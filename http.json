@@ -1,6 +1,6 @@
 {
     "port":80,
-    "webRoot":"www/",
+    "webRoot":"src/",
     "controllers":{
         "http":""
     }
