@@ -8,16 +8,16 @@ class ComposerStaticInit9c25ca0edfdb51b728fbf5957c11ee11
 {
     public static $fallbackDirsPsr4 = array (
         0 => __DIR__ . '/../..' . '/src',
-        1 => 'C:\\Users\\Razvan\\Documents\\NetBeansProjects\\CatServer\\vendor',
+        1 => 'C:\\Users\\Razvan\\Documents\\PhpProjects\\CatServer\\vendor',
     );
 
     public static $classMap = array (
-        'App' => __DIR__ . '/../..' . '/src/php/controllers/App.php',
+        'App\\App' => __DIR__ . '/../..' . '/src/php/controllers/App.php',
+        'App\\ControllerNotFound' => __DIR__ . '/../..' . '/src/php/controllers/ControllerNotFound.php',
+        'App\\HelloWorld' => __DIR__ . '/../..' . '/src/php/controllers/HelloWorld.php',
         'ComposerAutoloaderInit9c25ca0edfdb51b728fbf5957c11ee11' => __DIR__ . '/..' . '/composer/autoload_real.php',
         'Composer\\Autoload\\ClassLoader' => __DIR__ . '/..' . '/composer/ClassLoader.php',
         'Composer\\Autoload\\ComposerStaticInit9c25ca0edfdb51b728fbf5957c11ee11' => __DIR__ . '/..' . '/composer/autoload_static.php',
-        'ControllerNotFound' => __DIR__ . '/../..' . '/src/php/controllers/ControllerNotFound.php',
-        'HelloWorld' => __DIR__ . '/../..' . '/src/php/controllers/HelloWorld.php',
         'com\\github\\tncrazvan\\CatServer\\Cat' => __DIR__ . '/..' . '/com/github/tncrazvan/CatServer/Cat.php',
         'com\\github\\tncrazvan\\CatServer\\CatServer' => __DIR__ . '/..' . '/com/github/tncrazvan/CatServer/CatServer.php',
         'com\\github\\tncrazvan\\CatServer\\Controller\\Http\\App' => __DIR__ . '/..' . '/com/github/tncrazvan/CatServer/Controller/Http/App.php',

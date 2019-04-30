@@ -2,6 +2,6 @@
     "port":80,
     "webRoot":"src/",
     "controllers":{
-        "http":""
+        "http":"App"
     }
 }

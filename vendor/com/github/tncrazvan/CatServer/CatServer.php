@@ -84,14 +84,14 @@ class CatServer extends Cat{
 
             $this->go_online();
         }else{
-            throw new \Exception ("Settings json file doesn't exist");
+            throw new \Exception ("\nSettings json file doesn't exist\n");
         }
     }
     
     private function go_online():void{
         if (!$this->listening) return;
         $this->online = true;
-        echo "\nServer started.";
+        echo "\nServer started.\n";
         do{
             $client = socket_accept($this->socket);
             if ($client === false) {
@@ -102,7 +102,7 @@ class CatServer extends Cat{
             $listener->run();
         }while($this->online);
         socket_close($this->socket);
-        echo "Server started.";
+        echo "\nServer stopped.\n";
     }
     
     public function is_online():bool{

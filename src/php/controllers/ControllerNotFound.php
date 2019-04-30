@@ -1,3 +1,4 @@
 <?php
-class ControllerNotFound extends com\github\tncrazvan\CatServer\Controller\Http\ControllerNotFound{}
+namespace App;
+class ControllerNotFound extends \com\github\tncrazvan\CatServer\Controller\Http\ControllerNotFound{}
 

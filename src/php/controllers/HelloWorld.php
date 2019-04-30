@@ -1,4 +1,5 @@
 <?php
+namespace App;
 use com\github\tncrazvan\CatServer\Http\HttpController;
 use com\github\tncrazvan\CatServer\Http\HttpEvent;
 class HelloWorld extends HttpController{

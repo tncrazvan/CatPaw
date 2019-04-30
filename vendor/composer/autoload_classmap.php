@@ -6,12 +6,12 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'App' => $baseDir . '/src/php/controllers/App.php',
+    'App\\App' => $baseDir . '/src/php/controllers/App.php',
+    'App\\ControllerNotFound' => $baseDir . '/src/php/controllers/ControllerNotFound.php',
+    'App\\HelloWorld' => $baseDir . '/src/php/controllers/HelloWorld.php',
     'ComposerAutoloaderInit9c25ca0edfdb51b728fbf5957c11ee11' => $vendorDir . '/composer/autoload_real.php',
     'Composer\\Autoload\\ClassLoader' => $vendorDir . '/composer/ClassLoader.php',
     'Composer\\Autoload\\ComposerStaticInit9c25ca0edfdb51b728fbf5957c11ee11' => $vendorDir . '/composer/autoload_static.php',
-    'ControllerNotFound' => $baseDir . '/src/php/controllers/ControllerNotFound.php',
-    'HelloWorld' => $baseDir . '/src/php/controllers/HelloWorld.php',
     'com\\github\\tncrazvan\\CatServer\\Cat' => $vendorDir . '/com/github/tncrazvan/CatServer/Cat.php',
     'com\\github\\tncrazvan\\CatServer\\CatServer' => $vendorDir . '/com/github/tncrazvan/CatServer/CatServer.php',
     'com\\github\\tncrazvan\\CatServer\\Controller\\Http\\App' => $vendorDir . '/com/github/tncrazvan/CatServer/Controller/Http/App.php',
