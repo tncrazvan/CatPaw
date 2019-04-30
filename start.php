@@ -14,6 +14,8 @@ if(!isset($argv[1]) || $argv[1] === ""){
 
 if(file_exists($argv[1])){
     $settings = json_decode(file_get_contents($argv[1]),true);
+    if(isset($settings["sleep"]))
+        Cat::$sleep = $settings["sleep"];
     Cat::$web_root = dirname($argv[1])."/www/";
     if(isset($settings["webRoot"]))
         Cat::$web_root = dirname($argv[1])."/".$settings["webRoot"];
@@ -50,16 +52,21 @@ if(file_exists($argv[1])){
             Cat::$ws_controller_package_name = $settings["controllers"]["websocket"];
     }
     print_r([
+        "sleep"=>Cat::$sleep." microseconds",
         "port"=>Cat::$port,
         "bindAddress"=>Cat::$bind_address,
         "webRoot"=>Cat::$web_root,
         "charset"=>Cat::$charset,
-        "timeout"=>Cat::$timeout,
-        "wsMtu"=>Cat::$ws_mtu,
-        "httpMtu"=>Cat::$http_mtu,
-        "cookieTtl"=>Cat::$cookie_ttl,
-        "cacheMaxAge"=>Cat::$cache_max_age,
-        "entryPoint"=>Cat::$entry_point
+        "timeout"=>Cat::$timeout." seconds",
+        "wsMtu"=>Cat::$ws_mtu." bytes",
+        "httpMtu"=>Cat::$http_mtu." bytes",
+        "cookieTtl"=>Cat::$cookie_ttl." seconds",
+        "cacheMaxAge"=>Cat::$cache_max_age." seconds",
+        "entryPoint"=>Cat::$entry_point,
+        "controllers"=>[
+            "http"=>Cat::$http_controller_package_name,
+            "websocket"=>Cat::$ws_controller_package_name,
+        ]
     ]);
     $server = new CatServer(Cat::$bind_address,Cat::$port);
     $server->go_online();

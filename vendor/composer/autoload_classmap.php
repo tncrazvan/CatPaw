@@ -6,15 +6,17 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'com\\github\\tncrazvan\\CatServer\\Cat' => $baseDir . '/app/com/github/tncrazvan/CatServer/Cat.php',
-    'com\\github\\tncrazvan\\CatServer\\CatServer' => $baseDir . '/app/com/github/tncrazvan/CatServer/CatServer.php',
-    'com\\github\\tncrazvan\\CatServer\\Controller\\Http\\App' => $baseDir . '/app/com/github/tncrazvan/CatServer/Controller/Http/App.php',
-    'com\\github\\tncrazvan\\CatServer\\Controller\\Http\\ControllerNotFound' => $baseDir . '/app/com/github/tncrazvan/CatServer/Controller/Http/ControllerNotFound.php',
-    'com\\github\\tncrazvan\\CatServer\\Http\\EventManager' => $baseDir . '/app/com/github/tncrazvan/CatServer/EventManager.php',
-    'com\\github\\tncrazvan\\CatServer\\Http\\HttpController' => $baseDir . '/app/com/github/tncrazvan/CatServer/Http/HttpController.php',
-    'com\\github\\tncrazvan\\CatServer\\Http\\HttpEvent' => $baseDir . '/app/com/github/tncrazvan/CatServer/Http/HttpEvent.php',
-    'com\\github\\tncrazvan\\CatServer\\Http\\HttpEventListener' => $baseDir . '/app/com/github/tncrazvan/CatServer/Http/HttpEventListener.php',
-    'com\\github\\tncrazvan\\CatServer\\Http\\HttpEventManager' => $baseDir . '/app/com/github/tncrazvan/CatServer/Http/HttpEventManager.php',
-    'com\\github\\tncrazvan\\CatServer\\Http\\HttpHeader' => $baseDir . '/app/com/github/tncrazvan/CatServer/Http/HttpHeader.php',
-    'com\\github\\tncrazvan\\CatServer\\Http\\HttpRequestReader' => $baseDir . '/app/com/github/tncrazvan/CatServer/Http/HttpRequestReader.php',
+    'App' => $baseDir . '/app/php/controllers/App.php',
+    'ControllerNotFound' => $baseDir . '/app/php/controllers/ControllerNotFound.php',
+    'com\\github\\tncrazvan\\CatServer\\Cat' => $baseDir . '/app/php/com/github/tncrazvan/CatServer/Cat.php',
+    'com\\github\\tncrazvan\\CatServer\\CatServer' => $baseDir . '/app/php/com/github/tncrazvan/CatServer/CatServer.php',
+    'com\\github\\tncrazvan\\CatServer\\Controller\\Http\\App' => $baseDir . '/app/php/com/github/tncrazvan/CatServer/Controller/Http/App.php',
+    'com\\github\\tncrazvan\\CatServer\\Controller\\Http\\ControllerNotFound' => $baseDir . '/app/php/com/github/tncrazvan/CatServer/Controller/Http/ControllerNotFound.php',
+    'com\\github\\tncrazvan\\CatServer\\Http\\EventManager' => $baseDir . '/app/php/com/github/tncrazvan/CatServer/EventManager.php',
+    'com\\github\\tncrazvan\\CatServer\\Http\\HttpController' => $baseDir . '/app/php/com/github/tncrazvan/CatServer/Http/HttpController.php',
+    'com\\github\\tncrazvan\\CatServer\\Http\\HttpEvent' => $baseDir . '/app/php/com/github/tncrazvan/CatServer/Http/HttpEvent.php',
+    'com\\github\\tncrazvan\\CatServer\\Http\\HttpEventListener' => $baseDir . '/app/php/com/github/tncrazvan/CatServer/Http/HttpEventListener.php',
+    'com\\github\\tncrazvan\\CatServer\\Http\\HttpEventManager' => $baseDir . '/app/php/com/github/tncrazvan/CatServer/Http/HttpEventManager.php',
+    'com\\github\\tncrazvan\\CatServer\\Http\\HttpHeader' => $baseDir . '/app/php/com/github/tncrazvan/CatServer/Http/HttpHeader.php',
+    'com\\github\\tncrazvan\\CatServer\\Http\\HttpRequestReader' => $baseDir . '/app/php/com/github/tncrazvan/CatServer/Http/HttpRequestReader.php',
 );

@@ -4,7 +4,7 @@ namespace com\github\tncrazvan\CatServer;
 
 class Cat{
     public static
-            $sleep = 1000000, //miliseconds
+            $sleep = 1, //microseconds
             $listen=true,
             $groups_allowed=false,
             $smtp_allowed=false,

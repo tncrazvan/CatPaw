@@ -1,7 +1,7 @@
 {
     "autoload": {
         "psr-4": {
-            "com\\github\\tncrazvan\\CatServer\\":"app/com/github/tncrazvan/CatServer"
+            "":"app/php"
         }
     }
 }

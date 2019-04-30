@@ -6,5 +6,5 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'com\\github\\tncrazvan\\CatServer\\' => array($baseDir . '/app/com/github/tncrazvan/CatServer'),
+    '' => array($baseDir . '/app/php'),
 );
