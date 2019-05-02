@@ -66,7 +66,7 @@ class HttpHeader{
     
     public function isset_cookie(string $key):bool{
         foreach(array_keys($this->headers) as &$needle){
-            if(trim(key) === trim($needle)){
+            if(trim($key) === trim($needle)){
                 return true;
             }
         }

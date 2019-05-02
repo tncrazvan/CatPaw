@@ -93,8 +93,8 @@ class EventManager extends Cat{
      * @param domain domain of the cooke.
      * @param expire time to live of the cookie.
      */
-    public function set_cookie(string $name, string $value, string $path, string $domain, string $expire):void{
-        $this->server_headers->set_cookie($key, $value, $path, $domain, $expire);
+    public function set_cookie(string $key, string $content, string $path="/", string $domain=null, string $expire=null):void{
+        $this->server_headers->set_cookie($key, $content, $path, $domain, $expire);
     }
     
     /**

@@ -11,7 +11,7 @@ class HttpEvent extends HttpEventManager{
         return $this->isset_cookie("session_id") && HttpSession::exists($this->get_cookie("session_id"));
     }
     public function session_start():HttpSession{
-        $this->session = HttpSessionManager::start($e);
+        $this->session = HttpSessionManager::start($this);
         return $this->session;
     }
     public function session_stop():void{

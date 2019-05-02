@@ -7,7 +7,7 @@ class HttpSession{
     private $id,$STORAGE=[];
     
     public function __construct($e) {
-        $this->id = hash('sha3-224',$e->get_inet_address().",".$e->get_port().",".rand());
+        $this->id = hash('sha3-224',$e->get_address().",".$e->get_port().",".rand());
         $e->set_cookie("session_id", $this->id, "/");
     }
     

@@ -16,6 +16,19 @@ abstract class HttpEventManager extends EventManager{
         $this->content=$content;
     }
     
+    public function get_address():string{
+        $address;
+        socket_getpeername($this->client, $address);
+        return $address;
+    }
+    
+    public function get_port():string{
+        $address;
+        $port;
+        socket_getpeername($this->client, $address,$port);
+        return $port;
+    }
+    
     /**
      * Note that this method WILL NOT invoke interaface method onClose
      */

@@ -13,8 +13,12 @@ class HttpSessionManager{
         return $session;
     }
     
-    public static function stop(HttpSession $session):void{
-        unset(self::$LIST[$session->get_session_id()]);
+    public static function set(HttpSession &$session){
+        HttpSession::$LIST[$session->id()] = $session;
+    }
+    
+    public static function stop(HttpSession &$session):void{
+        unset(HttpSession::$LIST[$session->get_session_id()]);
     }
     
     public static function get(string $session_id):HttpSession{
@@ -22,6 +26,6 @@ class HttpSessionManager{
     }
     
     public static function exists(string $session_id):bool{
-        return isset(self::$LIST[$session_id]);
+        return isset(HttpSession::$LIST[$session_id]);
     }
 }
