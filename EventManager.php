@@ -23,7 +23,7 @@ class EventManager extends Cat{
         
         if($parts_length > 1){
             $tmp = preg_split("/\\&/",$parts[1]);
-            foreach ($tmp as $part){
+            foreach ($tmp as &$part){
                 $object = preg_split("/=/m",$part);
                 $object_length = count($object);
                 if($object_length > 1){
@@ -65,7 +65,7 @@ class EventManager extends Cat{
             $tmp = array_fill(0, 2, null);
             $languages = preg_split("/,/",$this->client_headers->get("Accept-Languages"));
             $this->user_languages["DEFAULT-LANGUAGE"]=$languages[0];
-            foreach($languages as $language){
+            foreach($languages as &$language){
                 $tmp = preg_split("/;/",$language);
                 if(count($tmp) > 1)
                     $this->user_languages[$tmp[0]] = $tmp[1];

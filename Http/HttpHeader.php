@@ -31,10 +31,10 @@ class HttpHeader{
     
     public function to_string():string{
         $result = "";
-        foreach(array_keys($this->headers) as $key){
+        foreach(array_keys($this->headers) as &$key){
             $result .= $this->field_to_string($key);
         }
-        foreach(array_keys($this->cookies) as $key){
+        foreach(array_keys($this->cookies) as &$key){
             $result .= $this->field_to_string($key);
         }
         return $result;
@@ -65,7 +65,7 @@ class HttpHeader{
     }
     
     public function isset_cookie(string $key):bool{
-        foreach(array_keys($this->headers) as $needle){
+        foreach(array_keys($this->headers) as &$needle){
             if(trim(key) === trim($needle)){
                 return true;
             }
@@ -91,14 +91,14 @@ class HttpHeader{
     public static function from_string(string &$string):HttpHeader{
         $http_header = new HttpHeader();
         $headers = preg_split("/\\r\\n/", $string);
-        foreach($headers as $header){
+        foreach($headers as &$header){
             if($header === "") continue;
             $item = preg_split("/:(?=\\s)/", $header);
             $item_length = count($item);
             if($item_length > 1){
                 if($item[0] === "Cookie"){
                     $cookies= preg_split("/;/", $item[1]);
-                    foreach($cookies as $cookie){
+                    foreach($cookies as &$cookie){
                         $cookie = preg_split("=(?!\\s|\\s|$)",$cookie);
                         $cookie_length = count($cookie);
                         if($cookie_length > 1){

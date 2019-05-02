@@ -8,10 +8,11 @@ class HttpEvent extends HttpEventManager{
         parent::__construct($client, $client_headers, $content);
     }
     public function sessionIdIsset():bool{
-        return $this->isset_cookie("session_id")/*&&HttpSession.isset($this->get_cookie("session_id")*/;
+        return $this->isset_cookie("session_id") && HttpSession::exists($this->get_cookie("session_id"));
     }
-    public function session_start():void{
-        /*$this->session = HttpSession->start($this);*/
+    public function session_start():HttpSession{
+        $this->session = HttpSession::start($this);
+        return $this->session;
     }
     private function serve_controller(array $location){
         $result = null;
