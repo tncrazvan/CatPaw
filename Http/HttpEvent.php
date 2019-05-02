@@ -3,7 +3,7 @@ namespace com\github\tncrazvan\CatServer\Http;
 use com\github\tncrazvan\CatServer\Http\HttpEventManager;
 use com\github\tncrazvan\CatServer\Cat;
 class HttpEvent extends HttpEventManager{
-    public $session;
+    protected $session = null;
     public function __construct($client, HttpHeader &$client_headers, string &$content) {
         parent::__construct($client, $client_headers, $content);
     }
@@ -11,8 +11,15 @@ class HttpEvent extends HttpEventManager{
         return $this->isset_cookie("session_id") && HttpSession::exists($this->get_cookie("session_id"));
     }
     public function session_start():HttpSession{
-        $this->session = HttpSession::start($this);
+        $this->session = HttpSessionManager::start($e);
         return $this->session;
+    }
+    public function session_stop():void{
+        HttpSessionManager::stop($this->session);
+    }
+    public function session_isset():bool{
+        if($this->session === null) return false;
+        return HttpSessionManager::exists($this->session->id());
     }
     private function serve_controller(array $location){
         $result = null;
