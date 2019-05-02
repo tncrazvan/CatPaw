@@ -7,7 +7,7 @@ class CatServer extends Cat{
     private $socket,
             $binding,
             $listening,
-            $online;
+            $started;
     
     private function init(&$args):void{
         $settings = json_decode(file_get_contents($args[1]),true);
@@ -81,16 +81,16 @@ class CatServer extends Cat{
             $this->listening = socket_listen($this->socket, self::$backlog);
             if ($this->listening === false) throw new \Exception(socket_strerror(socket_last_error($this->socket)));
             socket_set_nonblock($this->socket);
-
-            $this->go_online();
+            
+            $this->start();
         }else{
             throw new \Exception ("\nSettings json file doesn't exist\n");
         }
     }
     
-    private function go_online():void{
+    private function start():void{
         if (!$this->listening) return;
-        $this->online = true;
+        $this->started = true;
         echo "\nServer started.\n";
         do{
             $client = socket_accept($this->socket);
@@ -98,18 +98,19 @@ class CatServer extends Cat{
                 usleep(Cat::$sleep);
                 continue;
             }
+            
             $listener = new HttpEventListener($client);
             $listener->run();
-        }while($this->online);
+        }while($this->started);
         socket_close($this->socket);
         echo "\nServer stopped.\n";
     }
     
-    public function is_online():bool{
-        return $this->online;
+    public function isOnline():bool{
+        return $this->started;
     }
     
-    public function go_offline():void{
-        $this->online = false;
+    public function stop():void{
+        $this->started = false;
     }
 }

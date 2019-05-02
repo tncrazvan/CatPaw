@@ -36,8 +36,8 @@ abstract class HttpRequestReader{
         }
         $str_header = $input[0];
         $this->content = $parts_counter>1?$input[1]:"";
-        $this->header = HttpHeader::from_string($str_header);
-        $this->on_request($this->header,$this->content);
+        $this->header = HttpHeader::fromString($str_header);
+        $this->onRequest($this->header,$this->content);
     }
-    public abstract function on_request(HttpHeader &$client_header, string $content):void;
+    public abstract function onRequest(HttpHeader &$client_header, string $content):void;
 }

@@ -2,83 +2,77 @@
 namespace com\github\tncrazvan\CatServer\Http;
 
 class HttpHeader{
-    private $headers = [],$cookies = [];
+    private $header = [],$cookies = [];
     const DATE_FORMAT = "D j M Y G:i:s T";
     const REGEX_RSEOURCE = "/(?<=\s)\/.*(?=\s\w+)/m";
     const REGEX_STATUS = "/(?<=\s)[0-9]+(?=\s)/m";
     public function __construct(bool $create_success_header = true) {
         if($create_success_header){
-            $this->headers["Status"] = "HTTP/1.1 200 OK";
-            $this->headers["Date"] = date(self::DATE_FORMAT); 
+            $this->header["Status"] = "HTTP/1.1 200 OK";
+            $this->header["Date"] = date(self::DATE_FORMAT); 
         }
     }
     
-    public function field_to_string(string $key):string{
+    public function fieldToString(string $key):string{
         if($key === "Resource" || $key === "Status"){
-            return $this->headers[$key]."\r\n";
+            return $this->header[$key]."\r\n";
         }
-        return $key.": ".$this->headers[$key]."\r\n";
+        return $key.": ".$this->header[$key]."\r\n";
     }
     
-    public function cookie_to_string(string $key):string{
+    public function cookieToString(string $key):string{
         $cookie = $this->cookies[$key];
         return $cookie[4].": "
                 .$key."=".$cookie[0]
                 .($cookie[1]===null?"":"; path=".$cookie[1])
                 .($cookie[2]===null?"":"; domain=".$cookie[2])
-                .($cookie[3]===null?"":"; expires=".date(self::DATE_FORMAT,$cookie[3]));
+                .($cookie[3]===null?"":"; expires=".date(self::DATE_FORMAT,$cookie[3]))."\r\n";
     }
     
-    public function to_string():string{
+    public function toString():string{
         $result = "";
-        foreach(array_keys($this->headers) as &$key){
-            $result .= $this->field_to_string($key);
+        foreach(array_keys($this->header) as &$key){
+            $result .= $this->fieldToString($key);
         }
         foreach(array_keys($this->cookies) as &$key){
-            $result .= $this->field_to_string($key);
+            $result .= $this->cookieToString($key);
         }
         return $result;
     }
     
-    public function is_defined(string $key):bool{
-        return isset($this->headers[$key]);
+    public function has(string $key):bool{
+        return isset($this->header[$key]);
     }
     
     public function set(string $key, string $content):void{
-        $this->headers[$key] = $content;
+        $this->header[$key] = $content;
     }
     
     public function get(string $key){
-        if(!isset($this->headers[$key])) return null;
+        if(!isset($this->header[$key])) return null;
         switch($key){
             case "Status":
             case "Resource":
-                return trim($this->headers[$key]);
+                return trim($this->header[$key]);
                 break;
             case "Method":
-                return trim(explode(" ", $this->headers[$key])[0]);
+                return trim(explode(" ", $this->header[$key])[0]);
                 break;
             default:
-                return trim($this->headers[$key]);
+                return trim($this->header[$key]);
                 break;
         }
     }
     
-    public function isset_cookie(string $key):bool{
-        foreach(array_keys($this->headers) as &$needle){
-            if(trim($key) === trim($needle)){
-                return true;
-            }
-        }
-        return false;
+    public function issetCookie(string $key):bool{
+        return isset($this->cookies[trim($key)]);
     }
     
-    public function get_cookie(string $key):string{
-        if(!$this->isset_cookie($key)) return null;
+    public function getCookie(string $key):string{
         return urldecode($this->cookies[$key][0]);
     }
     
-    public function set_cookie(string $key, string $content, string $path="/", string $domain=null, string $expire=null):void{
+    public function setCookie(string $key, string $content, string $path="/", string $domain=null, string $expire=null):void{
         $cookie = array_fill(0, 4, null);
         $cookie[0] = urlencode($content);
         $cookie[1] = $path;
@@ -88,10 +82,10 @@ class HttpHeader{
         $this->cookies[trim($key)] = $cookie;
     }
     
-    public static function from_string(string &$string):HttpHeader{
+    public static function fromString(string &$string):HttpHeader{
         $http_header = new HttpHeader();
-        $headers = preg_split("/\\r\\n/", $string);
-        foreach($headers as &$header){
+        $header = preg_split("/\\r\\n/", $string);
+        foreach($header as &$header){
             if($header === "") continue;
             $item = preg_split("/:(?=\\s)/", $header);
             $item_length = count($item);
@@ -99,7 +93,7 @@ class HttpHeader{
                 if($item[0] === "Cookie"){
                     $cookies= preg_split("/;/", $item[1]);
                     foreach($cookies as &$cookie){
-                        $cookie = preg_split("=(?!\\s|\\s|$)",$cookie);
+                        $cookie = preg_split("/=(?!\\s|\\s|$)/",$cookie);
                         $cookie_length = count($cookie);
                         if($cookie_length > 1){
                             $content = array_fill(0, 4, null);
@@ -108,7 +102,7 @@ class HttpHeader{
                             $content[2] = $cookie_length>3?$cookie[3]:null;
                             $content[3] = $cookie_length>3?$cookie[3]:null;
                             $content[4] = "Cookie";
-                            $this->cookies[trim($key)] = $content;
+                            $http_header->cookies[trim($cookie[0])] = $content;
                         }
                     }
                 }else{

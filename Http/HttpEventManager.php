@@ -6,25 +6,22 @@ use com\github\tncrazvan\CatServer\Cat;
 
 abstract class HttpEventManager extends EventManager{
     protected 
-            $default_headers=true,
+            $default_header=true,
             $alive=true,
             $client,
             $content;
-    public function __construct($client,HttpHeader &$client_headers,string &$content) {
-        parent::__construct($client_headers);
+    public function __construct($client,HttpHeader &$client_header,string &$content) {
+        parent::__construct($client_header);
         $this->client=$client;
         $this->content=$content;
     }
     
-    public function get_address():string{
-        $address;
+    public function &getAddress():string{
         socket_getpeername($this->client, $address);
         return $address;
     }
     
-    public function get_port():string{
-        $address;
-        $port;
+    public function &getPort():string{
         socket_getpeername($this->client, $address,$port);
         return $port;
     }
@@ -38,94 +35,94 @@ abstract class HttpEventManager extends EventManager{
         socket_close($this->client);
     }
     
-    public function get_client(){
+    public function getClient(){
         return $this->client;
     }
     
-    public function set_headers_field(string $key, string $content):void{
-        $this->server_headers->set($key,$content);
+    public function setHeaderField(string $key, string $content):void{
+        $this->server_header->set($key,$content);
     }
         
-    public function set_status(string $status):void{
-        $this->set_headers_field("Status", "HTTP/1.1 $status");
+    public function setStatus(string $status):void{
+        $this->setHeaderField("Status", "HTTP/1.1 $status");
     }
     
-    public function get_headers_field(string $key):string{
-        return $this->server_headers->get($key);
+    public function &getHeaderField(string $key):string{
+        return $this->server_header->get($key);
     }
     
-    public function get_headers():HttpHeader{
-        return $this->server_headers;
+    public function &getHeader():HttpHeader{
+        return $this->server_header;
     }
     
-    public function get_client_headers():HttpHeader{
-        return $this->client_headers;
+    public function &getClientHeader():HttpHeader{
+        return $this->client_header;
     }
     
-    public function get_method():string{
-        return $this->client_headers->get("Method");
+    public function &getMethod():string{
+        return $this->getHeaderField("Method");
     }
     
-    public function is_alive():bool{
+    public function isAlive():bool{
         return $this->alive;
     }
     
     public function execute():bool{
-        $this->find_user_languages();
+        $this->findUserLanguages();
         $filename = Cat::$web_root.$this->location;
         if(file_exists($filename)){
             if(!is_dir($filename)){
                 $last_modified=filemtime($filename);
-                $this->set_headers_field("Last-Modified", date(Cat::DATE_FORMAT, $last_modified));
-                $this->set_headers_field("Last-Timestamp", $last_modified);
-                $this->set_content_type(Cat::get_content_type($filename));
-                $this->send_file_contents($filename);
+                $this->setHeaderField("Last-Modified", date(Cat::DATE_FORMAT, $last_modified));
+                $this->setHeaderField("Last-Timestamp", $last_modified);
+                $this->setContentType(Cat::getContentType($filename));
+                $this->sendFileContents($filename);
             }else{
-                $this->send($this->on_controller_request($this->location));
+                $this->send($this->onControllerRequest($this->location));
             }
         }else{
-            $this->send($this->on_controller_request($this->location));
+            $this->send($this->onControllerRequest($this->location));
         }
         $this->close();
         return true;
     }
     
-    protected abstract function on_controller_request(string $location);
+    protected abstract function &onControllerRequest(string &$location);
     
-    public function get_user_languages():array{
+    public function &getUserLanguages():array{
         return $this->user_languages;
     }
     
-    public function get_user_default_language():string{
+    public function &getUserDefaultLanguage():string{
         return $this->user_languages["DEFAULT-LANGUAGE"];
     }
     
-    public function get_user_agent():string{
-        return $this->get_client_headers()->get("User-Agent");
+    public function &getUserAgent():string{
+        return $this->getClientHeader()->get("User-Agent");
     }
     
     private $first_message = true;
-    public function send_headers():void{
+    public function sendHeader():void{
         $this->first_message=false;
-        socket_write($this->client, $this->server_headers->to_string()."\r\n");
+        socket_write($this->client, $this->server_header->toString()."\r\n");
         $this->alive=true;
     }
     
     public function send(string $data=null):int{
         if($this->alive){
-            if($this->first_message && $this->default_headers){
-                $this->send_headers();
+            if($this->first_message && $this->default_header){
+                $this->sendHeader();
             }
             return socket_write($this->client, $data);
         }
     }
     
-    public function set_content_type(string $type):void{
-        $this->set_headers_field("Content-Type", $type);
+    public function setContentType(string $type):void{
+        $this->setHeaderField("Content-Type", $type);
     }
     
     
-    public function send_file_contents(string ...$filename):void{
+    public function sendFileContents(string ...$filename):void{
         $filename_length = count($filename);
         if($filename_length === 0) return;
         $buffer;
@@ -138,9 +135,9 @@ abstract class HttpEventManager extends EventManager{
         $raf = fopen($filename,"r");
         $file_length = filesize($filename);
         
-        if($this->client_headers->is_defined("Range")){
-            $this->set_status(Cat::STATUS_PARTIAL_CONTENT);
-            $ranges = preg_split("/=/",preg_split("/,/",$this->client_headers->get("Range")));
+        if($this->client_header->has("Range")){
+            $this->setStatus(Cat::STATUS_PARTIAL_CONTENT);
+            $ranges = preg_split("/=/",preg_split("/,/",$this->client_header->get("Range")));
             $ranges_length = count($ranges);
             $range_start = array_fill(0, $ranges_length, null);
             $range_end = array_fill(0, $ranges_length, null);
@@ -160,7 +157,7 @@ abstract class HttpEventManager extends EventManager{
                     $range_end[$i] = $file_length-1;
                 }
             }
-            $ctype = Cat::get_content_type($filename);
+            $ctype = Cat::getContentType($filename);
             $start;
             $end;
             $range_start_length = count($range_start);
@@ -169,8 +166,8 @@ abstract class HttpEventManager extends EventManager{
                 $boundary = Cat::generateMultipartBoundary();
                 if($this->first_message){
                     $this->first_message=false;
-                    $this->set_content_type("multipart/byteranges; boundary=$boundary");
-                    socket_write($this->client, $this->server_headers->to_string());
+                    $this->setContentType("multipart/byteranges; boundary=$boundary");
+                    socket_write($this->client, $this->server_header->to_string());
                 }
                 
                 for($i = 0; $i < $range_start_length; $i++){
@@ -210,18 +207,18 @@ abstract class HttpEventManager extends EventManager{
                 $start = $range_start[0];
                 $end = $range_end[0];
                 $len = $end-$start+1;
-                if($this->first_message && $this->default_headers){
+                if($this->first_message && $this->default_header){
                     $this->first_message=false;
-                    $this->set_headers_field("Content-Range", "bytes $start-$end/$file_length");
-                    $this->set_headers_field("Content-Length", "$length");
-                    socket_write($this->client, $this->server_headers->to_string()."\r\n");
+                    $this->setHeaderField("Content-Range", "bytes $start-$end/$file_length");
+                    $this->setHeaderField("Content-Length", "$length");
+                    socket_write($this->client, $this->server_header->to_string()."\r\n");
                 }
                 fseek($raf, $start);
                 $buffer = fread($raf,$end-$start+1);
                 socket_write($this->client, $buffer);
             }
         }else{
-            $this->set_headers_field("Content-Length", $file_length);
+            $this->setHeaderField("Content-Length", $file_length);
             fseek($raf, 0);
             $buffer = fread($raf, $file_length);
             $this->send($buffer);

@@ -5,7 +5,7 @@ class HttpEventListener extends HttpRequestReader{
     public function __construct($client) {
         parent::__construct($client);
     }
-    public function on_request(HttpHeader &$client_header, string $content):void {
+    public function onRequest(HttpHeader &$client_header, string $content):void {
         if($client_header !== null && $client_header->get("Connection") !== null){
             if(preg_match("/upgrade/", $client_header->get("Connection"))){
                 //websocket event goes here

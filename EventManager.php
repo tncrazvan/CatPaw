@@ -6,16 +6,16 @@ use com\github\tncrazvan\CatServer\Cat;
 class EventManager extends Cat{
     
     protected 
-            $client_headers,
+            $client_header,
             $location,
             $user_languages=[],
             $query_string=[],
-            $server_headers;
+            $server_header;
     
-    public function __construct(HttpHeader $client_headers) {
-        $this->server_headers = new HttpHeader();
-        $this->client_headers = $client_headers;
-        $parts = preg_split("/\\?|\\&/m",preg_replace("/^\\//m","",urldecode($client_headers->get("Resource"))));
+    public function __construct(HttpHeader $client_header) {
+        $this->server_header = new HttpHeader();
+        $this->client_header = $client_header;
+        $parts = preg_split("/\\?|\\&/m",preg_replace("/^\\//m","",urldecode($client_header->get("Resource"))));
         $tmp=[];
         $object=[];
         $this->location = $parts[0];
@@ -40,7 +40,7 @@ class EventManager extends Cat{
      * @param key name of the query.
      * @return 
      */
-    public function isset_url_query(string $key):bool{
+    public function issetUrlQuery(string $key):bool{
         return isset($this->query_string[$key]);
     }
     
@@ -49,7 +49,7 @@ class EventManager extends Cat{
      * @param key name of the query.
      * @return the value of the query.
      */
-    public function get_url_query(string $key):string{
+    public function getUrlQuery(string $key):string{
         return $this->query_string[$key];
     }
     
@@ -57,13 +57,13 @@ class EventManager extends Cat{
      * Finds the languages of the client application.
      * The value is stored in EventManager#userLanguages.
      */
-    protected function find_user_languages():void{
-        if($this->client_headers->get("Accept-Language") === null){
+    protected function findUserLanguages():void{
+        if($this->client_header->get("Accept-Language") === null){
             $this->user_languages["unknown"]="unknown";
         }else{
             //prepare array
             $tmp = array_fill(0, 2, null);
-            $languages = preg_split("/,/",$this->client_headers->get("Accept-Languages"));
+            $languages = preg_split("/,/",$this->client_header->get("Accept-Languages"));
             $this->user_languages["DEFAULT-LANGUAGE"]=$languages[0];
             foreach($languages as &$language){
                 $tmp = preg_split("/;/",$language);
@@ -81,8 +81,8 @@ class EventManager extends Cat{
      * @param path path of the cookie
      * @param domain domain of the cookie
      */
-    public function unset_cookie(string $key, string $path="/", string $domain=null):void{
-        $this->server_headers->set_cookie($key, "",$path,$domain,"0");
+    public function unsetCookie(string $key, string $path="/", string $domain=null):void{
+        $this->server_header->set_cookie($key, "",$path,$domain,"0");
     }
     
     /**
@@ -93,8 +93,8 @@ class EventManager extends Cat{
      * @param domain domain of the cooke.
      * @param expire time to live of the cookie.
      */
-    public function set_cookie(string $key, string $content, string $path="/", string $domain=null, string $expire=null):void{
-        $this->server_headers->set_cookie($key, $content, $path, $domain, $expire);
+    public function setCookie(string $key, string $content, string $path="/", string $domain=null, string $expire=null):void{
+        $this->server_header->set_cookie($key, $content, $path, $domain, $expire);
     }
     
     /**
@@ -102,19 +102,15 @@ class EventManager extends Cat{
      * @param name name of the cookie.
      * @return value of the cookie.
      */
-    public function get_cookie(string $key):string{
-        $this->client_headers->get_cookie($key);
+    public function getCookie(string $key):string{
+        return $this->client_header->get_cookie($key);
     }
     
     /**
      * Checks if the cookie is set.
      * @param key name of the cookie.
      */
-    public function isset_cookie(string $key){
-        return $this->client_headers->isset_cookie($key);
-    }
-    
-    public function cookie_isset(string $key){
-        return $this->isset_cookie($key);
+    public function issetCookie(string $key){
+        return $this->client_header->isset_cookie($key);
     }
 }

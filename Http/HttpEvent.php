@@ -4,24 +4,24 @@ use com\github\tncrazvan\CatServer\Http\HttpEventManager;
 use com\github\tncrazvan\CatServer\Cat;
 class HttpEvent extends HttpEventManager{
     protected $session = null;
-    public function __construct($client, HttpHeader &$client_headers, string &$content) {
-        parent::__construct($client, $client_headers, $content);
+    public function __construct($client, HttpHeader &$client_header, string &$content) {
+        parent::__construct($client, $client_header, $content);
     }
-    public function sessionIdIsset():bool{
+    public function issetSessionId():bool{
         return $this->isset_cookie("session_id") && HttpSession::exists($this->get_cookie("session_id"));
     }
-    public function session_start():HttpSession{
-        $this->session = HttpSessionManager::start($this);
+    public function &startSession():array{
+        $this->session = &HttpSessionManager::start($this);
         return $this->session;
     }
-    public function session_stop():void{
+    public function stopSeassion():void{
         HttpSessionManager::stop($this->session);
     }
-    public function session_isset():bool{
+    public function issetSession():bool{
         if($this->session === null) return false;
-        return HttpSessionManager::exists($this->session->id());
+        return HttpSessionManager::session_isset($e);
     }
-    private function serve_controller(array $location){
+    private function &serveController(array $location){
         $result = null;
         $args = [];
         $location_length = count($location);
@@ -29,28 +29,29 @@ class HttpEvent extends HttpEventManager{
             $location = [Cat::$http_default_name];
         }
         try{
-            $class_id = Cat::get_classname_index(Cat::$http_controller_package_name,$location);
-            $classname = Cat::resolve_classname($class_id,Cat::$http_controller_package_name,$location);
+            $class_id = Cat::getClassNameIndex(Cat::$http_controller_package_name,$location);
+            $classname = Cat::resolveClassName($class_id,Cat::$http_controller_package_name,$location);
             $controller = new $classname();
             $methodname = $location_length-1>$class_id?$location[$class_id+1]:"main";
-            $args = Cat::resolve_method_args($class_id+2, $location);
+            $args = Cat::resolveMethodArgs($class_id+2, $location);
             if(method_exists($controller, $methodname)){
-                $result = $controller->{$methodname}($this,$args, $this->content);
+                $result = @$controller->{$methodname}($this,$args, $this->content);
             }else{
-                $args = Cat::resolve_method_args($class_id+1, $location);
-                $result = $controller->main($this,$args, $this->content);
+                $args = Cat::resolveMethodArgs($class_id+1, $location);
+                $result = @$controller->main($this,$args, $this->content);
             }
-            $controller->on_close();
+            $controller->onClose();
         } catch (\Exception $ex) {
             $classname = Cat::$http_controller_package_name."\\".Cat::$http_not_found_name;
             $controller = new $classname();
-            $result = $controller->main($this,$args,$this->content);
-            $controller->on_close();
+            $result = @$controller->main($this,$args,$this->content);
+            $controller->onClose();
         }
         return $result;
     }
-    protected function on_controller_request(string $url){
-        return $this->serve_controller(preg_split("/\\//m",$url));
+    protected function &onControllerRequest(string &$url){
+        $result = &$this->serveController(preg_split("/\\//m",$url));
+        return $result;
     }
 
 }

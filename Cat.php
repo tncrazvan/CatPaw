@@ -108,7 +108,7 @@ class Cat{
         STATUS_NOT_EXTENDED = "510 Not Extended",
         STATUS_NETWORK_AUTHENTICATION_REQUIRED = "511 Network Authentication Required";
     
-    protected static function get_classname_index(string $root, array &$location):int{
+    protected static function getClassNameIndex(string $root, array &$location):int{
         $classname = $root;
         $location_length = count($location);
         for($i=0;$i<$location_length;$i++){
@@ -120,7 +120,7 @@ class Cat{
         throw new \Exception("Class not found");
     }
     
-    protected static function resolve_classname(int $class_id, string $root, array &$location):string{
+    protected static function resolveClassName(int $class_id, string $root, array &$location):string{
         $classname = $root;
         $location_length = count($location);
         for($i=0;$i<$location_length;$i++){
@@ -129,7 +129,7 @@ class Cat{
         return $classname;
     }
     
-    protected static function resolve_method_args(int $offset, array &$location):array{
+    protected static function resolveMethodArgs(int $offset, array &$location):array{
         $args = [];
         $location_length = count($location);
         if($location_length-1>$offset-1){
@@ -138,7 +138,7 @@ class Cat{
         return $args;
     }
     
-    public static function escape_js(string $content):string{
+    public static function escapeJs(string $content):string{
         return 
         preg_replace(self::PATTERN_JS_ESCAPE_LEFT_START, "&lt;", 
             preg_replace(self::PATTERN_JS_ESCAPE_LEFT_END, "&lt;/", 
@@ -151,8 +151,8 @@ class Cat{
         );
     }
     
-    public static function get_content_type(string $location):string{
-        return self::process_content_type($location);
+    public static function getContentType(string $location):string{
+        return self::resolveContentType($location);
     }
     
     /**
@@ -162,7 +162,7 @@ class Cat{
      * @param location resource name.
      * @return the mime type of the given resource as a String.
      */
-    public static function process_content_type(string $location):string{
+    public static function resolveContentType(string $location):string{
         $tmp_type = "";
         $tmp_type0 = preg_split("/\\//",$location);
         $tmp_type0_length = count($tmp_type0);

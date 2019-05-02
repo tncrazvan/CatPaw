@@ -4,15 +4,19 @@ namespace com\github\tncrazvan\CatServer\Http;
 
 class HttpSession{
     static $LIST = [];
-    private $id,$STORAGE=[];
+    private $id,$STORAGE = [];
     
     public function __construct($e) {
-        $this->id = hash('sha3-224',$e->get_address().",".$e->get_port().",".rand());
-        $e->set_cookie("session_id", $this->id, "/");
+        $this->id = hash('sha3-224',$e->getAddress().",".$e->getPort().",".rand());
+        $e->setCookie("session_id", $this->id, "/");
     }
     
     public function id():string{
         return $this->id;
+    }
+    
+    public function &storage():array{
+        return $this->STORAGE;
     }
     
     public function get(string $key){
@@ -27,7 +31,7 @@ class HttpSession{
         unset($this->STORAGE[$key]);
     }
     
-    public function exists(string $key):bool{
+    public function has(string $key):bool{
         return isset($this->STORAGE[$key]);
     }
     
