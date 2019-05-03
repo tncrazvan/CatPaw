@@ -7,8 +7,11 @@ class CatServer extends Cat{
     private $socket,
             $binding,
             $listening,
-            $started;
-    
+            $started,
+            $websocket_clients=[];
+    public function addWebSocketClient(&$client,int &$memoryKey):void{
+        
+    }
     private function init(&$args):void{
         $settings = json_decode(file_get_contents($args[1]),true);
         if(isset($settings["sleep"]))

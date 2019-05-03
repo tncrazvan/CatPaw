@@ -17,12 +17,12 @@ class HttpHeader{
         if($key === "Resource" || $key === "Status"){
             return $this->header[$key]."\r\n";
         }
-        return $key.": ".$this->header[$key]."\r\n";
+        return $key.":".$this->header[$key]."\r\n";
     }
     
     public function cookieToString(string $key):string{
         $cookie = $this->cookies[$key];
-        return $cookie[4].": "
+        return $cookie[4].":"
                 .$key."=".$cookie[0]
                 .($cookie[1]===null?"":"; path=".$cookie[1])
                 .($cookie[2]===null?"":"; domain=".$cookie[2])

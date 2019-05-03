@@ -4,6 +4,7 @@ namespace com\github\tncrazvan\CatServer;
 
 class Cat{
     public static
+            $PSToolsDir = __DIR__."/PSTools",
             $sleep = 1, //microseconds
             $listen=true,
             $groups_allowed=false,
