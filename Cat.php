@@ -5,7 +5,7 @@ namespace com\github\tncrazvan\CatServer;
 class Cat{
     public static
             $PSToolsDir = __DIR__."/PSTools",
-            $sleep = 1, //microseconds
+            $sleep = 10, //microseconds
             $listen=true,
             $groups_allowed=false,
             $smtp_allowed=false,
@@ -15,10 +15,20 @@ class Cat{
             $web_root="src/",
             $charset="UTF-8",
             $bind_address="127.0.0.1",
+            
+            $http_controller_package_name_original="com\\github\\tncrazvan\\CatServer\\Controller\\Http",
             $http_controller_package_name="com\\github\\tncrazvan\\CatServer\\Controller\\Http",
+            
+            $ws_controller_package_name_original="com\\github\\tncrazvan\\CatServer\\Controller\\WebSocket",
             $ws_controller_package_name="com\\github\\tncrazvan\\CatServer\\Controller\\WebSocket",
+            
+            $http_not_found_name_original="ControllerNotFound",
             $http_not_found_name="ControllerNotFound",
+            
+            $ws_not_found_name_original="ControllerNotFound",
             $ws_not_found_name="ControllerNotFound",
+            
+            $http_default_name_original="App",
             $http_default_name="App",
             $ws_events,
             $cookie_ttl=60*60*24*365, //year
@@ -123,8 +133,7 @@ class Cat{
     
     protected static function resolveClassName(int $class_id, string $root, array &$location):string{
         $classname = $root;
-        $location_length = count($location);
-        for($i=0;$i<$location_length;$i++){
+        for($i=0;$i<=$class_id;$i++){
             $classname .="\\".$location[$i];
         }
         return $classname;

@@ -5,27 +5,25 @@ use com\github\tncrazvan\CatServer\Cat;
 abstract class HttpRequestReader{
     protected 
             $client,
+            $clients,
             $header,
             $content;
     
-    public function __construct($client) {
+    public function __construct($client,array &$clients) {
         $this->client = $client;
+        $this->clients = $clients;
     }
     
     public function run():void{
-        $chain= array_fill(0, 4, null);
-        $keepReading=true;
-        $input = "";
-        while($keepReading){
-            $result = socket_read($this->client, Cat::$http_mtu);
-            if(!$result){
-                $keepReading = false;
-            }else{
-                $input .=$result;
-            }
+        $input = socket_read($this->client, Cat::$http_mtu);
+        if(!$input){
+            $key = array_search($this->client, $this->clients);
+            unset($this->clients[$key]);
+            return;
         }
         if(trim($input) === ""){
             socket_close($this->client);
+            unset($this->clients[$key]);
             return;
         }
         $input = preg_split("/\\r\\?\\n\\r\\?\\n/m", $input);

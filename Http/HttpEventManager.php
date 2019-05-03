@@ -113,7 +113,12 @@ abstract class HttpEventManager extends EventManager{
             if($this->first_message && $this->default_header){
                 $this->sendHeader();
             }
-            return socket_write($this->client, $data);
+            try{
+                return socket_write($this->client, $data);
+            } catch (Exception $ex) {
+                return 0;
+            }
+            
         }
     }
     

@@ -7,11 +7,7 @@ class CatServer extends Cat{
     private $socket,
             $binding,
             $listening,
-            $started,
-            $websocket_clients=[];
-    public function addWebSocketClient(&$client,int &$memoryKey):void{
-        
-    }
+            $started;
     private function init(&$args):void{
         $settings = json_decode(file_get_contents($args[1]),true);
         if(isset($settings["sleep"]))
@@ -71,49 +67,69 @@ class CatServer extends Cat{
         ]);
     }
     
+    
     public function __construct(&$args) {
         $args_length = count($args);
         if($args_length > 1 && file_exists($args[1])){
             $this->init($args);
             $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
             if ($this->socket === false) throw new \Exception(socket_strerror(socket_last_error()));
-
+            socket_set_option($this->socket, SOL_SOCKET, SO_REUSEADDR, 1);
             $this->binding = socket_bind($this->socket, self::$bind_address, self::$port);
             if ($this->binding === false) throw new \Exception(socket_strerror(socket_last_error($this->socket)));
-
             $this->listening = socket_listen($this->socket, self::$backlog);
             if ($this->listening === false) throw new \Exception(socket_strerror(socket_last_error($this->socket)));
-            socket_set_nonblock($this->socket);
-            
             $this->start();
         }else{
             throw new \Exception ("\nSettings json file doesn't exist\n");
         }
     }
-    
+    private $clients = [];
     private function start():void{
         if (!$this->listening) return;
-        $this->started = true;
+        array_push($this->clients, $this->socket);
+        socket_set_block($this->socket);
         echo "\nServer started.\n";
-        do{
-            $client = socket_accept($this->socket);
-            if ($client === false) {
-                usleep(Cat::$sleep);
+        while($this->listening){
+            // create a copy
+            $copy = $this->clients;
+            if (@socket_select($copy, $write, $except, 0) < 1){
                 continue;
             }
+                
+            // check if there is a client trying to connect
             
-            $listener = new HttpEventListener($client);
-            $listener->run();
-        }while($this->started);
+            if (in_array($this->socket, $copy)) {
+                // accept the client, and add him to the $clients array
+                $this->clients[] = $newsock = socket_accept($this->socket);
+                
+                // remove the listening socket from the clients-with-data array
+                $key = array_search($this->socket, $copy);
+                unset($copy[$key]);
+            }
+            $this->watch_clients($copy);
+            usleep(self::$sleep);
+        }
         socket_close($this->socket);
         echo "\nServer stopped.\n";
     }
     
+    private function watch_clients(array &$copy):void{
+        foreach($copy as &$client){
+            $listener = new HttpEventListener($client, $this->clients);
+            $listener->run();
+            $key = array_search($client, $copy);
+            unset($copy[$key]);
+            $key = array_search($client, $this->clients);
+            unset($this->clients[$key]);
+        }
+    }
+    
     public function isOnline():bool{
-        return $this->started;
+        return $this->listening;
     }
     
     public function stop():void{
-        $this->started = false;
+        $this->listening = false;
     }
 }

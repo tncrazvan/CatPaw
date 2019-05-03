@@ -2,10 +2,10 @@
 namespace com\github\tncrazvan\CatServer\Http;
 use com\github\tncrazvan\CatServer\WebSocket\WebSocketEvent;
 class HttpEventListener extends HttpRequestReader{
-    public function __construct($client) {
-        parent::__construct($client);
+    public function __construct(&$read,array &$clients) {
+        parent::__construct($read,$clients);
     }
-    public function onRequest(HttpHeader &$client_header, string $content):void {
+    public function onRequest(HttpHeader &$client_header, string $content):void{
         if($client_header !== null && $client_header->get("Connection") !== null){
             if(preg_match("/Upgrade/", $client_header->get("Connection"))){
                 //websocket event goes here
