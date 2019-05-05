@@ -6,8 +6,7 @@ use com\github\tncrazvan\CatServer\Http\HttpEventListener;
 class CatServer extends Cat{
     private $socket,
             $binding,
-            $listening,
-            $started;
+            $listening;
     private function init(&$args):void{
         $settings = json_decode(file_get_contents($args[1]),true);
         if(isset($settings["sleep"]))
@@ -97,6 +96,7 @@ class CatServer extends Cat{
             // create a copy
             $copy = $this->clients;
             if (@socket_select($copy, $write, $except, 0) < 1){
+                usleep(self::$sleep);
                 continue;
             }
                 
@@ -106,23 +106,23 @@ class CatServer extends Cat{
                 // accept the client, and add him to the $clients array
                 $this->clients[] = $newsock = socket_accept($this->socket);
                 
-                // remove the listening socket from the clients-with-data array
+                // remove the listening sockets from the clients-with-data array
                 $key = array_search($this->socket, $copy);
                 unset($copy[$key]);
             }
-            $this->watch_clients($copy);
+            $this->watchClients($copy);
             usleep(self::$sleep);
         }
         socket_close($this->socket);
         echo "\nServer stopped.\n";
     }
     
-    private function watch_clients(array &$copy):void{
+    private function watchClients(array &$copy):void{
         foreach($copy as &$client){
             $listener = new HttpEventListener($client, $this->clients);
             $listener->run();
-            $key = array_search($client, $copy);
-            unset($copy[$key]);
+            $copy_key = array_search($client, $copy);
+            unset($copy[$copy_key]);
             $key = array_search($client, $this->clients);
             unset($this->clients[$key]);
         }

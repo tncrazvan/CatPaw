@@ -9,9 +9,12 @@ class EventManager extends Cat{
             $client,
             $client_header,
             $location,
+            $alive=true,
             $user_languages=[],
             $query_string=[],
-            $server_header;
+            $server_header,
+            $session = null,
+            $session_id = null;
     
     public function __construct(&$client,HttpHeader $client_header) {
         $this->client=$client;
@@ -66,16 +69,141 @@ class EventManager extends Cat{
         return $args;
     }
     
+    /**
+     * Get client ip address
+     * @return string the ip address of the client
+     */
     public function &getAddress():string{
         socket_getpeername($this->client, $address);
         return $address;
     }
     
+    /**
+     * Get client port number.
+     * @return string the port number of the client
+     */
     public function &getPort():string{
         socket_getpeername($this->client, $address,$port);
         return $port;
     }
     
+    
+    /**
+     * Closes the client connection.
+     * @return void This method WILL NOT invoke the "onClose" method.
+     */
+    public function close():void{
+        socket_set_block($this->client);
+        socket_set_option($this->client, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));
+        socket_close($this->client);
+    }
+    /**
+     * Get client socket
+     * @return \resource This is the socket of the client.
+     */
+    public function &getClient(){
+        return $this->client;
+    }
+    
+    /**
+     * Set a field to your response header.
+     * @param string $key name of the field
+     * @param string $content content of the field
+     */
+    public function setHeaderField(string $key, string $content):void{
+        $this->server_header->set($key,$content);
+    }
+        
+    /**
+     * Set the status of your response.
+     * @param string $status a status code. Multiple status codes can be found in the Cat class, suche as Cat::STATUS_SUCCESS.
+     */
+    public function setStatus(string $status):void{
+        $this->setHeaderField("Status", "HTTP/1.1 $status");
+    }
+    
+    /**
+     * Get header field.
+     * @param string $key name of the header field.
+     * @return string value of the header field.
+     */
+    public function &getHeaderField(string $key):string{
+        return $this->server_header->get($key);
+    }
+    
+    /**
+     * Get response header.
+     * @return \com\github\tncrazvan\CatServer\Http\HttpHeader header of the your response message.
+     */
+    public function &getHeader():HttpHeader{
+        return $this->server_header;
+    }
+    
+    /**
+     * Get request header.
+     * @return \com\github\tncrazvan\CatServer\Http\HttpHeader header of the client request.
+     */
+    public function &getClientHeader():HttpHeader{
+        return $this->client_header;
+    }
+    
+    /**
+     * Get request method.
+     * @return string method of the client request.
+     */
+    public function &getMethod():string{
+        return $this->getHeaderField("Method");
+    }
+    
+    public function &getUserLanguages():array{
+        return $this->user_languages;
+    }
+    /**
+     * Get the default user language from the request header.
+     * @return &string
+     */
+    public function &getUserDefaultLanguage():string{
+        return $this->user_languages["DEFAULT-LANGUAGE"];
+    }
+    
+    /**
+     * Get the user agent of the client.
+     * @return &string
+     */
+    public function &getUserAgent():string{
+        return $this->getClientHeader()->get("User-Agent");
+    }
+    
+    /**
+     * Starts a client http session.
+     * @return &array This method returns an array pointer, so any changes made to the array will be saved across all http requests relative to this session, untill the server kills the session due to inactivity. The default session ttl is 24 minutes.
+     */
+    public function &startSession():array{
+        $this->session = &HttpSessionManager::startSession($this, $this->session_id);
+        return $this->session;
+    }
+    
+    /**
+     * Removes the session of the current client from the server sessions list.
+     * @return void No need to call HttpEventManager::startSession, this method will 
+     * call it automatically if needed.
+     */
+    public function stopSession():void{
+        if($this->session_id === null){
+            $this->startSession();
+        }
+        $this->session = null;
+        HttpSessionManager::stopSession(HttpSessionManager::getSession($this->session_id));
+    }
+    
+    /**
+     * Checks if the current client can find a session.
+     * @return bool true if the client has "session_id" cookie and its value exists in the server sessions list, otherwise false.
+     */
+    public function issetSession():bool{
+        if($this->session === null) return false;
+        return HttpSessionManager::issetSession($e);
+    }
     
     /**
      * Checks if the requested URL contains the given key as a query.

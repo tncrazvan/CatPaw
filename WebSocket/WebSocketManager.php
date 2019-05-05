@@ -19,31 +19,6 @@ abstract class WebSocketManager extends EventManager{
         $this->request_id = spl_object_hash($this).rand();
         $this->content=$content;
     }
-    
-    public function getClientHeader(): HttpHeader{
-        return $this->client_header;
-    }
-    public function getClient(){
-        return $this->client;
-    }
-    public function getUserLanguages():array{
-        return $this->user_languages;
-    }
-    public function getUserDefaultLanguage():string{
-        return $this->user_languages["DEFAULT-LANGUAGE"];
-    }
-    public function getUserAgent():string{
-        return $this->client_header->get("User-Agent");
-    }
-    public function &getAddress():string{
-        socket_getpeername($this->client, $address);
-        return $address;
-    }
-    
-    public function &getPort():string{
-        socket_getpeername($this->client, $address,$port);
-        return $port;
-    }
     public function execute():void{
         $pid = pcntl_fork();
         if ($pid == -1) {

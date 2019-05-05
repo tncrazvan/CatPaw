@@ -8,7 +8,7 @@ class HttpSessionManager extends HttpSession{
     public static function &startSession(HttpEvent &$e,&$session_id):array{
         if (self::issetSession($e,$session_id)) {//if session exists
             //if session is expired
-            if(HttpSession::$LIST[$session_id]->getTime() + self::$session_ttl > time()){
+            if(HttpSession::$LIST[$session_id]->getTime() + self::$session_ttl < time()){
                 //delete the expired session
                 self::stopSession(HttpSession::$LIST[$session_id]);
             }else{ //if session is alive, return its storage pointer
