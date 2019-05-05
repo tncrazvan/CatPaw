@@ -4,7 +4,7 @@ namespace com\github\tncrazvan\CatServer;
 
 class Cat{
     public static
-            $PSToolsDir = __DIR__."/PSTools",
+            $session_ttl = 1440, // 24 minutes
             $sleep = 10, //microseconds
             $listen=true,
             $groups_allowed=false,
@@ -118,35 +118,6 @@ class Cat{
         STATUS_LOOP_DETECTED = "508 Loop Detected",
         STATUS_NOT_EXTENDED = "510 Not Extended",
         STATUS_NETWORK_AUTHENTICATION_REQUIRED = "511 Network Authentication Required";
-    
-    protected static function getClassNameIndex(string $root, array &$location):int{
-        $classname = $root;
-        $location_length = count($location);
-        for($i=0;$i<$location_length;$i++){
-            $classname .="\\".$location[$i];
-            if(class_exists($classname)){
-                return $i;
-            }
-        }
-        throw new \Exception("Class not found");
-    }
-    
-    protected static function resolveClassName(int $class_id, string $root, array &$location):string{
-        $classname = $root;
-        for($i=0;$i<=$class_id;$i++){
-            $classname .="\\".$location[$i];
-        }
-        return $classname;
-    }
-    
-    protected static function resolveMethodArgs(int $offset, array &$location):array{
-        $args = [];
-        $location_length = count($location);
-        if($location_length-1>$offset-1){
-            $args = array_slice($args, $offset);
-        }
-        return $args;
-    }
     
     public static function escapeJs(string $content):string{
         return 

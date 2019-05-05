@@ -15,13 +15,16 @@ class WebSocketEvent extends WebSocketManager{
         if($location_length === 0 || $location_length === 1 && $location[0] === ""){
             $location = [self::$ws_not_found_name];
         }
-        try{
-            $class_id = self::getClassNameIndex(self::$ws_controller_package_name, $location);
+        $class_id = self::getClassNameIndex(self::$ws_controller_package_name, $location);
+        if($class_id >= 0){
             $this->classname = self::resolveClassName($class_id,self::$ws_controller_package_name,$location);
             $this->controller = new $this->classname();
             $this->args = self::resolveMethodArgs($class_id+2, $location);
-        } catch (Exception $ex) {
-            $this->classname = self::$ws_controller_package_name_original."\\".self::$ws_not_found_name_original;
+        }else{
+            $this->classname = self::$ws_controller_package_name."\\".self::$ws_not_found_name;
+            if(!class_exists($this->classname)){
+                $this->classname = self::$ws_controller_package_name_original."\\".self::$ws_not_found_name_original;
+            }
             $this->controller = new $this->classname();
         }
     }

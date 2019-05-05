@@ -4,8 +4,6 @@ namespace com\github\tncrazvan\CatServer\Http;
 class HttpHeader{
     private $header = [],$cookies = [];
     const DATE_FORMAT = "D j M Y G:i:s T";
-    const REGEX_RSEOURCE = "/(?<=\s)\/.*(?=\s\w+)/m";
-    const REGEX_STATUS = "/(?<=\s)[0-9]+(?=\s)/m";
     public function __construct(bool $create_success_header = true) {
         if($create_success_header){
             $this->header["Status"] = "HTTP/1.1 200 OK";
@@ -17,12 +15,12 @@ class HttpHeader{
         if($key === "Resource" || $key === "Status"){
             return $this->header[$key]."\r\n";
         }
-        return $key.":".$this->header[$key]."\r\n";
+        return $key.": ".$this->header[$key]."\r\n";
     }
     
     public function cookieToString(string $key):string{
         $cookie = $this->cookies[$key];
-        return $cookie[4].":"
+        return $cookie[4].": "
                 .$key."=".$cookie[0]
                 .($cookie[1]===null?"":"; path=".$cookie[1])
                 .($cookie[2]===null?"":"; domain=".$cookie[2])
@@ -50,25 +48,14 @@ class HttpHeader{
     
     public function get(string $key){
         if(!isset($this->header[$key])) return null;
-        switch($key){
-            case "Status":
-            case "Resource":
-                return trim($this->header[$key]);
-                break;
-            case "Method":
-                return trim(explode(" ", $this->header[$key])[0]);
-                break;
-            default:
-                return trim($this->header[$key]);
-                break;
-        }
+        return trim($this->header[$key]);
     }
     
     public function issetCookie(string $key):bool{
         return isset($this->cookies[trim($key)]);
     }
     
-    public function getCookie(string $key):string{
+    public function &getCookie(string $key):string{
         return urldecode($this->cookies[$key][0]);
     }
     
@@ -84,10 +71,10 @@ class HttpHeader{
     
     public static function fromString(string &$string):HttpHeader{
         $http_header = new HttpHeader();
-        $header = preg_split("/\\r\\n/", $string);
-        foreach($header as &$header){
-            if($header === "") continue;
-            $item = preg_split("/:(?=\\s)/", $header);
+        $lines = preg_split("/\\r\\n/", $string);
+        foreach($lines as &$line){
+            if($line === "") continue;
+            $item = preg_split("/:\\s*/", $line, 2);
             $item_length = count($item);
             if($item_length > 1){
                 if($item[0] === "Cookie"){
@@ -109,16 +96,13 @@ class HttpHeader{
                     $http_header->set($item[0], $item[1]);
                 }
             }else{
-                if(substr($header, 0, 3) === "GET"){
-                    $matches = [];
-                    preg_match(self::REGEX_RSEOURCE, $header, $matches);
-                    $http_header->set("Resource", $matches[0]);
-                    $http_header->set("Method", "GET");
-                }else if(substr($header, 0, 4) === "POST"){
-                    $matches = [];
-                    preg_match(self::REGEX_RSEOURCE, $header, $matches);
-                    $http_header->set("Resource", $matches[0]);
-                    $http_header->set("Method", "POST");
+                if(preg_match("/^.+(?=\\s\\/).*HTTPS?\\/.*\$/", $line) > 0){
+                    $parts = preg_split("/\\s+/", $line);
+                    $http_header->set("Method", $parts[0]);
+                    $http_header->set("Resource", $parts[1]);
+                    $http_header->set("Version", $parts[2]);
+                }else{
+                    $http_header->set($line, null);
                 }
             }
         }

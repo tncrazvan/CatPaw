@@ -9,65 +9,130 @@ abstract class HttpEventManager extends EventManager{
             $default_header=true,
             $alive=true,
             $client,
-            $content;
+            $content,
+            $session = null,
+            $session_id = null;
     public function __construct($client,HttpHeader &$client_header,string &$content) {
-        parent::__construct($client_header);
-        $this->client=$client;
+        parent::__construct($client,$client_header);
         $this->content=$content;
     }
     
-    public function &getAddress():string{
-        socket_getpeername($this->client, $address);
-        return $address;
-    }
-    
-    public function &getPort():string{
-        socket_getpeername($this->client, $address,$port);
-        return $port;
+    /**
+     * Starts a client http session.
+     * @return &array This method returns an array pointer, so any changes made to the array will be saved across all http requests relative to this session, untill the server kills the session due to inactivity. The default session ttl is 24 minutes.
+     */
+    public function &startSession():array{
+        $this->session = &HttpSessionManager::startSession($this, $this->session_id);
+        return $this->session;
     }
     
     /**
-     * Note that this method WILL NOT invoke interaface method onClose
+     * Removes the session of the current client from the server sessions list.
+     * @return void No need to call HttpEventManager::startSession, this method will 
+     * call it automatically if needed.
+     */
+    public function stopSession():void{
+        if($this->session_id === null){
+            $this->startSession();
+        }
+        $this->session = null;
+        HttpSessionManager::stopSession(HttpSessionManager::getSession($this->session_id));
+    }
+    
+    /**
+     * Checks if the current client can find a session.
+     * @return bool true if the client has "session_id" cookie and its value exists in the server sessions list, otherwise false.
+     */
+    public function issetSession():bool{
+        if($this->session === null) return false;
+        return HttpSessionManager::issetSession($e);
+    }
+    
+    /**
+     * Closes the client connection.
+     * @return void This method WILL NOT invoke the "onClose" method.
      */
     public function close():void{
         socket_set_block($this->client);
         socket_set_option($this->client, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));
         socket_close($this->client);
     }
-    
-    public function getClient(){
+    /**
+     * Get client socket
+     * @return \resource This is the socket of the client.
+     */
+    public function &getClient(){
         return $this->client;
     }
     
+    /**
+     * Set a field to your response header.
+     * @param string $key name of the field
+     * @param string $content content of the field
+     */
     public function setHeaderField(string $key, string $content):void{
         $this->server_header->set($key,$content);
     }
         
+    /**
+     * Set the status of your response.
+     * @param string $status a status code. Multiple status codes can be found in the Cat class, suche as Cat::STATUS_SUCCESS.
+     */
     public function setStatus(string $status):void{
         $this->setHeaderField("Status", "HTTP/1.1 $status");
     }
     
+    /**
+     * Get header field.
+     * @param string $key name of the header field.
+     * @return string value of the header field.
+     */
     public function &getHeaderField(string $key):string{
         return $this->server_header->get($key);
     }
     
+    /**
+     * Get response header.
+     * @return \com\github\tncrazvan\CatServer\Http\HttpHeader header of the your response message.
+     */
     public function &getHeader():HttpHeader{
         return $this->server_header;
     }
     
+    /**
+     * Get request header.
+     * @return \com\github\tncrazvan\CatServer\Http\HttpHeader header of the client request.
+     */
     public function &getClientHeader():HttpHeader{
         return $this->client_header;
     }
     
+    /**
+     * Get request method.
+     * @return string method of the client request.
+     */
     public function &getMethod():string{
         return $this->getHeaderField("Method");
     }
     
+    /**
+     * Checks if event is alive.
+     * @return bool true if the current event is alive, otherwise false.
+     */
     public function isAlive():bool{
         return $this->alive;
     }
     
-    public function execute():bool{
+    /**
+     * Execute the current event.
+     * 
+     * @return void This method is invoked once by the server to trigger all the required components 
+     * in order to reply to the http request
+     * such as the appropriate http header and requested file or controller.
+     * 
+     * Be aware that missuse of this method could lead to request loops.
+     */
+    public function execute():void{
         $this->findUserLanguages();
         $filename = Cat::$web_root.$this->location;
         if(file_exists($filename)){
@@ -84,30 +149,44 @@ abstract class HttpEventManager extends EventManager{
             $this->send($this->onControllerRequest($this->location));
         }
         $this->close();
-        return true;
     }
     
     protected abstract function &onControllerRequest(string &$location);
-    
+    /**
+     * Get user languages from the request header.
+     * @return &array
+     */
     public function &getUserLanguages():array{
         return $this->user_languages;
     }
-    
+    /**
+     * Get the default user language from the request header.
+     * @return &string
+     */
     public function &getUserDefaultLanguage():string{
         return $this->user_languages["DEFAULT-LANGUAGE"];
     }
     
+    /**
+     * Get the user agent of the client.
+     * @return &string
+     */
     public function &getUserAgent():string{
         return $this->getClientHeader()->get("User-Agent");
     }
     
     private $first_message = true;
-    public function sendHeader():void{
+    private function sendHeader():void{
         $this->first_message=false;
         socket_write($this->client, $this->server_header->toString()."\r\n");
         $this->alive=true;
     }
     
+    /**
+     * Send data to the client.
+     * @param string $data data to be sent to the client.
+     * @return int number of bytes sent to the client. Returns -1 if an error occured.
+     */
     public function send(string $data=null):int{
         if($this->alive){
             if($this->first_message && $this->default_header){
@@ -116,17 +195,33 @@ abstract class HttpEventManager extends EventManager{
             try{
                 return socket_write($this->client, $data);
             } catch (Exception $ex) {
-                return 0;
+                return -1;
             }
             
         }
     }
     
+    /**
+     * Set the Content-Type field to the response header.
+     * @param string $type content type string, such as "text/plain", "text/html" ecc...
+     */
     public function setContentType(string $type):void{
         $this->setHeaderField("Content-Type", $type);
     }
     
-    
+    /**
+     * Send contents of a file to the user.
+     * @param array $filename An array of strings containing the name of the file. 
+     * The elements of this array will be joined on "/" and create a filename.
+     * @return void This method manages byterange requests.
+     * If the request header contains byterange fields, Content-Type will be set as 
+     * "multipart/byteranges; boundary=$boundary" and the data will be sent as a byterange response, otherwise the Content-Type
+     * will be determined using the Cat::resolveContentType method.
+     * 
+     * In both cases, regardless if the request is a byterange request or not, the method will send the data as a byterange response.
+     * The response ranges will be set as specified by the request header fields 
+     * or from 0 to the end of file if ranges are not found.
+     */
     public function sendFileContents(string ...$filename):void{
         $filename_length = count($filename);
         if($filename_length === 0) return;

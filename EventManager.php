@@ -6,13 +6,15 @@ use com\github\tncrazvan\CatServer\Cat;
 class EventManager extends Cat{
     
     protected 
+            $client,
             $client_header,
             $location,
             $user_languages=[],
             $query_string=[],
             $server_header;
     
-    public function __construct(HttpHeader $client_header) {
+    public function __construct(&$client,HttpHeader $client_header) {
+        $this->client=$client;
         $this->server_header = new HttpHeader();
         $this->client_header = $client_header;
         $parts = preg_split("/\\?|\\&/m",preg_replace("/^\\//m","",urldecode($client_header->get("Resource"))));
@@ -34,6 +36,46 @@ class EventManager extends Cat{
             }
         }
     }
+    
+    protected static function getClassNameIndex(string $root, array &$location):int{
+        $classname = $root;
+        $location_length = count($location);
+        for($i=0;$i<$location_length;$i++){
+            $classname .="\\".$location[$i];
+            if(class_exists($classname)){
+                return $i;
+            }
+        }
+        return -1;
+    }
+    
+    protected static function resolveClassName(int $class_id, string $root, array &$location):string{
+        $classname = $root;
+        for($i=0;$i<=$class_id;$i++){
+            $classname .="\\".$location[$i];
+        }
+        return $classname;
+    }
+    
+    protected static function resolveMethodArgs(int $offset, array &$location):array{
+        $args = [];
+        $location_length = count($location);
+        if($location_length-1>$offset-1){
+            $args = array_slice($args, $offset);
+        }
+        return $args;
+    }
+    
+    public function &getAddress():string{
+        socket_getpeername($this->client, $address);
+        return $address;
+    }
+    
+    public function &getPort():string{
+        socket_getpeername($this->client, $address,$port);
+        return $port;
+    }
+    
     
     /**
      * Checks if the requested URL contains the given key as a query.
@@ -82,7 +124,7 @@ class EventManager extends Cat{
      * @param domain domain of the cookie
      */
     public function unsetCookie(string $key, string $path="/", string $domain=null):void{
-        $this->server_header->set_cookie($key, "",$path,$domain,"0");
+        $this->server_header->setCookie($key, "",$path,$domain,"0");
     }
     
     /**
@@ -94,7 +136,7 @@ class EventManager extends Cat{
      * @param expire time to live of the cookie.
      */
     public function setCookie(string $key, string $content, string $path="/", string $domain=null, string $expire=null):void{
-        $this->server_header->set_cookie($key, $content, $path, $domain, $expire);
+        $this->server_header->setCookie($key, $content, $path, $domain, $expire);
     }
     
     /**
@@ -102,8 +144,8 @@ class EventManager extends Cat{
      * @param name name of the cookie.
      * @return value of the cookie.
      */
-    public function getCookie(string $key):string{
-        return $this->client_header->get_cookie($key);
+    public function &getCookie(string $key):string{
+        return $this->client_header->getCookie($key);
     }
     
     /**
@@ -111,6 +153,6 @@ class EventManager extends Cat{
      * @param key name of the cookie.
      */
     public function issetCookie(string $key){
-        return $this->client_header->isset_cookie($key);
+        return $this->client_header->issetCookie($key);
     }
 }

@@ -19,6 +19,8 @@ class CatServer extends Cat{
             Cat::$port = $settings["port"];
         if(isset($settings["timeout"]))
             Cat::$timeout = $settings["timeout"];
+        if(isset($settings["sessionTtl"]))
+            Cat::$session_ttl = $settings["sessionTtl"];
         if(isset($settings["charset"]))
             Cat::$charset = $settings["charset"];
         if(isset($settings["bindAddress"]))
@@ -53,6 +55,7 @@ class CatServer extends Cat{
             "webRoot"=>Cat::$web_root,
             "charset"=>Cat::$charset,
             "timeout"=>Cat::$timeout." seconds",
+            "sessionTtl"=>Cat::$session_ttl." seconds",
             "wsMtu"=>Cat::$ws_mtu." bytes",
             "httpMtu"=>Cat::$http_mtu." bytes",
             "cookieTtl"=>Cat::$cookie_ttl." seconds",

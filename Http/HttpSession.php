@@ -1,17 +1,26 @@
 <?php
 
 namespace com\github\tncrazvan\CatServer\Http;
-
-class HttpSession{
+use com\github\tncrazvan\CatServer\Cat;
+class HttpSession extends Cat{
     static $LIST = [];
-    private $id,$STORAGE = [];
+    private $id,$STORAGE = [],$time;
     
-    public function __construct($e) {
+    protected function __construct($e) {
         $this->id = hash('sha3-224',$e->getAddress().",".$e->getPort().",".rand());
         $e->setCookie("session_id", $this->id, "/");
+        $this->time=time();
     }
     
-    public function id():string{
+    protected function getTime():int{
+        return $this->time;
+    }
+
+    protected function setTime($time):void{
+        $this->time=$time;
+    }
+
+    public function &id():string{
         return $this->id;
     }
     
@@ -19,7 +28,7 @@ class HttpSession{
         return $this->STORAGE;
     }
     
-    public function get(string $key){
+    public function &get(string $key){
         return $this->STORAGE[$key];
     }
     
