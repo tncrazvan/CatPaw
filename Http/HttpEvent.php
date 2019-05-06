@@ -1,8 +1,9 @@
 <?php
+namespace com\github\tncrazvan\CatServer\Http;
 
 use com\github\tncrazvan\CatServer\Http\HttpEventManager;
 use com\github\tncrazvan\CatServer\Http\HttpHeader;
-namespace com\github\tncrazvan\CatServer\Http;
+use com\github\tncrazvan\CatServer\Cat;
 class HttpEvent extends HttpEventManager{
     public function __construct($client, HttpHeader &$client_header, string &$content) {
         parent::__construct($client, $client_header, $content);
@@ -13,12 +14,12 @@ class HttpEvent extends HttpEventManager{
         $args = [];
         $location_length = count($location);
         if($location_length === 0 || $location_length === 1 && $location[0] === ""){
-            $location = [self::$http_default_name];
+            $location = [Cat::$http_default_name];
         }
-        $class_id = self::getClassNameIndex(self::$http_controller_package_name,$location);
+        $class_id = self::getClassNameIndex(Cat::$http_controller_package_name,$location);
         
         if($class_id>=0){
-            $classname = self::resolveClassName($class_id,self::$http_controller_package_name,$location);
+            $classname = self::resolveClassName($class_id,Cat::$http_controller_package_name,$location);
             $controller = new $classname();
             $methodname = $location_length-1>$class_id?$location[$class_id+1]:"main";
             $args = self::resolveMethodArgs($class_id+2, $location);
@@ -30,13 +31,13 @@ class HttpEvent extends HttpEventManager{
             }
             $controller->onClose();
         }else{
-            if($location[0] === self::$http_default_name){
-                $classname = self::$http_controller_package_name_original."\\".self::$http_default_name_original;
+            if($location[0] === Cat::$http_default_name){
+                $classname = Cat::$http_controller_package_name_original."\\".Cat::$http_default_name_original;
                 $controller = new $classname();
             }else{
-                $classname = self::$http_controller_package_name."\\".self::$http_not_found_name;
+                $classname = Cat::$http_controller_package_name."\\".Cat::$http_not_found_name;
                 if(!class_exists($classname)){
-                    $classname = self::$http_controller_package_name_original."\\".self::$http_not_found_name_original;
+                    $classname = Cat::$http_controller_package_name_original."\\".Cat::$http_not_found_name_original;
                 }
                 $controller = new $classname();
             }

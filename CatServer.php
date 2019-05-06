@@ -2,6 +2,7 @@
 namespace com\github\tncrazvan\CatServer;
 
 use com\github\tncrazvan\CatServer\Http\HttpEventListener;
+use com\github\tncrazvan\CatServer\Http\HttpSession;
 
 class CatServer extends Cat{
     private $socket,
@@ -55,6 +56,7 @@ class CatServer extends Cat{
             "charset"=>Cat::$charset,
             "timeout"=>Cat::$timeout." seconds",
             "sessionTtl"=>Cat::$session_ttl." seconds",
+            "sessionSize"=>Cat::$session_size." MB",
             "wsMtu"=>Cat::$ws_mtu." bytes",
             "httpMtu"=>Cat::$http_mtu." bytes",
             "cookieTtl"=>Cat::$cookie_ttl." seconds",
@@ -86,8 +88,19 @@ class CatServer extends Cat{
             throw new \Exception ("\nSettings json file doesn't exist\n");
         }
     }
+    
+    protected function initSession():void{
+        if(file_exists(HttpSession::SESSION_DIR)){
+            echo shell_exec("umount ".HttpSession::SESSION_DIR);
+        }
+        echo shell_exec("rm ".HttpSession::SESSION_DIR." -fr");
+        echo shell_exec("mkdir ".HttpSession::SESSION_DIR);
+        echo shell_exec("mount -t tmpfs tmpfs ".HttpSession::SESSION_DIR." -o size=".Cat::$session_size."M");
+    }
+    
     private $clients = [];
     private function start():void{
+        $this->initSession();
         if (!$this->listening) return;
         array_push($this->clients, $this->socket);
         socket_set_block($this->socket);
@@ -95,8 +108,7 @@ class CatServer extends Cat{
         while($this->listening){
             // create a copy
             $copy = $this->clients;
-            if (@socket_select($copy, $write, $except, 0) < 1){
-                usleep(self::$sleep);
+            if (@socket_select($copy, $write, $except, self::$sleep) < 1){
                 continue;
             }
                 
@@ -111,7 +123,6 @@ class CatServer extends Cat{
                 unset($copy[$key]);
             }
             $this->watchClients($copy);
-            usleep(self::$sleep);
         }
         socket_close($this->socket);
         echo "\nServer stopped.\n";
@@ -119,12 +130,18 @@ class CatServer extends Cat{
     
     private function watchClients(array &$copy):void{
         foreach($copy as &$client){
-            $listener = new HttpEventListener($client, $this->clients);
-            $listener->run();
-            $copy_key = array_search($client, $copy);
-            unset($copy[$copy_key]);
-            $key = array_search($client, $this->clients);
-            unset($this->clients[$key]);
+            $pid = pcntl_fork();
+            if ($pid == -1) {
+                 die('could not fork');
+            } else if ($pid) {
+                 // we are the parent
+                $key = array_search($client, $this->clients);
+                unset($this->clients[$key]);
+                socket_close($client);
+            } else {
+                $listener = new HttpEventListener($client, $this->clients);
+                $listener->run();
+            }
         }
     }
     

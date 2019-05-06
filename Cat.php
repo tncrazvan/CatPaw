@@ -3,7 +3,9 @@
 namespace com\github\tncrazvan\CatServer;
 
 class Cat{
+    const DIR = __DIR__;
     public static
+            $session_size = 1024, // 1024 MB
             $session_ttl = 1440, // 24 minutes
             $sleep = 10, //microseconds
             $listen=true,

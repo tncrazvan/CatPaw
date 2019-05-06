@@ -5,7 +5,6 @@ namespace com\github\tncrazvan\CatServer\WebSocket;
 use com\github\tncrazvan\CatServer\Http\EventManager;
 use com\github\tncrazvan\CatServer\Http\HttpHeader;
 use com\github\tncrazvan\CatServer\Cat;
-use com\github\tncrazvan\CatServer\IntConverter;
 
 abstract class WebSocketManager extends EventManager{
     protected $subscriptions = [],
@@ -14,38 +13,30 @@ abstract class WebSocketManager extends EventManager{
             $connected = true,
             $content;
     public function __construct(&$client,HttpHeader &$client_header,string &$content) {
-        parent::__construct($client_header);
+        parent::__construct($client,$client_header);
         $this->client=$client;
         $this->request_id = spl_object_hash($this).rand();
         $this->content=$content;
     }
-    public function execute():void{
-        $pid = pcntl_fork();
-        if ($pid == -1) {
-             throw new Exception("Could not fork");
-        } else if ($pid) {
-             // we are the parent
-        } else {
-            // we are the child
-            $accept_key = base64_encode(sha1($this->client_header->get("Sec-WebSocket-Key").Cat::$ws_accept_key,true));
-            $this->server_header->set("Status","HTTP/1.1 101 Switching Protocols");
-            $this->server_header->set("Connection","Upgrade");
-            $this->server_header->set("Upgrade","websocket");
-            $this->server_header->set("Sec-WebSocket-Accept",$accept_key);
-            socket_write($this->client, $this->server_header->toString()."\r\n");
-            $this->onOpen();
-            $data="";
-            while($this->connected){
-                $result = socket_recv($this->client, $masked, Cat::$ws_mtu, MSG_DONTWAIT);
-                $opcode = (ord($masked[0]) & 0x0F);
-                if ($result === 0 || $opcode === 8) {
-                    $this->close();
-                } else if($masked !== null && unpack("C", $masked)[1] !== 136){
-                    $this->onMessage($this->unmask($masked));
-                }
-                usleep(self::$sleep);
+    public function run(){
+        $accept_key = base64_encode(sha1($this->client_header->get("Sec-WebSocket-Key").Cat::$ws_accept_key,true));
+        $this->server_header->set("Status","HTTP/1.1 101 Switching Protocols");
+        $this->server_header->set("Connection","Upgrade");
+        $this->server_header->set("Upgrade","websocket");
+        $this->server_header->set("Sec-WebSocket-Accept",$accept_key);
+        socket_write($this->client, $this->server_header->toString()."\r\n");
+        $this->onOpen();
+        while($this->connected){
+            $result = socket_recv($this->client, $masked, Cat::$ws_mtu, MSG_DONTWAIT);
+            $opcode = (ord($masked[0]) & 0x0F);
+            if ($result === 0 || $opcode === 8) {
+                $this->close();
+            } else if($masked !== null && unpack("C", $masked)[1] !== 136){
+                $this->onMessage($this->unmask($masked));
             }
+            usleep(Cat::$sleep);
         }
+        exit;
     }
     
     /*

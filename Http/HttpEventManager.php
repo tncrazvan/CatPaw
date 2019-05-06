@@ -1,8 +1,9 @@
 <?php
+namespace com\github\tncrazvan\CatServer\Http;
 
 use com\github\tncrazvan\CatServer\Http\EventManager;
 use com\github\tncrazvan\CatServer\Http\HttpHeader;
-namespace com\github\tncrazvan\CatServer\Http;
+use com\github\tncrazvan\CatServer\Cat;
 
 abstract class HttpEventManager extends EventManager{
     protected 
@@ -30,16 +31,15 @@ abstract class HttpEventManager extends EventManager{
      * 
      * Be aware that missuse of this method could lead to request loops.
      */
-    public function execute():void{
-        
+    public function run(){
         $this->findUserLanguages();
-        $filename = self::$web_root.$this->location;
+        $filename = Cat::$web_root.$this->location;
         if(file_exists($filename)){
             if(!is_dir($filename)){
                 $last_modified=filemtime($filename);
-                $this->setHeaderField("Last-Modified", date(self::DATE_FORMAT, $last_modified));
+                $this->setHeaderField("Last-Modified", date(Cat::DATE_FORMAT, $last_modified));
                 $this->setHeaderField("Last-Timestamp", $last_modified);
-                $this->setContentType(self::getContentType($filename));
+                $this->setContentType(Cat::getContentType($filename));
                 $this->sendFileContents($filename);
             }else{
                 $this->send($this->onControllerRequest($this->location));
@@ -47,6 +47,8 @@ abstract class HttpEventManager extends EventManager{
         }else{
             $this->send($this->onControllerRequest($this->location));
         }
+        $this->close();
+        exit;
     }
     
     protected abstract function &onControllerRequest(string &$location);
@@ -97,7 +99,7 @@ abstract class HttpEventManager extends EventManager{
      * @return void This method manages byterange requests.
      * If the request header contains byterange fields, Content-Type will be set as 
      * "multipart/byteranges; boundary=$boundary" and the data will be sent as a byterange response, otherwise the Content-Type
-     * will be determined using the self::resolveContentType method.
+     * will be determined using the Cat::resolveContentType method.
      * 
      * In both cases, regardless if the request is a byterange request or not, the method will send the data as a byterange response.
      * The response ranges will be set as specified by the request header fields 
@@ -108,7 +110,7 @@ abstract class HttpEventManager extends EventManager{
         if($filename_length === 0) return;
         $buffer;
         if($filename_length === 1){
-            $filename = join("/",[self::$web_root,$filename[0]]);
+            $filename = join("/",[Cat::$web_root,$filename[0]]);
         }else{
             $filename = join("/",$filename);
         }
@@ -117,7 +119,7 @@ abstract class HttpEventManager extends EventManager{
         $file_length = filesize($filename);
         
         if($this->client_header->has("Range")){
-            $this->setStatus(self::STATUS_PARTIAL_CONTENT);
+            $this->setStatus(Cat::STATUS_PARTIAL_CONTENT);
             $ranges = preg_split("/=/",preg_split("/,/",$this->client_header->get("Range")));
             $ranges_length = count($ranges);
             $range_start = array_fill(0, $ranges_length, null);
@@ -138,13 +140,13 @@ abstract class HttpEventManager extends EventManager{
                     $range_end[$i] = $file_length-1;
                 }
             }
-            $ctype = self::getContentType($filename);
+            $ctype = Cat::getContentType($filename);
             $start;
             $end;
             $range_start_length = count($range_start);
             if($range_start_length > 1){
                 $body = "";
-                $boundary = self::generateMultipartBoundary();
+                $boundary = Cat::generateMultipartBoundary();
                 if($this->first_message){
                     $this->first_message=false;
                     $this->setContentType("multipart/byteranges; boundary=$boundary");
@@ -158,17 +160,17 @@ abstract class HttpEventManager extends EventManager{
                     socket_write($this->client, "Content-Type: $ctype\r\n");
                     socket_write($this->client, "Content-Range: bytes $start-$end/$file_length\r\n\r\n");
                 
-                    if($end-$start+1 > self::$http_mtu){
+                    if($end-$start+1 > Cat::$http_mtu){
                         $remaining_bytes = $end-$start+1;
                         $buffer = "";
-                        $read_length = self::$http_mtu;
+                        $read_length = Cat::$http_mtu;
                         fseek($raf, $start);
                         while($remaining_bytes > 0){
                             $buffer = fread($raf, $read_length);
                             socket_write($this->client, $buffer);
-                            $remaining_bytes -= self::$http_mtu;
+                            $remaining_bytes -= Cat::$http_mtu;
                             if($remaining_bytes < 0){
-                                $read_length = $remaining_bytes+self::$http_mtu;
+                                $read_length = $remaining_bytes+Cat::$http_mtu;
                                 $remaining_bytes = 0;
                             }
                         }
