@@ -33,7 +33,7 @@ abstract class HttpEventManager extends EventManager{
      */
     public function run(){
         $this->findUserLanguages();
-        $filename = Cat::$web_root.$this->location;
+        $filename = Cat::$web_root."/".$this->location;
         if(file_exists($filename)){
             if(!is_dir($filename)){
                 $last_modified=filemtime($filename);
