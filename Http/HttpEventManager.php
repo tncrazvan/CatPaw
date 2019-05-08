@@ -39,7 +39,6 @@ abstract class HttpEventManager extends EventManager{
                 $last_modified=filemtime($filename);
                 $this->setHeaderField("Last-Modified", date(Cat::DATE_FORMAT, $last_modified));
                 $this->setHeaderField("Last-Timestamp", $last_modified);
-                $this->setContentType(Cat::getContentType($filename));
                 $this->sendFileContents($filename);
             }else{
                 $this->send($this->onControllerRequest($this->location));
@@ -52,11 +51,6 @@ abstract class HttpEventManager extends EventManager{
     }
     
     protected abstract function &onControllerRequest(string &$location);
-    /**
-     * Get user languages from the request header.
-     * @return &array
-     */
-    
     
     private $first_message = true;
     private function sendHeader():void{
@@ -108,19 +102,16 @@ abstract class HttpEventManager extends EventManager{
     public function sendFileContents(string ...$filename):void{
         $filename_length = count($filename);
         if($filename_length === 0) return;
-        $buffer;
-        if($filename_length === 1){
-            $filename = join("/",[Cat::$web_root,$filename[0]]);
-        }else{
-            $filename = join("/",$filename);
-        }
+        $buffer = "";
+        $filename = preg_replace('#/+#','/',filter_var(join("/",$filename), FILTER_SANITIZE_URL));
         
         $raf = fopen($filename,"r");
         $file_length = filesize($filename);
+        $ctype = Cat::getContentType($filename);
         
         if($this->client_header->has("Range")){
             $this->setStatus(Cat::STATUS_PARTIAL_CONTENT);
-            $ranges = preg_split("/=/",preg_split("/,/",$this->client_header->get("Range")));
+            $ranges = preg_split("/,/",preg_split("/=/",$this->client_header->get("Range"))[1]);
             $ranges_length = count($ranges);
             $range_start = array_fill(0, $ranges_length, null);
             $range_end = array_fill(0, $ranges_length, null);
@@ -134,13 +125,12 @@ abstract class HttpEventManager extends EventManager{
                     $range_start[$i] = 0;
                 }
                 
-                if(!substr($ranges[i], $last_index,$last_index+1) === "-"){
+                if(!substr($ranges[$i], $last_index,$last_index+1) === "-"){
                     $range_end[$i] = intval($tmp[1]);
                 }else{
                     $range_end[$i] = $file_length-1;
                 }
             }
-            $ctype = Cat::getContentType($filename);
             $start;
             $end;
             $range_start_length = count($range_start);
@@ -190,18 +180,15 @@ abstract class HttpEventManager extends EventManager{
                 $start = $range_start[0];
                 $end = $range_end[0];
                 $len = $end-$start+1;
-                if($this->first_message && $this->default_header){
-                    $this->first_message=false;
-                    $this->setHeaderField("Content-Range", "bytes $start-$end/$file_length");
-                    $this->setHeaderField("Content-Length", "$length");
-                    socket_write($this->client, $this->server_header->to_string()."\r\n");
-                }
+                $this->setHeaderField("Content-Range", "bytes $start-$end/$file_length");
+                $this->setHeaderField("Content-Length", $len);
                 fseek($raf, $start);
                 $buffer = fread($raf,$end-$start+1);
-                socket_write($this->client, $buffer);
+                $this->send($buffer);
             }
         }else{
             $this->setHeaderField("Content-Length", $file_length);
+            $this->setContentType($ctype);
             fseek($raf, 0);
             $buffer = fread($raf, $file_length);
             $this->send($buffer);
