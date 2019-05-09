@@ -183,11 +183,16 @@ abstract class HttpEventManager extends EventManager{
             }else{
                 $start = $range_start[0];
                 $end = $range_end[0];
-                $len = $end-$start+1;
-                $this->setHeaderField("Content-Range", "bytes $start-$end/$file_length");
-                $this->setHeaderField("Content-Length", $len);
-                fseek($raf, $start);
-                $buffer = fread($raf,$end-$start+1);
+                if($filesize-1 < $start){
+                    if($filesize-1 < $end){
+                        $end = $filesize-1;
+                    }
+                    $len = $end-$start+1;
+                    $this->setHeaderField("Content-Range", "bytes $start-$end/$file_length");
+                    $this->setHeaderField("Content-Length", $len);
+                    fseek($raf, $start);
+                    $buffer = fread($raf,$end-$start+1);
+                }
                 $this->send($buffer);
             }
         }else{

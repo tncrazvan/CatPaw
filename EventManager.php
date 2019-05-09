@@ -223,6 +223,13 @@ class EventManager extends Cat{
     public function getUrlQuery(string $key):string{
         return $this->query_string[$key];
     }
+
+    /**
+     * @return the array queries pointer
+     */
+    public function &getUrlQueries():array{
+        return $this->query_string;
+    }
     
     /**
      * Finds the languages of the client application.
