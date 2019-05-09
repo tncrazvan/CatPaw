@@ -104,7 +104,7 @@ abstract class HttpEventManager extends EventManager{
         if($filename_length === 0) return;
         $buffer = "";
         $filename = preg_replace('#/+#','/',filter_var(join("/",$filename), FILTER_SANITIZE_URL));
-        
+        $filesize = filesize($filename);
         $raf = fopen($filename,"r");
         $file_length = filesize($filename);
         $ctype = Cat::getContentType($filename);
@@ -146,6 +146,12 @@ abstract class HttpEventManager extends EventManager{
                 for($i = 0; $i < $range_start_length; $i++){
                     $start = $range_start[$i];
                     $end = $range_end[$i];
+                    if($filesize-1 < $start){
+                        continue;
+                    }
+                    if($filesize-1 < $end){
+                        $end = $filesize-1;
+                    }
                     socket_write($this->client, "--$boundary\r\n");
                     socket_write($this->client, "Content-Type: $ctype\r\n");
                     socket_write($this->client, "Content-Range: bytes $start-$end/$file_length\r\n\r\n");
@@ -173,9 +179,7 @@ abstract class HttpEventManager extends EventManager{
                         socket_write($this->client, "\r\n");
                     }
                 }
-                if($range_start_length > 1){
-                    socket_write($this->client, "\r\n--$boundary--");
-                }
+                socket_write($this->client, "\r\n--$boundary--");
             }else{
                 $start = $range_start[0];
                 $end = $range_end[0];
@@ -189,8 +193,10 @@ abstract class HttpEventManager extends EventManager{
         }else{
             $this->setHeaderField("Content-Length", $file_length);
             $this->setContentType($ctype);
-            fseek($raf, 0);
-            $buffer = fread($raf, $file_length);
+            if($filesize > 0){
+                fseek($raf, 0);
+                $buffer = fread($raf, $file_length);
+            }
             $this->send($buffer);
         }
         fclose($raf);
