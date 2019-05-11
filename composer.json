@@ -2,7 +2,7 @@
     "name":"tncrazvan/catserver",
 	"version":"1.0.0",
     "type": "library",
-    "description": "A php Http & WebSocket server",
+    "description": "A Php server for Http & WebSocket requests",
     "keywords": ["php","cli","server","http","websocket"],
     "homepage": "https://github.com/tncrazvan/catserver",
     "license": "MIT",
