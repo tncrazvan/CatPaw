@@ -1,6 +1,5 @@
 {
     "name":"tncrazvan/catserver",
-	"version":"1.0.0",
     "type": "library",
     "description": "A Php server for Http & WebSocket requests",
     "keywords": ["php","cli","server","http","websocket"],
@@ -15,6 +14,6 @@
         }
     ],
     "require": {
-        "php": ">=7.2.6"
+        "php": ">=7.2.0"
     }
 }
