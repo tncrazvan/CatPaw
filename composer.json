@@ -1,7 +1,7 @@
 {
     "name":"tncrazvan/catserver",
     "type": "library",
-    "description": "An Http & WebSocket server for php",
+    "description": "A php Http & WebSocket server",
     "keywords": ["php","cli","server","http","websocket"],
     "homepage": "https://github.com/Seldaek/monolog",
     "license": "MIT",
