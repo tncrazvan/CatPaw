@@ -1,9 +1,11 @@
 <?php
 namespace com\github\tncrazvan\CatServer\Http;
 
+use com\github\tncrazvan\CatServer\Cat;
 use com\github\tncrazvan\CatServer\Http\EventManager;
 use com\github\tncrazvan\CatServer\Http\HttpHeader;
-use com\github\tncrazvan\CatServer\Cat;
+use com\github\tncrazvan\CatServer\Tools\Minify\Minify;
+use Exception;
 
 abstract class HttpEventManager extends EventManager{
     protected 
@@ -47,7 +49,6 @@ abstract class HttpEventManager extends EventManager{
             $this->send($this->onControllerRequest($this->location));
         }
         $this->close();
-        exit;
     }
     
     protected abstract function &onControllerRequest(string &$location);
@@ -55,7 +56,7 @@ abstract class HttpEventManager extends EventManager{
     private $first_message = true;
     private function sendHeader():void{
         $this->first_message=false;
-        socket_write($this->client, $this->server_header->toString()."\r\n");
+        @socket_write($this->client, $this->server_header->toString()."\r\n");
         $this->alive=true;
     }
     
@@ -70,7 +71,7 @@ abstract class HttpEventManager extends EventManager{
                 $this->sendHeader();
             }
             try{
-                return socket_write($this->client, $data);
+                return @socket_write($this->client, $data);
             } catch (Exception $ex) {
                 return -1;
             }
@@ -196,12 +197,12 @@ abstract class HttpEventManager extends EventManager{
                 $this->send($buffer);
             }
         }else{
-            $this->setHeaderField("Content-Length", $file_length);
             $this->setContentType($ctype);
             if($filesize > 0){
                 fseek($raf, 0);
                 $buffer = fread($raf, $file_length);
             }
+            $this->setHeaderField("Content-Length", $file_length);
             $this->send($buffer);
         }
         fclose($raf);

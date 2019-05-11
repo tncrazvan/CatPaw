@@ -94,8 +94,8 @@ class EventManager extends Cat{
      * @return void This method WILL NOT invoke the "onClose" method.
      */
     public function close():void{
-        socket_set_option($this->client, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));
-        socket_close($this->client);
+        @socket_set_option($this->client, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));
+        @socket_close($this->client);
         if($this->session !== null) HttpSessionManager::saveSession (HttpSessionManager::getSession($this->session_id));
     }
     /**

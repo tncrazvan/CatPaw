@@ -8,7 +8,7 @@ class CatServer extends Cat{
     private $socket,
             $binding,
             $listening;
-    private function init(&$args):void{
+    public function init(&$args):void{
         $settings = json_decode(file_get_contents($args[1]),true);
         if(isset($settings["sleep"]))
             Cat::$sleep = $settings["sleep"];
@@ -89,7 +89,7 @@ class CatServer extends Cat{
         }
     }
     
-    protected function initSession():void{
+    protected function mountSession():void{
         if(file_exists(HttpSession::SESSION_DIR)){
             echo shell_exec("umount ".HttpSession::SESSION_DIR);
         }
@@ -100,7 +100,7 @@ class CatServer extends Cat{
     
     private $clients = [];
     private function start():void{
-        $this->initSession();
+        $this->mountSession();
         if (!$this->listening) return;
         array_push($this->clients, $this->socket);
         socket_set_block($this->socket);
@@ -108,7 +108,7 @@ class CatServer extends Cat{
         while($this->listening){
             // create a copy
             $copy = $this->clients;
-            if (@socket_select($copy, $write, $except, self::$sleep) < 1){
+            if (@socket_select($copy, $write = NULL, $except = NULL, self::$sleep) < 1){
                 continue;
             }
                 
@@ -130,17 +130,22 @@ class CatServer extends Cat{
     
     private function watchClients(array &$copy):void{
         foreach($copy as &$client){
+            $key = array_search($client, $copy);
             $pid = pcntl_fork();
             if ($pid == -1) {
-                 die('could not fork');
+                //fork could not be made
+                unset($copy[$key]);
+                unset($this->clients[$key]);
+                @socket_close($client);
             } else if ($pid) {
                  // we are the parent
-                $key = array_search($client, $this->clients);
+                unset($copy[$key]);
                 unset($this->clients[$key]);
-                socket_close($client);
+                @socket_close($client);
             } else {
                 $listener = new HttpEventListener($client, $this->clients);
                 $listener->run();
+                exit;
             }
         }
     }

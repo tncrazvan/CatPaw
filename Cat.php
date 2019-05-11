@@ -134,6 +134,36 @@ class Cat{
         );
     }
     
+    public static function dir_get_contents($root,&$last_modified){
+        $fn = end(explode("/",$root));
+        if(is_dir($root)){
+            $scan = scandir($root);
+            $result = array();
+            foreach ($scan as $a => &$file){
+                if($file == "." || $file == ".." || $file == ".git") continue;
+                $result[$file]=getData("$root/$file",$last_modified);
+            }
+            return $result;
+        }else{
+            $tmpTime = filemtime($root);
+            if($tmpTime > $last_modified) $last_modified = $tmpTime;
+            if(startsWith($fn,"tooltip")) {
+                //tooltips must be read as html not json, so get the raw content
+                return file_get_contents($root);
+            }else{
+                return json_decode(file_get_contents($root));
+            }
+        }
+    }
+    
+    
+    /**
+     * Returns the mime type of the given resource.
+     * For example, given the filename "/index.html", the mime type returned will be "text/html".
+     * This can be useful when sending data to your clients.
+     * @param $location resource name.
+     * @return the mime type of the given resource as a String.
+     */
     public static function getContentType(string $location):string{
         return self::resolveContentType($location);
     }
@@ -142,7 +172,7 @@ class Cat{
      * Returns the mime type of the given resource.
      * For example, given the filename "/index.html", the mime type returned will be "text/html".
      * This can be useful when sending data to your clients.
-     * @param location resource name.
+     * @param $location resource name.
      * @return the mime type of the given resource as a String.
      */
     public static function resolveContentType(string $location):string{

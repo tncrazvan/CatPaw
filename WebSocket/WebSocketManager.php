@@ -36,7 +36,6 @@ abstract class WebSocketManager extends EventManager{
             }
             usleep(Cat::$sleep);
         }
-        exit;
     }
     
     /*
