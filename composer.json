@@ -1,4 +1,19 @@
 {
-	"name":"tncrazvan/catserver",
-	"version":"1.0.0"
+    "name":"tncrazvan/catserver",
+    "type": "library",
+    "description": "An Http & WebSocket server for php",
+    "keywords": ["php","cli","server","http","websocket"],
+    "homepage": "https://github.com/Seldaek/monolog",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Razvan Tanase",
+            "email": "tangent.jotey@gmail.com",
+            "homepage": "https://github.com/tncrazvan",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0"
+    }
 }
