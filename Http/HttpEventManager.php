@@ -125,7 +125,6 @@ abstract class HttpEventManager extends EventManager{
                 }else{
                     $range_start[$i] = 0;
                 }
-                
                 if(!substr($ranges[$i], $last_index,$last_index+1) === "-"){
                     $range_end[$i] = intval($tmp[1]);
                 }else{
@@ -184,7 +183,7 @@ abstract class HttpEventManager extends EventManager{
             }else{
                 $start = $range_start[0];
                 $end = $range_end[0];
-                if($filesize-1 < $start){
+                if($filesize-1 > $start){
                     if($filesize-1 < $end){
                         $end = $filesize-1;
                     }
