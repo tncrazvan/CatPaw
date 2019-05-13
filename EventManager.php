@@ -1,38 +1,43 @@
 <?php
 namespace com\github\tncrazvan\CatServer\Http;
-use com\github\tncrazvan\CatServer\Cat;
-class EventManager extends Cat{
+
+use com\github\com\tncrazvan\CatServer\Tools\G;
+use com\github\tncrazvan\CatServer\Http\HttpHeader;
+use com\github\tncrazvan\CatServer\Http\HttpEventManager;
+use com\github\tncrazvan\CatServer\Http\HttpSessionManager;
+
+class EventManager extends G{
     
     protected 
             $client,
-            $client_header,
+            $clientHeader,
             $location,
             $alive=true,
-            $user_languages=[],
-            $query_string=[],
-            $server_header,
+            $userLanguages=[],
+            $queryString=[],
+            $serverHeader,
             $session = null,
-            $session_id = null;
+            $sessionId = null;
     
-    public function __construct(&$client,HttpHeader $client_header) {
+    public function __construct(&$client,HttpHeader $clientHeader) {
         $this->client=$client;
-        $this->server_header = new HttpHeader();
-        $this->client_header = $client_header;
-        $parts = preg_split("/\\?|\\&/m",preg_replace("/^\\//m","",urldecode($client_header->get("Resource"))));
+        $this->serverHeader = new HttpHeader();
+        $this->clientHeader = $clientHeader;
+        $parts = preg_split("/\\?|\\&/m",preg_replace("/^\\//m","",urldecode($clientHeader->get("Resource"))));
         $tmp=[];
         $object=[];
         $this->location = $parts[0];
-        $parts_length = count($parts);
+        $partsLength = count($parts);
         
-        if($parts_length > 1){
+        if($partsLength > 1){
             $tmp = preg_split("/\\&/",$parts[1]);
             foreach ($tmp as &$part){
                 $object = preg_split("/=/m",$part);
-                $object_length = count($object);
-                if($object_length > 1){
-                    $this->query_string[trim($object[0])] = $object[1];
+                $objectLength = count($object);
+                if($objectLength > 1){
+                    $this->queryString[trim($object[0])] = $object[1];
                 }else{
-                    $this->query_string[trim($object[0])] = "";
+                    $this->queryString[trim($object[0])] = "";
                 }
             }
         }
@@ -43,8 +48,8 @@ class EventManager extends Cat{
 
     protected static function getClassNameIndex(string $root, array &$location):int{
         $classname = $root;
-        $location_length = count($location);
-        for($i=0;$i<$location_length;$i++){
+        $locationLength = count($location);
+        for($i=0;$i<$locationLength;$i++){
             $classname .="\\".$location[$i];
             if(class_exists($classname)){
                 return $i;
@@ -53,9 +58,9 @@ class EventManager extends Cat{
         return -1;
     }
     
-    protected static function resolveClassName(int $class_id, string $root, array &$location):string{
+    protected static function resolveClassName(int $classId, string $root, array &$location):string{
         $classname = $root;
-        for($i=0;$i<=$class_id;$i++){
+        for($i=0;$i<=$classId;$i++){
             $classname .="\\".$location[$i];
         }
         return $classname;
@@ -63,8 +68,8 @@ class EventManager extends Cat{
     
     protected static function resolveMethodArgs(int $offset, array &$location):array{
         $args = [];
-        $location_length = count($location);
-        if($location_length-1>$offset-1){
+        $locationLength = count($location);
+        if($locationLength-1>$offset-1){
             $args = array_slice($args, $offset);
         }
         return $args;
@@ -96,7 +101,7 @@ class EventManager extends Cat{
     public function close():void{
         @socket_set_option($this->client, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));
         @socket_close($this->client);
-        if($this->session !== null) HttpSessionManager::saveSession (HttpSessionManager::getSession($this->session_id));
+        if($this->session !== null) HttpSessionManager::saveSession (HttpSessionManager::getSession($this->sessionId));
     }
     /**
      * Get client socket
@@ -112,12 +117,12 @@ class EventManager extends Cat{
      * @param string $content content of the field
      */
     public function setHeaderField(string $key, string $content):void{
-        $this->server_header->set($key,$content);
+        $this->serverHeader->set($key,$content);
     }
         
     /**
      * Set the status of your response.
-     * @param string $status a status code. Multiple status codes can be found in the Cat class, suche as Cat::STATUS_SUCCESS.
+     * @param string $status a status code. Multiple status codes can be found in the Cat class, suche as G::STATUS_SUCCESS.
      */
     public function setStatus(string $status):void{
         $this->setHeaderField("Status", "HTTP/1.1 $status");
@@ -129,7 +134,7 @@ class EventManager extends Cat{
      * @return string value of the header field.
      */
     public function &getHeaderField(string $key):string{
-        return $this->server_header->get($key);
+        return $this->serverHeader->get($key);
     }
     
     /**
@@ -137,7 +142,7 @@ class EventManager extends Cat{
      * @return \com\github\tncrazvan\CatServer\Http\HttpHeader header of the your response message.
      */
     public function &getHeader():HttpHeader{
-        return $this->server_header;
+        return $this->serverHeader;
     }
     
     /**
@@ -145,7 +150,7 @@ class EventManager extends Cat{
      * @return \com\github\tncrazvan\CatServer\Http\HttpHeader header of the client request.
      */
     public function &getClientHeader():HttpHeader{
-        return $this->client_header;
+        return $this->clientHeader;
     }
     
     /**
@@ -157,14 +162,14 @@ class EventManager extends Cat{
     }
     
     public function &getUserLanguages():array{
-        return $this->user_languages;
+        return $this->userLanguages;
     }
     /**
      * Get the default user language from the request header.
      * @return &string
      */
     public function &getUserDefaultLanguage():string{
-        return $this->user_languages["DEFAULT-LANGUAGE"];
+        return $this->userLanguages["DEFAULT-LANGUAGE"];
     }
     
     /**
@@ -180,7 +185,7 @@ class EventManager extends Cat{
      * @return &array This method returns an array pointer, so any changes made to the array will be saved across all http requests relative to this session, untill the server kills the session due to inactivity. The default session ttl is 24 minutes.
      */
     public function &startSession():array{
-        $this->session = &HttpSessionManager::startSession($this, $this->session_id);
+        $this->session = &HttpSessionManager::startSession($this, $this->sessionId);
         return $this->session;
     }
     
@@ -190,16 +195,16 @@ class EventManager extends Cat{
      * call it automatically if needed.
      */
     public function stopSession():void{
-        if($this->session_id === null){
+        if($this->sessionId === null){
             $this->startSession();
         }
         $this->session = null;
-        HttpSessionManager::stopSession(HttpSessionManager::getSession($this->session_id));
+        HttpSessionManager::stopSession(HttpSessionManager::getSession($this->sessionId));
     }
     
     /**
      * Checks if the current client can find a session.
-     * @return bool true if the client has "session_id" cookie and its value exists in the server sessions list, otherwise false.
+     * @return bool true if the client has "sessionId" cookie and its value exists in the server sessions list, otherwise false.
      */
     public function issetSession():bool{
         if($this->session === null) return false;
@@ -212,7 +217,7 @@ class EventManager extends Cat{
      * @return 
      */
     public function issetUrlQuery(string $key):bool{
-        return isset($this->query_string[$key]);
+        return isset($this->queryString[$key]);
     }
     
     /**
@@ -221,14 +226,14 @@ class EventManager extends Cat{
      * @return the value of the query.
      */
     public function getUrlQuery(string $key):string{
-        return $this->query_string[$key];
+        return $this->queryString[$key];
     }
 
     /**
      * @return the array queries pointer
      */
     public function &getUrlQueries():array{
-        return $this->query_string;
+        return $this->queryString;
     }
     
     /**
@@ -236,19 +241,19 @@ class EventManager extends Cat{
      * The value is stored in EventManager#userLanguages.
      */
     protected function findUserLanguages():void{
-        if($this->client_header->get("Accept-Language") === null){
-            $this->user_languages["unknown"]="unknown";
+        if($this->clientHeader->get("Accept-Language") === null){
+            $this->userLanguages["unknown"]="unknown";
         }else{
             //prepare array
             $tmp = array_fill(0, 2, null);
-            $languages = preg_split("/,/",$this->client_header->get("Accept-Languages"));
-            $this->user_languages["DEFAULT-LANGUAGE"]=$languages[0];
+            $languages = preg_split("/,/",$this->clientHeader->get("Accept-Languages"));
+            $this->userLanguages["DEFAULT-LANGUAGE"]=$languages[0];
             foreach($languages as &$language){
                 $tmp = preg_split("/;/",$language);
                 if(count($tmp) > 1)
-                    $this->user_languages[$tmp[0]] = $tmp[1];
+                    $this->userLanguages[$tmp[0]] = $tmp[1];
                 else
-                    $this->user_languages["unknown"]="unknown";
+                    $this->userLanguages["unknown"]="unknown";
             }
         }
     }
@@ -260,7 +265,7 @@ class EventManager extends Cat{
      * @param domain domain of the cookie
      */
     public function unsetCookie(string $key, string $path="/", string $domain=null):void{
-        $this->server_header->setCookie($key, "",$path,$domain,"0");
+        $this->serverHeader->setCookie($key, "",$path,$domain,"0");
     }
     
     /**
@@ -272,7 +277,7 @@ class EventManager extends Cat{
      * @param expire time to live of the cookie.
      */
     public function setCookie(string $key, string $content, string $path="/", string $domain=null, string $expire=null):void{
-        $this->server_header->setCookie($key, $content, $path, $domain, $expire);
+        $this->serverHeader->setCookie($key, $content, $path, $domain, $expire);
     }
     
     /**
@@ -281,7 +286,7 @@ class EventManager extends Cat{
      * @return value of the cookie.
      */
     public function &getCookie(string $key):string{
-        return $this->client_header->getCookie($key);
+        return $this->clientHeader->getCookie($key);
     }
     
     /**
@@ -289,6 +294,6 @@ class EventManager extends Cat{
      * @param key name of the cookie.
      */
     public function issetCookie(string $key){
-        return $this->client_header->issetCookie($key);
+        return $this->clientHeader->issetCookie($key);
     }
 }

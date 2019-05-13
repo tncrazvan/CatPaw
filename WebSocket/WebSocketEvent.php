@@ -1,41 +1,43 @@
 <?php
-
 namespace com\github\tncrazvan\CatServer\WebSocket;
+
+use com\github\com\tncrazvan\CatServer\Tools\G;
 use com\github\tncrazvan\CatServer\Http\HttpHeader;
-use com\github\tncrazvan\CatServer\Cat;
+use com\github\tncrazvan\CatServer\WebSocket\WebSocketManager;
+
 class WebSocketEvent extends WebSocketManager{
     private $controller,$classname;
     const args=[];
-    public function __construct(&$client, HttpHeader &$client_header, string &$content) {
-        parent::__construct($client, $client_header, $content);
+    public function __construct(&$client, HttpHeader &$clientHeader, string &$content) {
+        parent::__construct($client, $clientHeader, $content);
         $this->serveController(preg_split("/\\//m", $this->location));
     }
     
     private function serveController(array $location):void{
         $this->args = [];
-        $location_length = count($location);
-        if($location_length === 0 || $location_length === 1 && $location[0] === ""){
-            $location = [Cat::$ws_not_found_name];
+        $locationLength = count($location);
+        if($locationLength === 0 || $locationLength === 1 && $location[0] === ""){
+            $location = [G::$wsNotFoundName];
         }
-        $class_id = self::getClassNameIndex(Cat::$ws_controller_package_name, $location);
-        if($class_id >= 0){
-            $this->classname = self::resolveClassName($class_id,Cat::$ws_controller_package_name,$location);
+        $classId = self::getClassNameIndex(G::$wsControllerPackageName, $location);
+        if($classId >= 0){
+            $this->classname = self::resolveClassName($classId,G::$wsControllerPackageName,$location);
             $this->controller = new $this->classname();
-            $this->args = self::resolveMethodArgs($class_id+2, $location);
+            $this->args = self::resolveMethodArgs($classId+2, $location);
         }else{
-            $this->classname = Cat::$ws_controller_package_name."\\".Cat::$ws_not_found_name;
+            $this->classname = G::$wsControllerPackageName."\\".G::$wsNotFoundName;
             if(!class_exists($this->classname)){
-                $this->classname = Cat::$ws_controller_package_name_original."\\".Cat::$ws_not_found_name_original;
+                $this->classname = G::$wsControllerPackageNameOriginal."\\".G::$wsNotFoundNameOriginal;
             }
             $this->controller = new $this->classname();
         }
     }
     
     protected function onOpen(): void {
-        if(!isset(Cat::$ws_events[$this->classname])){
-            Cat::$ws_events[$this->classname] = [$this->request_id => $this];
+        if(!isset(G::$wsEvents[$this->classname])){
+            G::$wsEvents[$this->classname] = [$this->requestId => $this];
         }else{
-            Cat::$ws_events[$this->classname][$this->request_id] = $this;
+            G::$wsEvents[$this->classname][$this->requestId] = $this;
         }
         try{
             $this->controller->onOpen($this,$this->args);
@@ -56,7 +58,7 @@ class WebSocketEvent extends WebSocketManager{
 
     protected function onClose(): void {
         try{
-            unset(Cat::$ws_events[$this->classname][$this->request_id]);
+            unset(G::$wsEvents[$this->classname][$this->requestId]);
             $this->controller->onClose($this,$this->args);
         } catch (Exception $ex) {
             socket_close($client);

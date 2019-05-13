@@ -1,8 +1,7 @@
 <?php
-
 namespace com\github\tncrazvan\CatServer;
 
-class IntConverter{
+abstract class IntConverter{
     public static function int8($i) {
         return is_int($i) ? pack("c", $i) : unpack("c", $i)[1];
     }

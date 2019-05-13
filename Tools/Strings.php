@@ -1,6 +1,6 @@
 <?php
-namespace com\github\tncrazvan\CatServer\Tools\String;
-abstract class String{
+namespace com\github\tncrazvan\CatServer\Tools;
+abstract class Strings{
     /**
     * Check if string starts with substring
     * @param string $needle substring to look for

@@ -1,16 +1,17 @@
 <?php
-
 namespace com\github\tncrazvan\CatServer\Http;
-use com\github\tncrazvan\CatServer\Cat;
-class HttpSession extends Cat{
+
+use com\github\com\tncrazvan\CatServer\Tools\G;
+
+class HttpSession extends G{
     static $LIST = [];
-    const SESSION_DIR = Cat::DIR."/SESSION";
+    const SESSION_DIR = self::DIR."/SESSION";
     private $id,$STORAGE = [],$time;
     
     protected function __construct($e=null) {
         if($e !== null){
             $this->id = hash('sha3-224',$e->getAddress().",".$e->getPort().",".rand());
-            $e->setCookie("session_id", $this->id, "/");
+            $e->setCookie("sessionId", $this->id, "/");
             $this->time=time();
         }
     }

@@ -4,8 +4,8 @@ namespace com\github\tncrazvan\CatServer\Http;
 class HttpHeader{
     private $header = [],$cookies = [];
     const DATE_FORMAT = "D j M Y G:i:s T";
-    public function __construct(bool $create_success_header = true) {
-        if($create_success_header){
+    public function __construct(bool $createSuccessHeader = true) {
+        if($createSuccessHeader){
             $this->header["Status"] = "HTTP/1.1 200 OK";
             $this->header["Date"] = date(self::DATE_FORMAT); 
         }
@@ -70,42 +70,42 @@ class HttpHeader{
     }
     
     public static function fromString(string &$string):HttpHeader{
-        $http_header = new HttpHeader();
+        $httpHeader = new HttpHeader();
         $lines = preg_split("/\\r\\n/", $string);
         foreach($lines as &$line){
             if($line === "") continue;
             $item = preg_split("/:\\s*/", $line, 2);
-            $item_length = count($item);
-            if($item_length > 1){
+            $itemLength = count($item);
+            if($itemLength > 1){
                 if($item[0] === "Cookie"){
                     $cookies= preg_split("/;/", $item[1]);
                     foreach($cookies as &$cookie){
                         $cookie = preg_split("/=(?!\\s|\\s|$)/",$cookie);
-                        $cookie_length = count($cookie);
-                        if($cookie_length > 1){
+                        $cookieLength = count($cookie);
+                        if($cookieLength > 1){
                             $content = array_fill(0, 4, null);
                             $content[0] = $cookie[1];
-                            $content[1] = $cookie_length>2?$cookie[2]:null;
-                            $content[2] = $cookie_length>3?$cookie[3]:null;
-                            $content[3] = $cookie_length>3?$cookie[3]:null;
+                            $content[1] = $cookieLength>2?$cookie[2]:null;
+                            $content[2] = $cookieLength>3?$cookie[3]:null;
+                            $content[3] = $cookieLength>3?$cookie[3]:null;
                             $content[4] = "Cookie";
-                            $http_header->cookies[trim($cookie[0])] = $content;
+                            $httpHeader->cookies[trim($cookie[0])] = $content;
                         }
                     }
                 }else{
-                    $http_header->set($item[0], $item[1]);
+                    $httpHeader->set($item[0], $item[1]);
                 }
             }else{
-                if(preg_match("/^.+(?=\\s\\/).*HTTPS?\\/.*\$/", $line) > 0){
+                if(preg_match("/^.+(?=\\s\\/).*HTTP\\/.*\$/", $line) > 0){
                     $parts = preg_split("/\\s+/", $line);
-                    $http_header->set("Method", $parts[0]);
-                    $http_header->set("Resource", $parts[1]);
-                    $http_header->set("Version", $parts[2]);
+                    $httpHeader->set("Method", $parts[0]);
+                    $httpHeader->set("Resource", $parts[1]);
+                    $httpHeader->set("Version", $parts[2]);
                 }else{
-                    $http_header->set($line, null);
+                    $httpHeader->set($line, null);
                 }
             }
         }
-        return $http_header;
+        return $httpHeader;
     }
 }

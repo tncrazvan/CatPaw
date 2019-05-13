@@ -2,6 +2,8 @@
 
 namespace com\github\tncrazvan\CatServer\WebSocket;
 
+use com\github\tncrazvan\CatServer\WebSocket\WebSocketEvent;
+
 abstract class WebSocketController{
     const GROUP_MANAGER = null;
     public abstract function onOpen(WebSocketEvent &$e, array &$args):void;

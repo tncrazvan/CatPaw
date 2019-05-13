@@ -1,43 +1,45 @@
 <?php
 namespace com\github\tncrazvan\CatServer\Http;
 
-use com\github\tncrazvan\CatServer\Http\HttpEventManager;
+use com\github\com\tncrazvan\CatServer\Tools\G;
 use com\github\tncrazvan\CatServer\Http\HttpHeader;
-use com\github\tncrazvan\CatServer\Cat;
+use com\github\tncrazvan\CatServer\Http\HttpEventManager;
+
+
 class HttpEvent extends HttpEventManager{
-    public function __construct($client, HttpHeader &$client_header, string &$content) {
-        parent::__construct($client, $client_header, $content);
+    public function __construct($client, HttpHeader &$clientHeader, string &$content) {
+        parent::__construct($client, $clientHeader, $content);
     }
     
     private function &serveController(array $location){
         $result = null;
         $args = [];
-        $location_length = count($location);
-        if($location_length === 0 || $location_length === 1 && $location[0] === ""){
-            $location = [Cat::$http_default_name];
+        $locationLength = count($location);
+        if($locationLength === 0 || $locationLength === 1 && $location[0] === ""){
+            $location = [G::$httpDefaultName];
         }
-        $class_id = self::getClassNameIndex(Cat::$http_controller_package_name,$location);
+        $classId = self::getClassNameIndex(G::$httpControllerPackageName,$location);
         
-        if($class_id>=0){
-            $classname = self::resolveClassName($class_id,Cat::$http_controller_package_name,$location);
+        if($classId>=0){
+            $classname = self::resolveClassName($classId,G::$httpControllerPackageName,$location);
             $controller = new $classname();
-            $methodname = $location_length-1>$class_id?$location[$class_id+1]:"main";
-            $args = self::resolveMethodArgs($class_id+2, $location);
+            $methodname = $locationLength-1>$classId?$location[$classId+1]:"main";
+            $args = self::resolveMethodArgs($classId+2, $location);
             if(method_exists($controller, $methodname)){
                 $result = @$controller->{$methodname}($this,$args, $this->content);
             }else{
-                $args = self::resolveMethodArgs($class_id+1, $location);
+                $args = self::resolveMethodArgs($classId+1, $location);
                 $result = @$controller->main($this,$args, $this->content);
             }
             $controller->onClose();
         }else{
-            if($location[0] === Cat::$http_default_name){
-                $classname = Cat::$http_controller_package_name_original."\\".Cat::$http_default_name_original;
+            if($location[0] === G::$httpDefaultName){
+                $classname = G::$httpControllerPackageNameOriginal."\\".G::$httpDefaultNameOriginal;
                 $controller = new $classname();
             }else{
-                $classname = Cat::$http_controller_package_name."\\".Cat::$http_not_found_name;
+                $classname = G::$httpControllerPackageName."\\".G::$httpNotFoundName;
                 if(!class_exists($classname)){
-                    $classname = Cat::$http_controller_package_name_original."\\".Cat::$http_not_found_name_original;
+                    $classname = G::$httpControllerPackageNameOriginal."\\".CaGt::$httpNotFoundNameOriginal;
                 }
                 $controller = new $classname();
             }

@@ -1,18 +1,17 @@
 <?php
 namespace com\github\tncrazvan\CatServer\Http;
 
-use com\github\tncrazvan\CatServer\Cat;
-use com\github\tncrazvan\CatServer\Http\EventManager;
-use com\github\tncrazvan\CatServer\Http\HttpHeader;
-use com\github\tncrazvan\CatServer\Tools\Minify\Minify;
 use Exception;
+use com\github\tncrazvan\CatServer\Tools\Mime;
+use com\github\com\tncrazvan\CatServer\Tools\G;
+use com\github\tncrazvan\CatServer\Http\EventManager;
 
 abstract class HttpEventManager extends EventManager{
     protected 
-            $default_header=true,
+            $defaultHeader=true,
             $content;
-    public function __construct($client,HttpHeader &$client_header,string &$content) {
-        parent::__construct($client,$client_header);
+    public function __construct($client,HttpHeader &$clientHeader,string &$content) {
+        parent::__construct($client,$clientHeader);
         $this->content=$content;
     }
     
@@ -35,12 +34,12 @@ abstract class HttpEventManager extends EventManager{
      */
     public function run(){
         $this->findUserLanguages();
-        $filename = Cat::$web_root."/".$this->location;
+        $filename = G::$webRoot."/".$this->location;
         if(file_exists($filename)){
             if(!is_dir($filename)){
-                $last_modified=filemtime($filename);
-                $this->setHeaderField("Last-Modified", date(Cat::DATE_FORMAT, $last_modified));
-                $this->setHeaderField("Last-Timestamp", $last_modified);
+                $lastModified=filemtime($filename);
+                $this->setHeaderField("Last-Modified", date(G::DATE_FORMAT, $lastModified));
+                $this->setHeaderField("Last-Timestamp", $lastModified);
                 $this->sendFileContents($filename);
             }else{
                 $this->send($this->onControllerRequest($this->location));
@@ -53,10 +52,11 @@ abstract class HttpEventManager extends EventManager{
     
     protected abstract function &onControllerRequest(string &$location);
     
-    private $first_message = true;
+    private $firstMessage = true;
     private function sendHeader():void{
-        $this->first_message=false;
-        @socket_write($this->client, $this->server_header->toString()."\r\n");
+        $this->firstMessage=false;
+        $string = $this->serverHeader->toString()."\r\n";
+        @fwrite($this->client, $string,strlen($string));
         $this->alive=true;
     }
     
@@ -67,11 +67,11 @@ abstract class HttpEventManager extends EventManager{
      */
     public function send(string $data=null):int{
         if($this->alive){
-            if($this->first_message && $this->default_header){
+            if($this->firstMessage && $this->defaultHeader){
                 $this->sendHeader();
             }
             try{
-                return @socket_write($this->client, $data);
+                return @fwrite($this->client, $data, strlen($data));
             } catch (Exception $ex) {
                 return -1;
             }
@@ -94,101 +94,106 @@ abstract class HttpEventManager extends EventManager{
      * @return void This method manages byterange requests.
      * If the request header contains byterange fields, Content-Type will be set as 
      * "multipart/byteranges; boundary=$boundary" and the data will be sent as a byterange response, otherwise the Content-Type
-     * will be determined using the Cat::resolveContentType method.
+     * will be determined using the Mime::getContentType method.
      * 
      * In both cases, regardless if the request is a byterange request or not, the method will send the data as a byterange response.
      * The response ranges will be set as specified by the request header fields 
      * or from 0 to the end of file if ranges are not found.
      */
     public function sendFileContents(string ...$filename):void{
-        $filename_length = count($filename);
-        if($filename_length === 0) return;
+        $filenameLength = count($filename);
+        if($filenameLength === 0) return;
         $buffer = "";
         $filename = preg_replace('#/+#','/',filter_var(join("/",$filename), FILTER_SANITIZE_URL));
         $filesize = filesize($filename);
         $raf = fopen($filename,"r");
-        $file_length = filesize($filename);
-        $ctype = Cat::getContentType($filename);
+        $fileLength = filesize($filename);
+        $ctype = Mime::getContentType($filename);
         
-        if($this->client_header->has("Range")){
-            $this->setStatus(Cat::STATUS_PARTIAL_CONTENT);
-            $ranges = preg_split("/,/",preg_split("/=/",$this->client_header->get("Range"))[1]);
-            $ranges_length = count($ranges);
-            $range_start = array_fill(0, $ranges_length, null);
-            $range_end = array_fill(0, $ranges_length, null);
-            $last_index;
-            for($i = 0; $i < $ranges_length; $i++){
-                $last_index = strlen($ranges[$i])-1;
+        if($this->clientHeader->has("Range")){
+            $this->setStatus(G::STATUS_PARTIAL_CONTENT);
+            $ranges = preg_split("/,/",preg_split("/=/",$this->clientHeader->get("Range"))[1]);
+            $rangesLength = count($ranges);
+            $rangeStart = array_fill(0, $rangesLength, null);
+            $rangeEnd = array_fill(0, $rangesLength, null);
+            $lastIndex;
+            for($i = 0; $i < $rangesLength; $i++){
+                $lastIndex = strlen($ranges[$i])-1;
                 $tmp = preg_split("/-/",$ranges[$i]);
                 if(substr($ranges[$i], 0, 1) === "-"){
-                    $range_start[$i] = intval($tmp[0]);
+                    $rangeStart[$i] = intval($tmp[0]);
                 }else{
-                    $range_start[$i] = 0;
+                    $rangeStart[$i] = 0;
                 }
-                if(!substr($ranges[$i], $last_index,$last_index+1) === "-"){
-                    $range_end[$i] = intval($tmp[1]);
+                if(!substr($ranges[$i], $lastIndex,$lastIndex+1) === "-"){
+                    $rangeEnd[$i] = intval($tmp[1]);
                 }else{
-                    $range_end[$i] = $file_length-1;
+                    $rangeEnd[$i] = $fileLength-1;
                 }
             }
             $start;
             $end;
-            $range_start_length = count($range_start);
-            if($range_start_length > 1){
+            $rangeStartLength = count($rangeStart);
+            if($rangeStartLength > 1){
                 $body = "";
-                $boundary = Cat::generateMultipartBoundary();
-                if($this->first_message){
-                    $this->first_message=false;
+                $boundary = G::generateMultipartBoundary();
+                if($this->firstMessage){
+                    $this->firstMessage=false;
                     $this->setContentType("multipart/byteranges; boundary=$boundary");
-                    socket_write($this->client, $this->server_header->to_string());
+                    $string = $this->serverHeader->toString();
+                    fwrite($this->client, $string, strlen($string));
                 }
                 
-                for($i = 0; $i < $range_start_length; $i++){
-                    $start = $range_start[$i];
-                    $end = $range_end[$i];
+                for($i = 0; $i < $rangeStartLength; $i++){
+                    $start = $rangeStart[$i];
+                    $end = $rangeEnd[$i];
                     if($filesize-1 < $start){
                         continue;
                     }
                     if($filesize-1 < $end){
                         $end = $filesize-1;
                     }
-                    socket_write($this->client, "--$boundary\r\n");
-                    socket_write($this->client, "Content-Type: $ctype\r\n");
-                    socket_write($this->client, "Content-Range: bytes $start-$end/$file_length\r\n\r\n");
+
+                    $startConnectionStr = "--$boundary\r\n";
+                    $startConnectionStr .= "Content-Type: $ctype\r\n";
+                    $startConnectionStr .= "Content-Range: bytes $start-$end/$fileLength\r\n\r\n";
+
+                    fwrite($this->client, $startConnectionStr, strlen($startConnectionStr));
                 
-                    if($end-$start+1 > Cat::$http_mtu){
-                        $remaining_bytes = $end-$start+1;
+                    if($end-$start+1 > G::$httpMtu){
+                        $remainingBytes = $end-$start+1;
                         $buffer = "";
-                        $read_length = Cat::$http_mtu;
+                        $readLength = G::$httpMtu;
                         fseek($raf, $start);
-                        while($remaining_bytes > 0){
-                            $buffer = fread($raf, $read_length);
-                            socket_write($this->client, $buffer);
-                            $remaining_bytes -= Cat::$http_mtu;
-                            if($remaining_bytes < 0){
-                                $read_length = $remaining_bytes+Cat::$http_mtu;
-                                $remaining_bytes = 0;
+                        while($remainingBytes > 0){
+                            $buffer = fread($raf, $readLength);
+                            fwrite($this->client, $buffer, strlen($buffer));
+                            $remainingBytes -= G::$httpMtu;
+                            if($remainingBytes < 0){
+                                $readLength = $remainingBytes+G::$httpMtu;
+                                $remainingBytes = 0;
                             }
                         }
                     }else{
                         fseek($raf, $start);
                         $buffer = fread($raf, $end-$start+1);
-                        socket_write($this->client, $buffer);
+                        fwrite($this->client, $buffer, strlen($buffer));
                     }
-                    if($i > $range_start_length-1){
-                        socket_write($this->client, "\r\n");
+                    if($i > $rangeStartLength-1){
+                        fwrite($this->client, "\r\n",2);
                     }
                 }
-                socket_write($this->client, "\r\n--$boundary--");
+                $endConnectionStr = "\r\n--$boundary--";
+                fwrite($this->client, $endConnectionStr, strlen($endConnectionStr));
             }else{
-                $start = $range_start[0];
-                $end = $range_end[0];
+                $start = $rangeStart[0];
+                $end = $rangeEnd[0];
                 if($filesize-1 > $start){
                     if($filesize-1 < $end){
                         $end = $filesize-1;
                     }
                     $len = $end-$start+1;
-                    $this->setHeaderField("Content-Range", "bytes $start-$end/$file_length");
+                    $this->setHeaderField("Content-Range", "bytes $start-$end/$fileLength");
                     $this->setHeaderField("Content-Length", $len);
                     fseek($raf, $start);
                     $buffer = fread($raf,$end-$start+1);
@@ -197,10 +202,10 @@ abstract class HttpEventManager extends EventManager{
             }
         }else{
             $this->setContentType($ctype);
-            $this->setHeaderField("Content-Length", $file_length);
+            $this->setHeaderField("Content-Length", $fileLength);
             if($filesize > 0){
                 fseek($raf, 0);
-                $buffer = fread($raf, $file_length);
+                $buffer = fread($raf, $fileLength);
             }
             $this->send($buffer);
         }

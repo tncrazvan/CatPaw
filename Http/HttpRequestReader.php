@@ -1,7 +1,9 @@
 <?php
 namespace com\github\tncrazvan\CatServer\Http;
 
-use com\github\tncrazvan\CatServer\Cat;
+use com\github\com\tncrazvan\CatServer\Tools\G;
+use com\github\tncrazvan\CatServer\Http\HttpHeader;
+
 abstract class HttpRequestReader{
     protected 
             $client,
@@ -13,7 +15,7 @@ abstract class HttpRequestReader{
     }
     
     public function run():void{
-        $input = socket_read($this->client, Cat::$http_mtu);
+        $input = fread($this->client, G::$httpMtu);
         if(!$input){
             return;
         }
@@ -21,16 +23,16 @@ abstract class HttpRequestReader{
             return;
         }
         $input = preg_split("/\\r\\?\\n\\r\\?\\n/m", $input);
-        $parts_counter = count($input);
-        if($parts_counter === 0){
-            socket_close($this->client);
+        $partsCounter = count($input);
+        if($partsCounter === 0){
+            fclose($this->client);
             return;
         }
-        $str_header = $input[0];
-        $this->content = $parts_counter>1?$input[1]:"";
-        $this->header = HttpHeader::fromString($str_header);
+        $strHeader = $input[0];
+        $this->content = $partsCounter>1?$input[1]:"";
+        $this->header = HttpHeader::fromString($strHeader);
         $this->onRequest($this->header,$this->content);
         return;
     }
-    public abstract function onRequest(HttpHeader &$client_header, string &$content):void;
+    public abstract function onRequest(HttpHeader &$clientHeader, string &$content):void;
 }
