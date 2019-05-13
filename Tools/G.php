@@ -7,7 +7,7 @@ abstract class G{
             $certificateName = "",
             $certificateType = "",
             $certificatePrivateKey = "",
-            $certificatePassword = "",
+            $certificatePassphrase = "",
             $sessionSize = 1024, // 1024 MB
             $sessionTtl = 1440, // 24 minutes
             $sleep = 10, //microseconds

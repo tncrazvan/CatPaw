@@ -57,7 +57,9 @@ class CatPaw extends G{
             if(isset($settings["certificate"]["privateKey"]))
             G::$certificatePrivateKey = preg_replace("/\\/\\//","/",$settingsDir."/".$settings["certificate"]["privateKey"]);
             if(isset($settings["certificate"]["password"]))
-            G::$certificatePassword = $settings["certificate"]["password"];
+            G::$certificatePassphrase = $settings["certificate"]["password"];
+            if(isset($settings["certificate"]["passphrase"]))
+            G::$certificatePassphrase = $settings["certificate"]["passphrase"];
         }
         print_r([
             "port"=>G::$port,
@@ -81,7 +83,7 @@ class CatPaw extends G{
             "certificate"=>[
                 "name"=>G::$certificateName,
                 "privateKey"=>G::$certificatePrivateKey,
-                "password"=>G::$certificatePassword
+                "passphrase"=>G::$certificatePassphrase
             ]
         ]);
     }
@@ -106,7 +108,7 @@ class CatPaw extends G{
                 stream_context_set_option($context, 'ssl', 'local_cert', G::$certificateName);
                 if(isset($settings["certificate"]["privateKey"]))
                     stream_context_set_option($context, 'ssl', 'local_pk', G::$certificatePrivateKey);
-                stream_context_set_option($context, 'ssl', 'passphrase', G::$certificatePassword);
+                stream_context_set_option($context, 'ssl', 'passphrase', G::$certificatePassphrase);
                 stream_context_set_option($context, 'ssl', 'cyphers', 2);
                 stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
                 stream_context_set_option($context, 'ssl', 'verify_peer', false);
