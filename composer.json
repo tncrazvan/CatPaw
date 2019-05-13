@@ -1,20 +1,16 @@
 {
-    "name":"tncrazvan/catserver",
+    "name": "tncrazvan/catserver",
+    "description": "A Php Http & WebSocket server",
     "type": "library",
-    "description": "A Php server for Http & WebSocket requests",
-    "keywords": ["php","cli","server","http","websocket"],
-    "homepage": "https://github.com/tncrazvan/catserver",
     "license": "MIT",
     "authors": [
         {
-            "name": "Razvan Tanase",
-            "email": "tangent.jotey@gmail.com",
-            "homepage": "https://github.com/tncrazvan",
-            "role": "Developer"
+            "name": "tncrazvan",
+            "email": "tangent.jotey@gmail.com"
         }
     ],
-    "minimum-stability":"dev",
+    "minimum-stability": "dev",
     "require": {
-        "php": ">=7.2.6"
-    }
+		"php":">=7.2.6"
+	}
 }
