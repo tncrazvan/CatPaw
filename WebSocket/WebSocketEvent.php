@@ -1,9 +1,9 @@
 <?php
-namespace com\github\tncrazvan\CatServer\WebSocket;
+namespace com\github\tncrazvan\CatPaw\WebSocket;
 
-use com\github\com\tncrazvan\CatServer\Tools\G;
-use com\github\tncrazvan\CatServer\Http\HttpHeader;
-use com\github\tncrazvan\CatServer\WebSocket\WebSocketManager;
+use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Http\HttpHeader;
+use com\github\tncrazvan\CatPaw\WebSocket\WebSocketManager;
 
 class WebSocketEvent extends WebSocketManager{
     private $controller,$classname;

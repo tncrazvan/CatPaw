@@ -1,10 +1,10 @@
 <?php
-namespace com\github\tncrazvan\CatServer\Http;
+namespace com\github\tncrazvan\CatPaw\Http;
 
-use com\github\tncrazvan\CatServer\Http\HttpEvent;
-use com\github\tncrazvan\CatServer\Http\HttpHeader;
-use com\github\tncrazvan\CatServer\Http\HttpRequestReader;
-use com\github\tncrazvan\CatServer\WebSocket\WebSocketEvent;
+use com\github\tncrazvan\CatPaw\Http\HttpEvent;
+use com\github\tncrazvan\CatPaw\Http\HttpHeader;
+use com\github\tncrazvan\CatPaw\Http\HttpRequestReader;
+use com\github\tncrazvan\CatPaw\WebSocket\WebSocketEvent;
 
 class HttpEventListener extends HttpRequestReader{
     public function __construct(&$read) {

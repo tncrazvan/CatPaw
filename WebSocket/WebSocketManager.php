@@ -1,10 +1,10 @@
 <?php
 
-namespace com\github\tncrazvan\CatServer\WebSocket;
+namespace com\github\tncrazvan\CatPaw\WebSocket;
 
-use com\github\com\tncrazvan\CatServer\Tools\G;
-use com\github\tncrazvan\CatServer\Http\HttpHeader;
-use com\github\tncrazvan\CatServer\Http\EventManager;
+use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Http\HttpHeader;
+use com\github\tncrazvan\CatPaw\Http\EventManager;
 
 abstract class WebSocketManager extends EventManager{
     protected $subscriptions = [],

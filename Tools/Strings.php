@@ -1,5 +1,6 @@
 <?php
-namespace com\github\tncrazvan\CatServer\Tools;
+namespace com\github\tncrazvan\CatPaw\Tools;
+
 abstract class Strings{
     /**
     * Check if string starts with substring

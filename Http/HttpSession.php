@@ -1,7 +1,7 @@
 <?php
-namespace com\github\tncrazvan\CatServer\Http;
+namespace com\github\tncrazvan\CatPaw\Http;
 
-use com\github\com\tncrazvan\CatServer\Tools\G;
+use com\github\tncrazvan\CatPaw\Tools\G;
 
 class HttpSession extends G{
     static $LIST = [];

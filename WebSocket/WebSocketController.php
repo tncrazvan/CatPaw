@@ -1,8 +1,8 @@
 <?php
 
-namespace com\github\tncrazvan\CatServer\WebSocket;
+namespace com\github\tncrazvan\CatPaw\WebSocket;
 
-use com\github\tncrazvan\CatServer\WebSocket\WebSocketEvent;
+use com\github\tncrazvan\CatPaw\WebSocket\WebSocketEvent;
 
 abstract class WebSocketController{
     const GROUP_MANAGER = null;

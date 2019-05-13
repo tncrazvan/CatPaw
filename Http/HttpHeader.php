@@ -1,5 +1,5 @@
 <?php
-namespace com\github\tncrazvan\CatServer\Http;
+namespace com\github\tncrazvan\CatPaw\Http;
 
 class HttpHeader{
     private $header = [],$cookies = [];

@@ -1,5 +1,5 @@
 <?php
-namespace com\github\tncrazvan\CatServer;
+namespace com\github\tncrazvan\CatPaw;
 
 abstract class IntConverter{
     public static function int8($i) {

@@ -1,10 +1,10 @@
 <?php
-namespace com\github\tncrazvan\CatServer\Http;
+namespace com\github\tncrazvan\CatPaw\Http;
 
-use com\github\com\tncrazvan\CatServer\Tools\G;
-use com\github\tncrazvan\CatServer\Http\HttpHeader;
-use com\github\tncrazvan\CatServer\Http\HttpEventManager;
-use com\github\tncrazvan\CatServer\Http\HttpSessionManager;
+use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Http\HttpHeader;
+use com\github\tncrazvan\CatPaw\Http\HttpEventManager;
+use com\github\tncrazvan\CatPaw\Http\HttpSessionManager;
 
 class EventManager extends G{
     
@@ -139,7 +139,7 @@ class EventManager extends G{
     
     /**
      * Get response header.
-     * @return \com\github\tncrazvan\CatServer\Http\HttpHeader header of the your response message.
+     * @return \com\github\tncrazvan\CatPaw\Http\HttpHeader header of the your response message.
      */
     public function &getHeader():HttpHeader{
         return $this->serverHeader;
@@ -147,7 +147,7 @@ class EventManager extends G{
     
     /**
      * Get request header.
-     * @return \com\github\tncrazvan\CatServer\Http\HttpHeader header of the client request.
+     * @return \com\github\tncrazvan\CatPaw\Http\HttpHeader header of the client request.
      */
     public function &getClientHeader():HttpHeader{
         return $this->clientHeader;

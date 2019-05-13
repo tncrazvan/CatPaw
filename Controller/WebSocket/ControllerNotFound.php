@@ -1,8 +1,9 @@
 <?php
+namespace com\github\tncrazvan\CatPaw\Controller\WebSocket;
 
-namespace com\github\tncrazvan\CatServer\Controller\WebSocket;
-use com\github\tncrazvan\CatServer\WebSocket\WebSocketController;
-use com\github\tncrazvan\CatServer\WebSocket\WebSocketEvent;
+use com\github\tncrazvan\CatPaw\WebSocket\WebSocketController;
+use com\github\tncrazvan\CatPaw\WebSocket\WebSocketEvent;
+
 class ControllerNotFound extends WebSocketController{
     
     public function onOpen(WebSocketEvent &$e, array &$args): void {

@@ -1,5 +1,5 @@
 {
-    "name": "tncrazvan/catserver",
+    "name": "tncrazvan/catpaw",
     "description": "A Php Http & WebSocket server",
     "type": "library",
     "license": "MIT",

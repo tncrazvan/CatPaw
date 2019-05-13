@@ -1,5 +1,5 @@
 <?php
-namespace com\github\com\tncrazvan\CatServer\Tools;
+namespace com\github\tncrazvan\CatPaw\Tools;
 
 abstract class G{
     const DIR = __DIR__;
@@ -21,11 +21,11 @@ abstract class G{
             $charset="UTF-8",
             $bindAddress="127.0.0.1",
             
-            $httpControllerPackageNameOriginal="com\\github\\tncrazvan\\CatServer\\Controller\\Http",
-            $httpControllerPackageName="com\\github\\tncrazvan\\CatServer\\Controller\\Http",
+            $httpControllerPackageNameOriginal="com\\github\\tncrazvan\\CatPaw\\Controller\\Http",
+            $httpControllerPackageName="com\\github\\tncrazvan\\CatPaw\\Controller\\Http",
             
-            $wsControllerPackageNameOriginal="com\\github\\tncrazvan\\CatServer\\Controller\\WebSocket",
-            $wsControllerPackageName="com\\github\\tncrazvan\\CatServer\\Controller\\WebSocket",
+            $wsControllerPackageNameOriginal="com\\github\\tncrazvan\\CatPaw\\Controller\\WebSocket",
+            $wsControllerPackageName="com\\github\\tncrazvan\\CatPaw\\Controller\\WebSocket",
             
             $httpNotFoundNameOriginal="ControllerNotFound",
             $httpNotFoundName="ControllerNotFound",

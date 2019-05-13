@@ -1,11 +1,11 @@
 <?php
-namespace com\github\tncrazvan\CatServer;
+namespace com\github\tncrazvan\CatPaw;
 
-use com\github\com\tncrazvan\CatServer\Tools\G;
-use com\github\tncrazvan\CatServer\Http\HttpSession;
-use com\github\tncrazvan\CatServer\Http\HttpEventListener;
+use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Http\HttpSession;
+use com\github\tncrazvan\CatPaw\Http\HttpEventListener;
 
-class CatServer extends G{
+class CatPaw extends G{
     private $socket,
             $binding,
             $listening;
