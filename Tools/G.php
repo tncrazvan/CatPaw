@@ -4,6 +4,7 @@ namespace com\github\tncrazvan\CatPaw\Tools;
 abstract class G{
     const DIR = __DIR__;
     public static
+            $sessionName = "SESSION",
             $certificateName = "",
             $certificateType = "",
             $certificatePrivateKey = "",
@@ -46,11 +47,4 @@ abstract class G{
             $wsAcceptKey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11",
             $mainSettings,
             $running=true;
-    
-    const DATE_FORMAT = "D j M Y G:i:s T";
-    const PATTERN_JS_ESCAPE_LEFT_START = "<\\s*(?=script)";
-    const PATTERN_JS_ESCAPE_LEFT_END = "<\\s*\\/\\s*(?=script)";
-    const PATTERN_JS_ESCAPE_RIGHT_START1 = "(?<=\\&lt\\;script)\\s*>";
-    const PATTERN_JS_ESCAPE_RIGHT_START2 = "(?<=\\&lt\\;script).*\\s*>";
-    const PATTERN_JS_ESCAPE_RIGHT_END = "(?<=&lt;\\/script)>";
 }

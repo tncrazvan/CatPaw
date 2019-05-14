@@ -4,8 +4,8 @@ namespace com\github\tncrazvan\CatPaw\Http;
 use com\github\tncrazvan\CatPaw\Tools\G;
 
 class HttpSession extends G{
-    static $LIST = [];
-    const SESSION_DIR = self::DIR."/SESSION";
+    public static $LIST = [];
+    public static $SESSION_DIR;
     private $id,$STORAGE = [],$time;
     
     protected function __construct($e=null) {

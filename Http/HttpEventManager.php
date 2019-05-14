@@ -2,8 +2,9 @@
 namespace com\github\tncrazvan\CatPaw\Http;
 
 use Exception;
-use com\github\tncrazvan\CatPaw\Tools\Mime;
 use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Tools\Mime;
+use com\github\tncrazvan\CatPaw\Tools\Strings;
 use com\github\tncrazvan\CatPaw\Http\EventManager;
 
 abstract class HttpEventManager extends EventManager{
@@ -38,7 +39,7 @@ abstract class HttpEventManager extends EventManager{
         if(file_exists($filename)){
             if(!is_dir($filename)){
                 $lastModified=filemtime($filename);
-                $this->setHeaderField("Last-Modified", date(G::DATE_FORMAT, $lastModified));
+                $this->setHeaderField("Last-Modified", date(Strings::DATE_FORMAT, $lastModified));
                 $this->setHeaderField("Last-Timestamp", $lastModified);
                 $this->sendFileContents($filename);
             }else{

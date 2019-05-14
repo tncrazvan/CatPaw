@@ -2,6 +2,7 @@
 namespace com\github\tncrazvan\CatPaw;
 
 use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Tools\Strings;
 use com\github\tncrazvan\CatPaw\Http\HttpSession;
 use com\github\tncrazvan\CatPaw\Http\HttpEventListener;
 
@@ -14,9 +15,9 @@ class CatPaw extends G{
         $settingsDir = dirname($args[1]);
         if(isset($settings["sleep"]))
         G::$sleep = $settings["sleep"];
-        G::$webRoot = preg_replace("/\\//","/",$settingsDir."/src/");
+        G::$webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/src/");
         if(isset($settings["webRoot"]))
-        G::$webRoot = preg_replace("/\\/\\//","/",$settingsDir."/".$settings["webRoot"]."/");
+        G::$webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".$settings["webRoot"]."/");
         if(isset($settings["port"]))
         G::$port = $settings["port"];
         if(isset($settings["timeout"]))
@@ -35,6 +36,8 @@ class CatPaw extends G{
         G::$cacheMaxAge = $settings["cacheMaxAge"];
         if(isset($settings["entryPoint"]))
         G::$entryPoint = $settings["entryPoint"];
+        if(isset($settings["sessionName"]))
+        G::$sessionName = $settings["sessionName"];
         if(isset($settings["controller"])){
             if(isset($settings["controller"]["http"]))
             G::$httpControllerPackageName = $settings["controller"]["http"];
@@ -53,14 +56,15 @@ class CatPaw extends G{
         }
         if(isset($settings["certificate"])){
             if(isset($settings["certificate"]["name"]))
-            G::$certificateName = preg_replace("/\\/\\//","/",$settingsDir."/".$settings["certificate"]["name"]);
+            G::$certificateName = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".$settings["certificate"]["name"]);
             if(isset($settings["certificate"]["privateKey"]))
-            G::$certificatePrivateKey = preg_replace("/\\/\\//","/",$settingsDir."/".$settings["certificate"]["privateKey"]);
+            G::$certificatePrivateKey = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".$settings["certificate"]["privateKey"]);
             if(isset($settings["certificate"]["password"]))
             G::$certificatePassphrase = $settings["certificate"]["password"];
             if(isset($settings["certificate"]["passphrase"]))
             G::$certificatePassphrase = $settings["certificate"]["passphrase"];
         }
+        HttpSession::$SESSION_DIR = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",G::DIR."/".G::$sessionName);
         print_r([
             "port"=>G::$port,
             "bindAddress"=>G::$bindAddress,
