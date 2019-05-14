@@ -5,7 +5,6 @@ use com\github\tncrazvan\CatPaw\Tools\G;
 
 class HttpSession extends G{
     public static $LIST = [];
-    public static $SESSION_DIR;
     private $id,$STORAGE = [],$time;
     
     protected function __construct($e=null) {

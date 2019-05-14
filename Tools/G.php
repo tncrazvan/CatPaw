@@ -4,7 +4,8 @@ namespace com\github\tncrazvan\CatPaw\Tools;
 abstract class G{
     const DIR = __DIR__;
     public static
-            $sessionName = "SESSION",
+            $sessionDir = "",
+            $sessionName = "/SESSION",
             $certificateName = "",
             $certificateType = "",
             $certificatePrivateKey = "",

@@ -3,7 +3,6 @@ namespace com\github\tncrazvan\CatPaw;
 
 use com\github\tncrazvan\CatPaw\Tools\G;
 use com\github\tncrazvan\CatPaw\Tools\Strings;
-use com\github\tncrazvan\CatPaw\Http\HttpSession;
 use com\github\tncrazvan\CatPaw\Http\HttpEventListener;
 
 class CatPaw extends G{
@@ -64,7 +63,7 @@ class CatPaw extends G{
             if(isset($settings["certificate"]["passphrase"]))
             G::$certificatePassphrase = $settings["certificate"]["passphrase"];
         }
-        HttpSession::$SESSION_DIR = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",G::DIR."/".G::$sessionName);
+        G::$sessionDir = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".G::$sessionName);
         print_r([
             "port"=>G::$port,
             "bindAddress"=>G::$bindAddress,
@@ -138,12 +137,12 @@ class CatPaw extends G{
     }
     
     protected function mountSession():void{
-        if(file_exists(HttpSession::$SESSION_DIR)){
-            echo shell_exec("umount ".HttpSession::$SESSION_DIR);
+        if(file_exists(G::$sessionDir)){
+            echo shell_exec("umount ".G::$SESSION_DIR);
         }
-        echo shell_exec("rm ".HttpSession::$SESSION_DIR." -fr");
-        echo shell_exec("mkdir ".HttpSession::$SESSION_DIR);
-        echo shell_exec("mount -t tmpfs tmpfs ".HttpSession::$SESSION_DIR." -o size=".G::$sessionSize."M");
+        echo shell_exec("rm ".G::$sessionDir." -fr");
+        echo shell_exec("mkdir ".G::$sessionDir);
+        echo shell_exec("mount -t tmpfs tmpfs ".G::$sessionDir." -o size=".G::$sessionSize."M");
     }
     
     private $clients = [];

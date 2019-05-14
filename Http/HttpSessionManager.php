@@ -1,6 +1,7 @@
 <?php
 namespace com\github\tncrazvan\CatPaw\Http;
 
+use com\github\tncrazvan\CatPaw\Tools\G;
 use com\github\tncrazvan\CatPaw\Http\HttpEvent;
 use com\github\tncrazvan\CatPaw\Http\HttpSession;
 
@@ -39,7 +40,7 @@ class HttpSessionManager extends HttpSession{
     public static function issetSession(&$e,&$sessionId):bool{
         if($e->issetCookie("sessionId")){
             $sessionId = $e->getCookie("sessionId");
-            if(file_exists(HttpSession::$SESSION_DIR."/$sessionId")){
+            if(file_exists(G::$sessionDir."/$sessionId")){
                 return true;
             }
         }
@@ -47,7 +48,7 @@ class HttpSessionManager extends HttpSession{
     }
     
     public static function loadSession(string &$sessionId):void{
-        $data = json_decode(file_get_contents(HttpSession::$SESSION_DIR."/$sessionId"),true);
+        $data = json_decode(file_get_contents(G::$sessionDir."/$sessionId"),true);
         $session = new HttpSession();
         $session->setStorage($data["STORAGE"]);
         $session->setTime($data["TIME"]);
@@ -56,7 +57,7 @@ class HttpSessionManager extends HttpSession{
     }
     
     public static function saveSession(HttpSession &$session):void{
-        file_put_contents(HttpSession::$SESSION_DIR."/".$session->id(), json_encode([
+        file_put_contents(G::$sessionDir."/".$session->id(), json_encode([
             "STORAGE"=>$session->storage(),
             "TIME"=>$session->getTime()
         ]));
@@ -68,7 +69,7 @@ class HttpSessionManager extends HttpSession{
     
     public static function stopSession(HttpSession &$session):void{
         unset(HttpSession::$LIST[$session->id()]);
-        unlink(HttpSession::$SESSION_DIR."/".$session->id());
+        unlink(G::$sessionDir."/".$session->id());
     }
     
     public static function &getSession(string $sessionId):HttpSession{
