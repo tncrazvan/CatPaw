@@ -138,12 +138,12 @@ class CatPaw extends G{
     }
     
     protected function mountSession():void{
-        if(file_exists(HttpSession::SESSION_DIR)){
-            echo shell_exec("umount ".HttpSession::SESSION_DIR);
+        if(file_exists(HttpSession::$SESSION_DIR)){
+            echo shell_exec("umount ".HttpSession::$SESSION_DIR);
         }
-        echo shell_exec("rm ".HttpSession::SESSION_DIR." -fr");
-        echo shell_exec("mkdir ".HttpSession::SESSION_DIR);
-        echo shell_exec("mount -t tmpfs tmpfs ".HttpSession::SESSION_DIR." -o size=".G::$sessionSize."M");
+        echo shell_exec("rm ".HttpSession::$SESSION_DIR." -fr");
+        echo shell_exec("mkdir ".HttpSession::$SESSION_DIR);
+        echo shell_exec("mount -t tmpfs tmpfs ".HttpSession::$SESSION_DIR." -o size=".G::$sessionSize."M");
     }
     
     private $clients = [];
