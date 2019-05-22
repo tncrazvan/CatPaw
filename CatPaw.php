@@ -9,7 +9,7 @@ class CatPaw extends G{
     private $socket,
             $binding,
             $listening;
-    public function init(&$args):void{
+    public function &init(&$args):array{
         $settings = json_decode(file_get_contents($args[1]),true);
         $settingsDir = dirname($args[1]);
         if(isset($settings["sleep"]))
@@ -89,6 +89,7 @@ class CatPaw extends G{
                 "passphrase"=>G::$certificatePassphrase
             ]
         ]);
+        return $string;
     }
     
     /**
@@ -103,7 +104,7 @@ class CatPaw extends G{
         $protocol="tcp";
         $argsLength = count($args);
         if($argsLength > 1 && file_exists($args[1])){
-            $this->init($args);
+            $string = $this->init($args);
             $context = stream_context_create();
             //check if SSL certificate file is specified
             if(G::$certificateName !== ""){
