@@ -10,95 +10,6 @@ class CatPaw extends G{
     private $socket,
             $binding,
             $listening;
-    public static function &init(array &$args,bool $print=true):array{
-        $settings = json_decode(file_get_contents($args[1]),true);
-        $settingsDir = dirname($args[1]);
-        if(isset($settings["sleep"]))
-        G::$sleep = $settings["sleep"];
-        G::$webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/src/");
-        if(isset($settings["webRoot"]))
-        G::$webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".$settings["webRoot"]."/");
-        if(isset($settings["port"]))
-        G::$port = $settings["port"];
-        if(isset($settings["timeout"]))
-        G::$timeout = $settings["timeout"];
-        if(isset($settings["ramSession"])){
-            if(isset($settings["ramSession"]["allow"]))
-            G::$ramSession["allow"] = $settings["ramSession"]["allow"];
-            if(isset($settings["ramSession"]["size"]))
-            G::$ramSession["size"] = $settings["ramSession"]["size"];
-        }
-        if(isset($settings["sessionTtl"]))
-        G::$sessionTtl = $settings["sessionTtl"];
-        if(isset($settings["charset"]))
-        G::$charset = $settings["charset"];
-        if(isset($settings["bindAddress"]))
-        G::$bindAddress = $settings["bindAddress"];
-        if(isset($settings["wsMtu"]))
-        G::$wsMtu = $settings["wsMtu"];
-        if(isset($settings["httpMtu"]))
-        G::$httpMtu = $settings["httpMtu"];
-        if(isset($settings["cacheMaxAge"]))
-        G::$cacheMaxAge = $settings["cacheMaxAge"];
-        if(isset($settings["entryPoint"]))
-        G::$entryPoint = $settings["entryPoint"];
-        if(isset($settings["sessionName"]))
-        G::$sessionName = $settings["sessionName"];
-        if(isset($settings["controller"])){
-            if(isset($settings["controller"]["http"]))
-            G::$httpControllerPackageName = $settings["controller"]["http"];
-            if(isset($settings["controller"]["ws"]))
-            G::$wsControllerPackageName = $settings["controller"]["ws"];
-            if(isset($settings["controller"]["websocket"]))
-            G::$wsControllerPackageName = $settings["controller"]["websocket"];
-        }
-        if(isset($settings["controllers"])){
-            if(isset($settings["controllers"]["http"]))
-            G::$httpControllerPackageName = $settings["controllers"]["http"];
-            if(isset($settings["controllers"]["ws"]))
-            G::$wsControllerPackageName = $settings["controllers"]["ws"];
-            if(isset($settings["controllers"]["websocket"]))
-            G::$wsControllerPackageName = $settings["controllers"]["websocket"];
-        }
-        if(isset($settings["certificate"])){
-            if(isset($settings["certificate"]["name"]))
-            G::$certificateName = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".$settings["certificate"]["name"]);
-            if(isset($settings["certificate"]["privateKey"]))
-            G::$certificatePrivateKey = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".$settings["certificate"]["privateKey"]);
-            if(isset($settings["certificate"]["password"]))
-            G::$certificatePassphrase = $settings["certificate"]["password"];
-            if(isset($settings["certificate"]["passphrase"]))
-            G::$certificatePassphrase = $settings["certificate"]["passphrase"];
-        }
-        G::$sessionDir = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".G::$sessionName);
-        
-        if($print) print_r([
-            "port"=>G::$port,
-            "bindAddress"=>G::$bindAddress,
-            "webRoot"=>G::$webRoot,
-            "charset"=>G::$charset,
-            "timeout"=>G::$timeout." seconds",
-            "sessionTtl"=>G::$sessionTtl." seconds",
-            "ramSession"=>G::$ramSession,
-            "wsMtu"=>G::$wsMtu." bytes",
-            "httpMtu"=>G::$httpMtu." bytes",
-            "cookieTtl"=>G::$cookieTtl." seconds",
-            "cacheMaxAge"=>G::$cacheMaxAge." seconds",
-            "entryPoint"=>"[webRoot] ".G::$entryPoint,
-            "sleep"=>G::$sleep." microseconds",
-            "backlog"=>G::$backlog." connections",
-            "controllers"=>[
-                "http"=>G::$httpControllerPackageName,
-                "websocket"=>G::$wsControllerPackageName,
-            ],
-            "certificate"=>[
-                "name"=>G::$certificateName,
-                "privateKey"=>G::$certificatePrivateKey,
-                "passphrase"=>G::$certificatePassphrase
-            ]
-        ]);
-        return $settings;
-    }
     
     /**
      * @param &$args This is the input array. The first element of this array should point to the settings json file, for example "http.json".
@@ -112,7 +23,7 @@ class CatPaw extends G{
         $protocol="tcp";
         $argsLength = count($args);
         if($argsLength > 1 && file_exists($args[1])){
-            $settings = self::init($args);
+            $settings = G::init($args[1]);
             $context = stream_context_create();
             //check if SSL certificate file is specified
             if(G::$certificateName !== ""){

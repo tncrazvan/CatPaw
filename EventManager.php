@@ -79,17 +79,20 @@ class EventManager extends G{
      * @return string the ip address of the client
      */
     public function &getAddress():string{
-        socket_getpeername($this->client, $address);
-        return $address;
+        $host = stream_socket_get_name($this->client,true);
+        $hostname = preg_replace("/:[0-9]*/","",$host);
+        return $hostname;
     }
     
     /**
      * Get client port number.
      * @return string the port number of the client
      */
-    public function &getPort():string{
-        socket_getpeername($this->client, $address,$port);
-        return $port;
+    public function &getPort():int{
+        $host = stream_socket_get_name($this->client,true);
+        $port = preg_replace("/.*:/","",$host);
+        echo "\n\nport:$port\n\n";
+        return intval($port);
     }
     
     
@@ -102,13 +105,7 @@ class EventManager extends G{
         @socket_close($this->client);
         if($this->session !== null) HttpSessionManager::saveSession (HttpSessionManager::getSession($this->sessionId));
     }
-    /**
-     * Get client socket
-     * @return \resource This is the socket of the client.
-     */
-    public function &getClient(){
-        return $this->client;
-    }
+    
     
     /**
      * Set a field to your response header.
@@ -127,6 +124,15 @@ class EventManager extends G{
         $this->setHeaderField("Status", "HTTP/1.1 $status");
     }
     
+
+    /**
+     * Get response header.
+     * @return \com\github\tncrazvan\CatPaw\Http\HttpHeader header of the your response message.
+     */
+    public function &getHeader():HttpHeader{
+        return $this->serverHeader;
+    }
+
     /**
      * Get header field.
      * @param string $key name of the header field.
@@ -137,11 +143,11 @@ class EventManager extends G{
     }
     
     /**
-     * Get response header.
-     * @return \com\github\tncrazvan\CatPaw\Http\HttpHeader header of the your response message.
+     * Get client socket
+     * @return \resource This is the socket of the client.
      */
-    public function &getHeader():HttpHeader{
-        return $this->serverHeader;
+    public function &getClient(){
+        return $this->client;
     }
     
     /**
@@ -151,13 +157,17 @@ class EventManager extends G{
     public function &getClientHeader():HttpHeader{
         return $this->clientHeader;
     }
+
+    public function &getClientHeaderField(string $key):string{
+        return $this->clientHeader->get($key);
+    }
     
     /**
      * Get request method.
      * @return string method of the client request.
      */
-    public function &getMethod():string{
-        return $this->getHeaderField("Method");
+    public function &getClientMethod():string{
+        return $this->getClientHeaderField("Method");
     }
     
     public function &getUserLanguages():array{
