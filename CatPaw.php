@@ -10,7 +10,7 @@ class CatPaw extends G{
     private $socket,
             $binding,
             $listening;
-    public function &init(&$args):array{
+    public static function &init(array &$args,bool $print=true):array{
         $settings = json_decode(file_get_contents($args[1]),true);
         $settingsDir = dirname($args[1]);
         if(isset($settings["sleep"]))
@@ -71,7 +71,8 @@ class CatPaw extends G{
             G::$certificatePassphrase = $settings["certificate"]["passphrase"];
         }
         G::$sessionDir = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".G::$sessionName);
-        print_r([
+        
+        if($print) print_r([
             "port"=>G::$port,
             "bindAddress"=>G::$bindAddress,
             "webRoot"=>G::$webRoot,
@@ -111,7 +112,7 @@ class CatPaw extends G{
         $protocol="tcp";
         $argsLength = count($args);
         if($argsLength > 1 && file_exists($args[1])){
-            $settings = $this->init($args);
+            $settings = self::init($args);
             $context = stream_context_create();
             //check if SSL certificate file is specified
             if(G::$certificateName !== ""){
@@ -144,7 +145,8 @@ class CatPaw extends G{
                 //if ramdisk is allowed, mount a new one
                 Session::mount();
                 //WARNING: ramdisk will remain mounted untill the next session is started
-                //which means the ramdisk could be alive after the server shuts down
+                //which means the ramdisk could be alive after the server shuts down.
+                //you can run ./sessionMount.php to umount the current session
             }
 
             $this->start();
