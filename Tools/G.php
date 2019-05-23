@@ -10,7 +10,10 @@ abstract class G{
             $certificateType = "",
             $certificatePrivateKey = "",
             $certificatePassphrase = "",
-            $sessionSize = 1024, // 1024 MB
+            $ramSession = [
+                "allow"=>true,
+                "size"=>1024 // 1024 MB
+            ],
             $sessionTtl = 1440, // 24 minutes
             $sleep = 10, //microseconds
             $listen=true,

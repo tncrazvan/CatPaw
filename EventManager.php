@@ -3,7 +3,6 @@ namespace com\github\tncrazvan\CatPaw\Http;
 
 use com\github\tncrazvan\CatPaw\Tools\G;
 use com\github\tncrazvan\CatPaw\Http\HttpHeader;
-use com\github\tncrazvan\CatPaw\Http\HttpEventManager;
 use com\github\tncrazvan\CatPaw\Http\HttpSessionManager;
 
 class EventManager extends G{
