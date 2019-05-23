@@ -152,32 +152,11 @@ class CatPaw extends G{
         }
     }
     
-    /**
-     * Check for a session directory, if it exists, try to umount 
-     * it (to make sure it's not) to make sure it's not mounted as a ramdisk,
-     * then remove session directory.
-     * After the directory is removed, a new one will be made and mounted as a ramdisk.
-     * This new directory will act as a ram space, which means it's faster, however
-     * it's limited to the specified size.
-     */
-    protected function mountSession():void{
-        //check if directory already exists
-        //if it does there's a chance it's mounted as a ram disk
-        if(file_exists(G::$sessionDir)){
-            //try to umount the ramdisk
-            echo shell_exec("umount ".G::$sessionDir);
-        }
-        //remove the session directory
-        echo shell_exec("rm ".G::$sessionDir." -fr");
-        //make the session directory again
-        echo shell_exec("mkdir ".G::$sessionDir);
-        //mount the directory as a new ramdisk
-        echo shell_exec("mount -t tmpfs tmpfs ".G::$sessionDir." -o size=".G::$ramSession["size"]);
-        //some feedback
-        echo "\nRam disk mounted.\n";
-    }
-    
     private $clients = [];
+    /**
+     * Start listening for requests.
+     * @return void
+     */
     private function start():void{
         //if the server is not supposed to listen for requests, kill the server.
         if (!$this->listening) return;
