@@ -8,7 +8,7 @@ abstract class Session{
      * then remove session directory.
      * @return void
      */
-    public static function umountSession():void{
+    public static function umount():void{
         //check if directory already exists
         //if it does there's a chance it's mounted as a ram disk
         if(file_exists(G::$sessionDir)){
@@ -26,9 +26,9 @@ abstract class Session{
      * it's limited to the specified size.
      * @return void
      */
-    public static function mountSession():void{
+    public static function mount():void{
         //try to umount session
-        self::umountSession();
+        self::umount();
         //make the session directory again
         echo shell_exec("mkdir ".G::$sessionDir);
         //mount the directory as a new ramdisk

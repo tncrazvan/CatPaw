@@ -2,6 +2,7 @@
 namespace com\github\tncrazvan\CatPaw;
 
 use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Tools\Session;
 use com\github\tncrazvan\CatPaw\Tools\Strings;
 use com\github\tncrazvan\CatPaw\Http\HttpEventListener;
 
@@ -141,7 +142,7 @@ class CatPaw extends G{
             //check if developer allows ramdisk for session storage
             if(G::$ramSession["allow"]){
                 //if ramdisk is allowed, mount a new one
-                $this->mountSession();
+                Session::mount();
                 //WARNING: ramdisk will remain mounted untill the next session is started
                 //which means the ramdisk could be alive after the server shuts down
             }
