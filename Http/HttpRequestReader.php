@@ -22,7 +22,7 @@ abstract class HttpRequestReader{
         if(trim($input) === ""){
             return;
         }
-        $input = preg_split("/\\r\\?\\n\\r\\?\\n/m", $input);
+        $input = preg_split('/\r\n\r\n/', $input,2);
         $partsCounter = count($input);
         if($partsCounter === 0){
             fclose($this->client);

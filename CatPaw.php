@@ -58,6 +58,8 @@ class CatPaw extends G{
                 //WARNING: ramdisk will remain mounted untill the next session is started
                 //which means the ramdisk could be alive after the server shuts down.
                 //you can run ./sessionMount.php to umount the current session
+            }else{
+                Session::init();
             }
 
             $this->start();

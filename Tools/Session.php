@@ -36,4 +36,16 @@ abstract class Session{
         //some feedback
         echo "\nRam disk mounted.\n";
     }
+
+    /**
+     * Try to umount session.
+     * After the session is removed, a new one will be made.
+     * @return void
+     */
+    public static function init():void{
+        //try to umount session
+        self::umount();
+        //make the session directory again
+        echo shell_exec("mkdir ".G::$sessionDir);
+    }
 }

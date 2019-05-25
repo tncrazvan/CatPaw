@@ -91,7 +91,6 @@ class EventManager extends G{
     public function &getPort():int{
         $host = stream_socket_get_name($this->client,true);
         $port = preg_replace("/.*:/","",$host);
-        echo "\n\nport:$port\n\n";
         return intval($port);
     }
     
