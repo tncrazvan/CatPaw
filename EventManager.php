@@ -114,6 +114,14 @@ class EventManager extends G{
     public function setHeaderField(string $key, string $content):void{
         $this->serverHeader->set($key,$content);
     }
+
+    /**
+     * Set the header of the event.
+     * @return void
+     */
+    public function setHeader(HttpHeader &$header):void{
+        $this->serverHeader = $header;
+    }
         
     /**
      * Set the status of your response.
