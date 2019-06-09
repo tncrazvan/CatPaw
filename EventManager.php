@@ -105,7 +105,6 @@ class EventManager extends G{
         if($this->session !== null) HttpSessionManager::saveSession (HttpSessionManager::getSession($this->sessionId));
     }
     
-    
     /**
      * Set a field to your response header.
      * @param string $key name of the field
