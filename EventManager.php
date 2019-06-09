@@ -131,6 +131,13 @@ class EventManager extends G{
         $this->setHeaderField("Status", "HTTP/1.1 $status");
     }
     
+    /**
+     * Set the Content-Type field to the response header.
+     * @param string $type content type string, such as "text/plain", "text/html" ecc...
+     */
+    public function setContentType(string $type):void{
+        $this->setHeaderField("Content-Type", $type);
+    }
 
     /**
      * Get response header.

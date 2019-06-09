@@ -1,12 +1,18 @@
 <?php
 namespace com\github\tncrazvan\CatPaw\Tools;
 
-abstract class G{
+use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Tools\Http;
+use com\github\tncrazvan\CatPaw\Tools\Strings;
+
+abstract class G extends Http{
     const DIR = __DIR__;
 
     public static function &init(string $settingsFile,bool $print=true):array{
         $settings = json_decode(file_get_contents($settingsFile),true);
         $settingsDir = dirname($settingsFile);
+        if(isset($settings["compress"]))
+        G::$compress = $settings["compress"];
         if(isset($settings["sleep"]))
         G::$sleep = $settings["sleep"];
         G::$webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/src/");
@@ -81,6 +87,7 @@ abstract class G{
             "entryPoint"=>"[webRoot] ".G::$entryPoint,
             "sleep"=>G::$sleep." microseconds",
             "backlog"=>G::$backlog." connections",
+            "compress"=>G::$compress !== null?implode(" > ",G::$compress):"DISABLED",
             "controllers"=>[
                 "http"=>G::$httpControllerPackageName,
                 "websocket"=>G::$wsControllerPackageName,
@@ -95,6 +102,7 @@ abstract class G{
     }
 
     public static
+            $compress = null,
             $sessionDir = "",
             $sessionName = "/SESSION",
             $certificateName = "",

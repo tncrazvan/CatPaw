@@ -2,9 +2,6 @@
 namespace com\github\tncrazvan\CatPaw\Http;
 
 use com\github\tncrazvan\CatPaw\Tools\G;
-use com\github\tncrazvan\CatPaw\Http\HttpHeader;
-use com\github\tncrazvan\CatPaw\Http\HttpEventManager;
-
 
 class HttpEvent extends HttpEventManager{
     public function __construct($client, HttpHeader &$clientHeader, string &$content) {
@@ -47,7 +44,6 @@ class HttpEvent extends HttpEventManager{
             $result = @$controller->main($this,$args,$this->content);
             $controller->onClose();
         }
-            
         return $result;
     }
     protected function &onControllerRequest(string &$url){

@@ -6,9 +6,6 @@ use com\github\tncrazvan\CatPaw\Tools\G;
 use com\github\tncrazvan\CatPaw\Tools\Http;
 use com\github\tncrazvan\CatPaw\Tools\Mime;
 use com\github\tncrazvan\CatPaw\Tools\Strings;
-use com\github\tncrazvan\CatPaw\Http\HttpHeader;
-use com\github\tncrazvan\CatPaw\Http\EventManager;
-use com\github\tncrazvan\CatPaw\Http\HttpResponse;
 
 abstract class HttpEventManager extends EventManager{
     protected 
@@ -50,41 +47,31 @@ abstract class HttpEventManager extends EventManager{
         }
         $this->close();
     }
-    
-    protected abstract function &onControllerRequest(string &$location);
-    
-    private $firstMessage = true;
-    private function sendHeader(HttpHeader &$header):void{
-        $string = $header->toString()."\r\n";
-        @fwrite($this->client, $string,strlen($string));
-        $this->alive=true;
-    }
-    
+
     /**
      * Send data to the client.
      * @param string $data data to be sent to the client.
      * @return int number of bytes sent to the client. Returns -1 if an error occured.
      */
-    public function send($data=null):int{
+    protected function send($data):int{
+        if(!is_a($data,HttpResponse::class)){
+            return $this->send(new HttpResponse($this->serverHeader,$data));
+        }
         try{
             if($this->alive){
-                $dataClass = $data !== null && is_object($data)?\get_class($data):"";
-                switch($dataClass){
-                    case HttpResponse::class:
-                        if($this->firstMessage){
-                            $this->firstMessage=false;
-                            $this->sendHeader($data->getHeader());
-                        }
-                        return @fwrite($this->client, $data->getBody(), strlen($data->getBody()));
-                    break;
-                    default:
-                        if($this->firstMessage){
-                            $this->firstMessage=false;
-                            $this->sendHeader($this->serverHeader);
-                        }
-                        return @fwrite($this->client, $data, strlen($data));
-                    break;
+                $body = &$data->getBody();
+                $accepted = preg_split("/\\s*,\\s*/",$this->clientHeader->get("Accept-Encoding"));
+                if(G::$compress !== null && Strings::compress($type,$body,G::$compress,$accepted)){
+                    $len = strlen($body);
+                    $data->getHeader()->set("Content-Encoding",$type);
+                    $data->getHeader()->set("Content-Length",$len);
+                }else{
+                    $len = strlen($body);
                 }
+                $header = ($data->getHeader()->toString())."\r\n";
+                $bytes = @fwrite($this->client, $header, strlen($header));
+                $bytes += @fwrite($this->client, $body, $len);
+                return $bytes;
             }else{
                 return -2;
             }
@@ -92,12 +79,6 @@ abstract class HttpEventManager extends EventManager{
             return -1;
         }
     }
-    
-    /**
-     * Set the Content-Type field to the response header.
-     * @param string $type content type string, such as "text/plain", "text/html" ecc...
-     */
-    public function setContentType(string $type):void{
-        $this->setHeaderField("Content-Type", $type);
-    }
+
+    protected abstract function &onControllerRequest(string &$location);
 }

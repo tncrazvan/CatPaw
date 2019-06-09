@@ -46,6 +46,14 @@ class HttpHeader{
         $this->header[$key] = $content;
     }
     
+    public function setStatus($content):void{
+        $this->set("Status",$content);
+    }
+
+    public function setContentType($content):void{
+        $this->set("Content-Type",$content);
+    }
+
     public function get(string $key){
         if(!isset($this->header[$key])) return null;
         return trim($this->header[$key]);

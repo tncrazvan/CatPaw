@@ -113,7 +113,7 @@ abstract class Http{
         $ctype = Mime::getContentType($filename);
         
         if($clientHeader->has("Range")){
-            $resultHeader->setStatus(G::STATUS_PARTIAL_CONTENT);
+            $resultHeader->setStatus(Http::STATUS_PARTIAL_CONTENT);
             $ranges = preg_split("/,/",preg_split("/=/",$clientHeader->get("Range"))[1]);
             $rangesLength = count($ranges);
             $rangeStart = array_fill(0, $rangesLength, null);

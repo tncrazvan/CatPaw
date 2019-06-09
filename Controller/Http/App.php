@@ -12,12 +12,14 @@ class App extends HttpController{
     public function &main(HttpEvent &$e, array &$path, string &$content) {
         switch($e->getClientMethod()){
             case "GET":
-                return Http::getFile($e->getClientHeader(),G::$webRoot."/".G::$entryPoint);
+                $response = Http::getFile($e->getClientHeader(),G::$webRoot."/".G::$entryPoint);
+                return $response;
             break;
             default:
-                return new HttpResponse([
+                $response = new HttpResponse([
                     "Status"=>Http::STATUS_BAD_REQUEST
                 ]);
+                return $response;
             break;
         }
     }

@@ -1,13 +1,14 @@
 <?php
 namespace App\Http;
 
+use com\github\tncrazvan\CatPaw\Tools\Http;
 use com\github\tncrazvan\CatPaw\Http\HttpEvent;
 use com\github\tncrazvan\CatPaw\Http\HttpController;
-use com\github\tncrazvan\CatPaw\Tools\Http;
+
 
 class Session extends HttpController{
     
-    public function &main(HttpEvent &$e, array &$path, string &$content){
+    public function &main(HttpEvent &$e, array &$path, string &$content) {
         switch($e->getClientMethod()){
             case "DELETE":
                 return $this->delete($e);
