@@ -81,6 +81,10 @@ abstract class Http{
         STATUS_NETWORK_AUTHENTICATION_REQUIRED = "511 Network Authentication Required";
 
 
+    public static function generateMultipartBoundary():string{
+        return md5(uniqid(rand(), true));
+    }
+
     /**
      * Get the contents of a file.
      * @param HttpHeader $clientHeader An HttpHeader that indicates the header of the request.
@@ -101,9 +105,14 @@ abstract class Http{
         $result = "";
         $filenameLength = count($filename);
         if($filenameLength === 0) return $result;
-        $filename = preg_replace('#/+#','/',filter_var(join("/",$filename), FILTER_SANITIZE_URL));
+        $filename = preg_replace('#/+#','/',join("/",$filename));
         $filesize = filesize($filename);
         $raf = fopen($filename,"r");
+        if(!$raf){
+            return new HttpResponse(null,[
+                "Status"=>Http::STATUS_NOT_FOUND
+            ]);
+        }
         $fileLength = filesize($filename);
 
         $lastModified=filemtime($filename);
@@ -113,7 +122,6 @@ abstract class Http{
         $ctype = Mime::getContentType($filename);
         
         if($clientHeader->has("Range")){
-            $resultHeader->setStatus(Http::STATUS_PARTIAL_CONTENT);
             $ranges = preg_split("/,/",preg_split("/=/",$clientHeader->get("Range"))[1]);
             $rangesLength = count($ranges);
             $rangeStart = array_fill(0, $rangesLength, null);
@@ -123,21 +131,22 @@ abstract class Http{
                 $lastIndex = strlen($ranges[$i])-1;
                 $tmp = preg_split("/-/",$ranges[$i]);
                 if(substr($ranges[$i], 0, 1) === "-"){
-                    $rangeStart[$i] = intval($tmp[0]);
-                }else{
                     $rangeStart[$i] = 0;
-                }
-                if(!substr($ranges[$i], $lastIndex,$lastIndex+1) === "-"){
-                    $rangeEnd[$i] = intval($tmp[1]);
                 }else{
+                    $rangeStart[$i] = intval($tmp[0]);
+                }
+                if(substr($ranges[$i], $lastIndex,$lastIndex+1) === "-"){
                     $rangeEnd[$i] = $fileLength-1;
+                }else{
+                    $rangeEnd[$i] = intval($tmp[1]);
                 }
             }
             $start;
             $end;
             $rangeStartLength = count($rangeStart);
             if($rangeStartLength > 1){
-                $boundary = G::generateMultipartBoundary();
+                $resultHeader->setStatus(Http::STATUS_PARTIAL_CONTENT);
+                $boundary = self::generateMultipartBoundary();
                 $resultHeader->setContentType("multipart/byteranges; boundary=$boundary");
                 
                 for($i = 0; $i < $rangeStartLength; $i++){

@@ -95,7 +95,7 @@ class CatPaw extends G{
                 */
                 continue;
             }
-                
+            
             // check if there is a client trying to connect
             if (in_array($this->socket, $copy)) {
                 //accept the client, and add him to the $clients array
