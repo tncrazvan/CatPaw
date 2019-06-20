@@ -36,15 +36,26 @@ abstract class HttpEventManager extends EventManager{
     public function run(){
         $this->findUserLanguages();
         $filename = G::$webRoot."/".$this->location;
-        if(file_exists($filename)){
-            if(!is_dir($filename)){
+        if($this->location === "favicon.ico"){
+            if(!\file_exists($filename)){
+                $this->send(new HttpResponse([
+                    "Status"=>Http::STATUS_NOT_FOUND
+                ]));
+            }else{
                 $this->send(Http::getFile($this->clientHeader,$filename));
+            }
+        }else{
+            if(file_exists($filename)){
+                if(!is_dir($filename)){
+                    $this->send(Http::getFile($this->clientHeader,$filename));
+                }else{
+                    $this->send($this->onControllerRequest($this->location));
+                }
             }else{
                 $this->send($this->onControllerRequest($this->location));
             }
-        }else{
-            $this->send($this->onControllerRequest($this->location));
         }
+        
         $this->close();
     }
 
