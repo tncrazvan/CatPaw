@@ -1,6 +1,9 @@
 <?php
 namespace com\github\tncrazvan\CatPaw\Tools;
 
+use MatthiasMullie\Minify;
+use com\github\tncrazvan\CatPaw\Tools\Strings;
+
 abstract class Strings{
     const DATE_FORMAT = "D j M Y G:i:s T";
     const PATTERN_DOUBLE_SLASH = "/\\/\\//";
@@ -65,26 +68,38 @@ abstract class Strings{
     
     /**
     * Check if string starts with substring
-    * @param string $needle substring to look for
     * @param string $haystack string to look into
+    * @param string $needle substring to look for
     * @return bool true if string starts with $needle, otherwise false
     */
-   public static function startsWith(string $needle, string $haystack):bool{
+   public static function startsWith(string $haystack, string $needle):bool{
        $length = strlen($needle);
        return (substr($haystack, 0, $length) === $needle);
    }
 
    /**
     * Check if string ends with substring
-    * @param string $needle substring to look for
     * @param string $haystack string to look into
+    * @param string $needle substring to look for
     * @return bool true if string ends with $needle, otherwise false
     */
-   public static function endsWith(string $needle, string $haystack):bool{
+   public static function endsWith(string $haystack, string $needle):bool{
        $length = strlen($needle);
        if ($length == 0) {
            return true;
        }
        return (substr($haystack, -$length) === $needle);
+   }
+
+   public static function minify(array $input, string $outputFilename):void{
+        if(Strings::endsWith($outputFilename,".css")){
+            $minifier = new Minify\CSS();
+        }else if(Strings::endsWith($outputFilename,".js")){
+            $minifier = new Minify\JS();
+        }
+        foreach($input as &$filename){
+            $minifier->add($filename);
+        }
+        $minifier->minify($outputFilename);
    }
 }
