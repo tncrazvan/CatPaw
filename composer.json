@@ -1,16 +1,19 @@
 {
-    "name": "tncrazvan/catpaw",
-    "description": "A Php Http & WebSocket server",
-    "type": "library",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "tncrazvan",
-            "email": "tangent.jotey@gmail.com"
-        }
-    ],
-    "minimum-stability": "dev",
-    "require": {
+	"name": "tncrazvan/catpaw",
+	"description": "A Php Http & WebSocket server",
+	"type": "library",
+	"license": "MIT",
+	"authors": [
+	{
+		"name": "tncrazvan",
+		"email": "tangent.jotey@gmail.com"
+	}
+	],
+	"minimum-stability": "dev",
+	"require": {
 		"php":">=7.2.6"
+	},
+	"config": {
+		"preferred-install": "source"
 	}
 }
