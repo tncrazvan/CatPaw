@@ -10,14 +10,19 @@ class HttpResponse{
     public function __construct($header=null,$body=null){
         if($body === null) $body = "";
         if(is_array($header)){
-            $h = new HttpHeader();
+            $this->header = new HttpHeader();
+            foreach(G::$header as $key => &$value){
+                if($key === "Status"){
+                    $value = "HTTP/1.1 $value";
+                }
+                $this->header->set($key,$value);
+            }
             foreach($header as $key => &$value){
                 if($key === "Status"){
                     $value = "HTTP/1.1 $value";
                 }
-                $h->set($key,$value);
+                $this->header->set($key,$value);
             }
-            $this->header = $h;
         }else if($header === null){
             $this->header = new HttpHeader();
         }else{

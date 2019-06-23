@@ -70,6 +70,9 @@ abstract class G extends Http{
             if(isset($settings["certificate"]["passphrase"]))
             G::$certificatePassphrase = $settings["certificate"]["passphrase"];
         }
+        if(isset($settings["header"])){
+            G::$header = $settings["header"];
+        }
         G::$sessionDir = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".G::$sessionName);
         
         if($print) print_r([
@@ -96,12 +99,14 @@ abstract class G extends Http{
                 "name"=>G::$certificateName,
                 "privateKey"=>G::$certificatePrivateKey,
                 "passphrase"=>G::$certificatePassphrase
-            ]
+            ],
+            "header"=>G::$header
         ]);
         return $settings;
     }
 
     public static
+            $header = [],
             $compress = null,
             $sessionDir = "",
             $sessionName = "/SESSION",
