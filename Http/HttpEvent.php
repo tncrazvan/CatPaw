@@ -16,7 +16,14 @@ class HttpEvent extends HttpEventManager{
             $location = [G::$httpDefaultName];
         }
         $classId = self::getClassNameIndex(G::$httpControllerPackageName,$location);
-        
+
+        if($classId < 0){
+            for($i=0;$i<$locationLength;$i++){
+                $location[$i] = strtolower($location[$i]);
+            }
+            $classId = self::getClassNameIndex(G::$httpControllerPackageName,$location);
+        }
+
         if($classId>=0){
             $classname = self::resolveClassName($classId,G::$httpControllerPackageName,$location);
             $controller = new $classname();
