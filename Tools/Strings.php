@@ -91,15 +91,25 @@ abstract class Strings{
        return (substr($haystack, -$length) === $needle);
    }
 
-   public static function minify(array $input, string $outputFilename):void{
-        if(Strings::endsWith($outputFilename,".css")){
-            $minifier = new Minify\CSS();
-        }else if(Strings::endsWith($outputFilename,".js")){
-            $minifier = new Minify\JS();
-        }
-        foreach($input as &$filename){
-            $minifier->add($filename);
-        }
-        $minifier->minify($outputFilename);
+   public static function minify(array $input, string $outputFilename,bool $minify=true):void{
+       if($minify){
+            if(Strings::endsWith($outputFilename,".css")){
+                $minifier = new Minify\CSS();
+            }else if(Strings::endsWith($outputFilename,".js")){
+                $minifier = new Minify\JS();
+            }
+            foreach($input as &$filename){
+                $minifier->add(file_get_contents($filename));
+            }
+            $minifier->minify($outputFilename);
+       }else{
+            $tmp = "";
+            foreach($input as &$filename){
+                $tmp .= file_get_contents($filename)."\n";
+            }
+
+            file_put_contents($outputFilename,$tmp);
+       }
+        
    }
 }

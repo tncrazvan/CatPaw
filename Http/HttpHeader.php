@@ -1,6 +1,8 @@
 <?php
 namespace com\github\tncrazvan\CatPaw\Http;
 
+use com\github\tncrazvan\CatPaw\Tools\G;
+
 class HttpHeader{
     private $header = [],$cookies = [];
     const DATE_FORMAT = "D j M Y G:i:s T";
@@ -8,6 +10,9 @@ class HttpHeader{
         if($createSuccessHeader){
             $this->header["Status"] = "HTTP/1.1 200 OK";
             $this->header["Date"] = date(self::DATE_FORMAT); 
+            foreach(G::$header as $key => &$value){
+                $this->header[$key] = $value;
+            }
         }
     }
     

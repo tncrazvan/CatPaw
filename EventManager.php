@@ -69,7 +69,7 @@ class EventManager extends G{
         $args = [];
         $locationLength = count($location);
         if($locationLength-1>$offset-1){
-            $args = array_slice($args, $offset);
+            $args = array_slice($location, $offset);
         }
         return $args;
     }
