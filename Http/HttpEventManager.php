@@ -39,7 +39,7 @@ abstract class HttpEventManager extends EventManager{
         if($this->location === "favicon.ico"){
             if(!\file_exists($filename)){
                 $this->send(new HttpResponse([
-                    "Status"=>Http::STATUS_NOT_FOUND
+                    "Status"=>Status::NOT_FOUND
                 ]));
             }else{
                 $this->send(Http::getFile($this->clientHeader,$filename));

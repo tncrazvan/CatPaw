@@ -2,7 +2,6 @@
 namespace com\github\tncrazvan\CatPaw\Tools;
 
 use MatthiasMullie\Minify;
-use com\github\tncrazvan\CatPaw\Tools\Strings;
 
 abstract class Strings{
     const DATE_FORMAT = "D j M Y G:i:s T";

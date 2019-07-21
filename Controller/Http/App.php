@@ -3,6 +3,7 @@ namespace com\github\tncrazvan\CatPaw\Controller\Http;
 
 use com\github\tncrazvan\CatPaw\Tools\G;
 use com\github\tncrazvan\CatPaw\Tools\Http;
+use com\github\tncrazvan\CatPaw\Tools\Status;
 use com\github\tncrazvan\CatPaw\Http\HttpEvent;
 use com\github\tncrazvan\CatPaw\Http\HttpResponse;
 use com\github\tncrazvan\CatPaw\Http\HttpController;
@@ -16,12 +17,12 @@ class App extends HttpController{
             break;
             default:
                 return new HttpResponse([
-                    "Status"=>Http::STATUS_BAD_REQUEST
+                    "Status"=>Status::BAD_REQUEST
                 ]);
             break;
         }
     }
 
-    public function onClose() {}
+    public function onClose():void {}
 
 }

@@ -50,7 +50,7 @@ class EventManager extends G{
         $locationLength = count($location);
         for($i=0;$i<$locationLength;$i++){
             $classname .="\\".$location[$i];
-            if(class_exists($classname)){
+            if(class_exists($classname,true)){
                 return $i;
             }
         }

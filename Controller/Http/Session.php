@@ -2,6 +2,7 @@
 namespace App\Http;
 
 use com\github\tncrazvan\CatPaw\Tools\Http;
+use com\github\tncrazvan\CatPaw\Tools\Status;
 use com\github\tncrazvan\CatPaw\Http\HttpEvent;
 use com\github\tncrazvan\CatPaw\Http\HttpController;
 
@@ -23,7 +24,7 @@ class Session extends HttpController{
                 return $this->get($e);
             break;
             default:
-                $e->setStatus(Http::STATUS_BAD_REQUEST);
+                $e->setStatus(Status::BAD_REQUEST);
             break;
         }
     }
@@ -104,5 +105,5 @@ class Session extends HttpController{
         }
 
     }
-    public function onClose(){}
+    public function onClose():void {}
 }

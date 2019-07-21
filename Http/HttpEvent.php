@@ -18,10 +18,9 @@ class HttpEvent extends HttpEventManager{
         $classId = self::getClassNameIndex(G::$httpControllerPackageName,$location);
 
         if($classId < 0){
-            for($i=0;$i<$locationLength;$i++){
-                $location[$i] = strtolower($location[$i]);
-            }
-            $classId = self::getClassNameIndex(G::$httpControllerPackageName,$location);
+            //$classId = self::getClassNameIndex(G::$httpControllerPackageName,$location);
+        }else{
+
         }
 
         if($classId>=0){

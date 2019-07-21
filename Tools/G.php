@@ -126,7 +126,7 @@ abstract class G extends Http{
             $backlog=50,
             $port=80,
             $timeout=3000,
-            $webRoot="/src/",
+            $webRoot="/public/",
             $charset="UTF-8",
             $bindAddress="127.0.0.1",
             
