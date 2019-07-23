@@ -2,6 +2,12 @@
 namespace com\github\tncrazvan\CatPaw\Http;
 
 use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Tools\Status;
+use com\github\tncrazvan\CatPaw\Http\HttpHeader;
+use com\github\tncrazvan\CatPaw\Http\HttpResponse;
+use com\github\tncrazvan\CatPaw\Http\HttpEventManager;
+
+
 
 class HttpEvent extends HttpEventManager{
     public function __construct($client, HttpHeader &$clientHeader, string &$content) {
@@ -17,12 +23,6 @@ class HttpEvent extends HttpEventManager{
         }
         $classId = self::getClassNameIndex(G::$httpControllerPackageName,$location);
 
-        if($classId < 0){
-            //$classId = self::getClassNameIndex(G::$httpControllerPackageName,$location);
-        }else{
-
-        }
-
         if($classId>=0){
             $classname = self::resolveClassName($classId,G::$httpControllerPackageName,$location);
             $controller = new $classname();
@@ -30,11 +30,16 @@ class HttpEvent extends HttpEventManager{
             $args = self::resolveMethodArgs($classId+2, $location);
             if(method_exists($controller, $methodname)){
                 $result = @$controller->{$methodname}($this,$args, $this->content);
-            }else{
+            }else if(method_exists($controller, "main")){
                 $args = self::resolveMethodArgs($classId+1, $location);
                 $result = @$controller->main($this,$args, $this->content);
+            }else{
+                $result = new HttpResponse([
+                    "Status"=>Status::NOT_FOUND
+                ],null);
             }
-            $controller->onClose();
+            if(method_exists($controller, "onClose"))
+                $controller->onClose();
         }else{
             if($location[0] === G::$httpDefaultName){
                 $classname = G::$httpControllerPackageNameOriginal."\\".G::$httpDefaultNameOriginal;
@@ -46,12 +51,19 @@ class HttpEvent extends HttpEventManager{
                 }
                 $controller = new $classname();
             }
-
-            $result = @$controller->main($this,$args,$this->content);
-            $controller->onClose();
+            if(method_exists($controller, "main")){
+                $result = @$controller->main($this,$args,$this->content);
+            }else{
+                $result = new HttpResponse([
+                    "Status"=>Status::NOT_FOUND
+                ],null);
+            }
+            if(method_exists($controller, "onClose"))
+                $controller->onClose();
         }
         return $result;
     }
+    
     protected function &onControllerRequest(string &$url){
         $result = &$this->serveController(preg_split("/\\//m",$url));
         return $result;
