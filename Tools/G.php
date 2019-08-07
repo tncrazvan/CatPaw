@@ -109,7 +109,7 @@ abstract class G extends Http{
             $header = [],
             $compress = null,
             $sessionDir = "",
-            $sessionName = "/SESSION",
+            $sessionName = "/_SESSION",
             $certificateName = "",
             $certificateType = "",
             $certificatePrivateKey = "",
