@@ -37,6 +37,10 @@ class HttpResponse{
     }
 
     public function &getBody():string{
+        if(\is_array($this->body) || \is_object($this->body)){
+            $result = json_encode($this->body);
+            return $result;
+        }
         return $this->body;
     }
 
