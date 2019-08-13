@@ -7,6 +7,7 @@ use com\github\tncrazvan\CatPaw\Tools\Status;
 use com\github\tncrazvan\CatPaw\Http\HttpEvent;
 use com\github\tncrazvan\CatPaw\Http\HttpResponse;
 use com\github\tncrazvan\CatPaw\Http\HttpController;
+use com\github\tncrazvan\CatPaw\Exception\HeaderFieldNotFoundException;
 
 class App extends HttpController{
     
@@ -17,7 +18,7 @@ class App extends HttpController{
             break;
             default:
                 return new HttpResponse([
-                    "Status"=>Status::BAD_REQUEST
+                    "Status"=>Status::METHOD_NOT_ALLOWED
                 ]);
             break;
         }

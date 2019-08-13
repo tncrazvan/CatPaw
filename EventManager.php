@@ -4,6 +4,7 @@ namespace com\github\tncrazvan\CatPaw\Http;
 use com\github\tncrazvan\CatPaw\Tools\G;
 use com\github\tncrazvan\CatPaw\Http\HttpHeader;
 use com\github\tncrazvan\CatPaw\Http\HttpSessionManager;
+use com\github\tncrazvan\CatPaw\Exception\HeaderFieldNotFoundException;
 
 class EventManager extends G{
     
@@ -105,6 +106,16 @@ class EventManager extends G{
         if($this->session !== null) HttpSessionManager::saveSession (HttpSessionManager::getSession($this->sessionId));
     }
     
+
+    /**
+     * Set a field to your response header.
+     * @param string $key name of the field
+     * @param string $content content of the field
+     */
+    public function hasHeaderField(string $key):bool{
+        return $this->serverHeader->has($key);
+    }
+
     /**
      * Set a field to your response header.
      * @param string $key name of the field
@@ -171,7 +182,7 @@ class EventManager extends G{
         return $this->clientHeader;
     }
 
-    public function &getClientHeaderField(string $key):string{
+    public function &getClientHeaderField(string $key){
         return $this->clientHeader->get($key);
     }
     
@@ -179,7 +190,7 @@ class EventManager extends G{
      * Get request method.
      * @return string method of the client request.
      */
-    public function &getClientMethod():string{
+    public function &getClientMethod(){
         return $this->getClientHeaderField("Method");
     }
     
