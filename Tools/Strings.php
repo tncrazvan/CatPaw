@@ -2,6 +2,7 @@
 namespace com\github\tncrazvan\CatPaw\Tools;
 
 use MatthiasMullie\Minify;
+use com\github\tncrazvan\AsciiTable\AsciiTable;
 
 abstract class Strings{
     const DATE_FORMAT = "D j M Y G:i:s T";
@@ -111,4 +112,19 @@ abstract class Strings{
        }
         
    }
+
+    public static function tableFromArray(array $input,bool $lineCounter=false,Callable $intercept=null,int $lvl = 0):string{
+        $table = new AsciiTable();
+        if($intercept !== null) $intercept($table,$lvl);
+        $table->add("Key","Value");
+        foreach($input as $key => &$item){
+            if(\is_array($item)){
+                $table->add($key,self::tableFromArray($item,$lineCounter,$intercept,$lvl+1));
+                continue;
+            }
+            $table->add($key,$item);
+        }
+            
+        return $table->toString($lineCounter);
+    }
 }

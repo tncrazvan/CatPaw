@@ -4,12 +4,14 @@ namespace com\github\tncrazvan\CatPaw\Tools;
 use com\github\tncrazvan\CatPaw\Tools\G;
 use com\github\tncrazvan\CatPaw\Tools\Http;
 use com\github\tncrazvan\CatPaw\Tools\Strings;
+use com\github\tncrazvan\AsciiTable\AsciiTable;
 
 abstract class G extends Http{
     const DIR = __DIR__;
 
     public static function &init(string $settingsFile,bool $print=true):array{
-        $settings = json_decode(file_get_contents($settingsFile),true);
+        //$settings = json_decode(file_get_contents($settingsFile),true);
+        $settings = include($settingsFile);
         $settingsDir = dirname($settingsFile);
         if(isset($settings["compress"]))
         G::$compress = $settings["compress"];
@@ -75,33 +77,110 @@ abstract class G extends Http{
         }
         G::$sessionDir = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".G::$sessionName);
         
-        if($print) print_r([
-            "port"=>G::$port,
-            "bindAddress"=>G::$bindAddress,
-            "webRoot"=>G::$webRoot,
-            "charset"=>G::$charset,
-            "timeout"=>G::$timeout." seconds",
-            "sessionTtl"=>G::$sessionTtl." seconds",
-            "ramSession"=>G::$ramSession,
-            "wsMtu"=>G::$wsMtu." bytes",
-            "httpMtu"=>G::$httpMtu." bytes",
-            "cookieTtl"=>G::$cookieTtl." seconds",
-            "cacheMaxAge"=>G::$cacheMaxAge." seconds",
-            "entryPoint"=>"[webRoot] ".G::$entryPoint,
-            "sleep"=>G::$sleep." microseconds",
-            "backlog"=>G::$backlog." connections",
-            "compress"=>G::$compress !== null?implode(" > ",G::$compress):"DISABLED",
-            "controllers"=>[
-                "http"=>G::$httpControllerPackageName,
-                "websocket"=>G::$wsControllerPackageName,
-            ],
-            "certificate"=>[
-                "name"=>G::$certificateName,
-                "privateKey"=>G::$certificatePrivateKey,
-                "passphrase"=>G::$certificatePassphrase
-            ],
-            "header"=>G::$header
-        ]);
+        
+        if($print) {
+            $data = [
+                "port\n\n"
+                ."This is the port the server will belistening to."
+                    =>G::$port,
+                "bindAddress\n\n"
+                ."This is the address the server should bind to.\nThe address 0.0.0.0 means the server will bind to all available interfaces."
+                    =>G::$bindAddress,
+                "webRoot\n\n"
+                ."This is the public directory your clients will be able to access."
+                    =>G::$webRoot,
+                "charset\n\n"
+                ."This is the charset your server will be using to decode/encode data."
+                    =>G::$charset,
+                "timeout\n\n"
+                ."Your server will timeout after this many seconds for each incoming request."
+                    =>G::$timeout." seconds",
+                "sessionName\n\n"
+                ."Your server will save all sessions on a ramdisk.\n"
+                ."This is your session ramdisk name.\n"
+                ."The ramdisk is always located in the same directory as the configuration file (which is by default \"/config/http.php\")."
+                    =>G::$sessionName,
+                "ramSession\n\n"
+                ."This is your server's session details."
+                    =>G::$ramSession,
+                "sessionTtl\n\n"
+                ."This is the lifespan of each session (in seconds).\n"
+                ."NOTE: Sessions are stored on a ramdisk, normally your "
+                ."OS should not let you delete the ramdisk as long as it's "
+                ."being used by the server, however, it can be forceully "
+                ."unmounted and deleted."
+                    =>G::$sessionTtl." seconds",
+                "wsMtu\n\n"
+                ."This is the maximum payload length your server will send over WebSockets."
+                    =>G::$wsMtu." bytes",
+                "httpMtu\n\n"
+                ."This is the maximum payload length your server will send over Http."
+                    =>G::$httpMtu." bytes",
+                "cookieTtl\n\n"
+                ."Cookies Time To Live."
+                    =>G::$cookieTtl." seconds",
+                "cacheMaxAge\n\n"
+                ."Cache Time To Live."
+                    =>G::$cacheMaxAge." seconds",
+                "entryPoint\n\n"
+                ."This is your server's entry point, usually \"index.html\"."
+                    =>"[webRoot] ".G::$entryPoint,
+                "sleep\n\n"
+                ."This idicates how long the server should sleep before checking if there are any new requests (in microseconds)."
+                    =>G::$sleep." microseconds",
+                "backlog\n\n"
+                ."A maximum of backlog incoming connections will be queued for processing. If a connection request arrives with the queue full the client may receive an error with an indication of ECONNREFUSED, or, if the underlying protocol supports retransmission, the request may be ignored so that retries may succeed."
+                    =>G::$backlog." connections",
+                "compress\n\n"
+                ."Type of compression.\n\n"
+                ."There's no fallback compression, is if no compression is specified, the server will not compress the data"
+                    =>G::$compress !== null?implode(" > ",G::$compress):"DISABLED",
+                "controllers\n\n"
+                ."This is a mapping of your controllers Http and WebSocket controllers.\n"
+                ."All your controllers should live under these two namespaces.\n"
+                ."The server does not require you to setup any routing system, your client's requests will map directly to your controllers.\n"
+                ."Check the documentation to read more details about the controller/request mapping system."
+                    =>[
+                    "http"=>G::$httpControllerPackageName,
+                    "websocket"=>G::$wsControllerPackageName,
+                ],
+                "certificate\n\n"
+                ."PEM certificate details.\n"
+                ."[NOTE]: You can use /mkcert to make your own certificate, and you can find the /mkcert configuration in /config/certificate.php"
+                    =>[
+                    "name\n\n"=>G::$certificateName,
+                    "privateKey"=>G::$certificatePrivateKey,
+                    "passphrase\n\n"
+                    ."[WARNING]: Don't commit this to github or any public repository!"
+                        =>G::$certificatePassphrase
+                ],
+                "header\n\n"
+                ."Extra headers to add to your HttpResponse objects.\n"
+                ."[NOTE]: These can be overwritten at runtime."
+                    =>G::$header
+            ];
+            echo Strings::tableFromArray($data,false,function(AsciiTable $table,int $lvl){
+                echo "LBL: $lvl\n";
+                switch($lvl){
+                    case 0:
+                        $table->style(0,[
+                            "width"=>37
+                        ]);
+                        $table->style(1,[
+                            "width"=>37
+                        ]);
+                    break;
+                    case 1:
+                        $table->style(0,[
+                            "width"=>25
+                        ]);
+                        $table->style(1,[
+                            "width"=>25
+                        ]);
+                    break;
+                }
+            })."\n";
+        }
         return $settings;
     }
 
