@@ -1,6 +1,8 @@
 <?php
 namespace com\github\tncrazvan\CatPaw\Tools;
 
+use com\github\tncrazvan\CatPaw\Tools\Server;
+
 abstract class Session{
     /**
      * Check for a session directory, if it exists, try to umount 
@@ -11,12 +13,12 @@ abstract class Session{
     public static function umount():void{
         //check if directory already exists
         //if it does there's a chance it's mounted as a ram disk
-        if(file_exists(G::$sessionDir)){
+        if(file_exists(Server::$sessionDir)){
             //try to umount the ramdisk
-            echo shell_exec("umount ".G::$sessionDir);
+            echo shell_exec("umount ".Server::$sessionDir);
         }
         //remove the session directory
-        echo shell_exec("rm ".G::$sessionDir." -fr");
+        echo shell_exec("rm ".Server::$sessionDir." -fr");
     }
     
     /**
@@ -30,9 +32,9 @@ abstract class Session{
         //try to umount session
         self::umount();
         //make the session directory again
-        echo shell_exec("mkdir ".G::$sessionDir);
+        echo shell_exec("mkdir ".Server::$sessionDir);
         //mount the directory as a new ramdisk
-        echo shell_exec("mount -t tmpfs tmpfs ".G::$sessionDir." -o size=".G::$ramSession["size"]);
+        echo shell_exec("mount -t tmpfs tmpfs ".Server::$sessionDir." -o size=".Server::$ramSession["size"]);
         //some feedback
         echo "\nRam disk mounted.\n";
     }
@@ -46,6 +48,6 @@ abstract class Session{
         //try to umount session
         self::umount();
         //make the session directory again
-        echo shell_exec("mkdir ".G::$sessionDir);
+        echo shell_exec("mkdir ".Server::$sessionDir);
     }
 }

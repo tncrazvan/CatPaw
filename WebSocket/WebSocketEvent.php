@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\CatPaw\WebSocket;
 
-use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Tools\Server;
 use com\github\tncrazvan\CatPaw\Http\HttpHeader;
 use com\github\tncrazvan\CatPaw\WebSocket\WebSocketManager;
 
@@ -17,27 +17,27 @@ class WebSocketEvent extends WebSocketManager{
         $this->args = [];
         $locationLength = count($location);
         if($locationLength === 0 || $locationLength === 1 && $location[0] === ""){
-            $location = [G::$wsNotFoundName];
+            $location = [Server::$wsNotFoundName];
         }
-        $classId = self::getClassNameIndex(G::$wsControllerPackageName, $location);
+        $classId = self::getClassNameIndex(Server::$wsControllerPackageName, $location);
         if($classId >= 0){
-            $this->classname = self::resolveClassName($classId,G::$wsControllerPackageName,$location);
+            $this->classname = self::resolveClassName($classId,Server::$wsControllerPackageName,$location);
             $this->controller = new $this->classname();
             $this->args = self::resolveMethodArgs($classId+2, $location);
         }else{
-            $this->classname = G::$wsControllerPackageName."\\".G::$wsNotFoundName;
+            $this->classname = Server::$wsControllerPackageName."\\".Server::$wsNotFoundName;
             if(!class_exists($this->classname)){
-                $this->classname = G::$wsControllerPackageNameOriginal."\\".G::$wsNotFoundNameOriginal;
+                $this->classname = Server::$wsControllerPackageNameOriginal."\\".Server::$wsNotFoundNameOriginal;
             }
             $this->controller = new $this->classname();
         }
     }
     
     protected function onOpen(): void {
-        if(!isset(G::$wsEvents[$this->classname])){
-            G::$wsEvents[$this->classname] = [$this->requestId => $this];
+        if(!isset(Server::$wsEvents[$this->classname])){
+            Server::$wsEvents[$this->classname] = [$this->requestId => $this];
         }else{
-            G::$wsEvents[$this->classname][$this->requestId] = $this;
+            Server::$wsEvents[$this->classname][$this->requestId] = $this;
         }
         try{
             $this->controller->onOpen($this,$this->args);
@@ -58,7 +58,7 @@ class WebSocketEvent extends WebSocketManager{
 
     protected function onClose(): void {
         try{
-            unset(G::$wsEvents[$this->classname][$this->requestId]);
+            unset(Server::$wsEvents[$this->classname][$this->requestId]);
             $this->controller->onClose($this,$this->args);
         } catch (Exception $ex) {
             socket_close($client);

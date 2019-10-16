@@ -1,8 +1,9 @@
 <?php
 namespace com\github\tncrazvan\CatPaw\Tools;
 
-use com\github\tncrazvan\CatPaw\Tools\G;
 use com\github\tncrazvan\CatPaw\Tools\Mime;
+use com\github\tncrazvan\CatPaw\Tools\Server;
+use com\github\tncrazvan\CatPaw\Tools\Status;
 use com\github\tncrazvan\CatPaw\Tools\Strings;
 use com\github\tncrazvan\CatPaw\Http\HttpHeader;
 use com\github\tncrazvan\CatPaw\Http\HttpResponse;
@@ -92,15 +93,15 @@ abstract class Http{
 
                     $result .= $startConnectionStr;
                 
-                    if($end-$start+1 > G::$httpMtu){
+                    if($end-$start+1 > Server::$httpMtu){
                         $remainingBytes = $end-$start+1;
-                        $readLength = G::$httpMtu;
+                        $readLength = Server::$httpMtu;
                         fseek($raf, $start);
                         while($remainingBytes > 0){
                             $result = fread($raf, $readLength);
-                            $remainingBytes -= G::$httpMtu;
+                            $remainingBytes -= Server::$httpMtu;
                             if($remainingBytes < 0){
-                                $readLength = $remainingBytes+G::$httpMtu;
+                                $readLength = $remainingBytes+Server::$httpMtu;
                                 $remainingBytes = 0;
                             }
                         }

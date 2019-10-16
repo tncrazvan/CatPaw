@@ -1,9 +1,10 @@
 <?php
 namespace com\github\tncrazvan\CatPaw\Http;
 
-use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Tools\Server;
 
-class HttpSession extends G{
+
+class HttpSession extends Server{
     public static $LIST = [];
     private $id,$STORAGE = [],$time;
     

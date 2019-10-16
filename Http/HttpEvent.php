@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\CatPaw\Http;
 
-use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Tools\Server;
 use com\github\tncrazvan\CatPaw\Tools\Status;
 use com\github\tncrazvan\CatPaw\Http\HttpHeader;
 use com\github\tncrazvan\CatPaw\Http\HttpResponse;
@@ -19,12 +19,12 @@ class HttpEvent extends HttpEventManager{
         $args = [];
         $locationLength = count($location);
         if($locationLength === 0 || $locationLength === 1 && $location[0] === ""){
-            $location = [G::$httpDefaultName];
+            $location = [Server::$httpDefaultName];
         }
-        $classId = self::getClassNameIndex(G::$httpControllerPackageName,$location);
+        $classId = self::getClassNameIndex(Server::$httpControllerPackageName,$location);
 
         if($classId>=0){
-            $classname = self::resolveClassName($classId,G::$httpControllerPackageName,$location);
+            $classname = self::resolveClassName($classId,Server::$httpControllerPackageName,$location);
             $controller = new $classname();
             $methodname = $locationLength-1>$classId?$location[$classId+1]:"main";
             $args = self::resolveMethodArgs($classId+2, $location);
@@ -41,13 +41,13 @@ class HttpEvent extends HttpEventManager{
             if(method_exists($controller, "onClose"))
                 $controller->onClose();
         }else{
-            if($location[0] === G::$httpDefaultName){
-                $classname = G::$httpControllerPackageNameOriginal."\\".G::$httpDefaultNameOriginal;
+            if($location[0] === Server::$httpDefaultName){
+                $classname = Server::$httpControllerPackageNameOriginal."\\".Server::$httpDefaultNameOriginal;
                 $controller = new $classname();
             }else{
-                $classname = G::$httpControllerPackageName."\\".G::$httpNotFoundName;
+                $classname = Server::$httpControllerPackageName."\\".Server::$httpNotFoundName;
                 if(!class_exists($classname)){
-                    $classname = G::$httpControllerPackageNameOriginal."\\".CaGt::$httpNotFoundNameOriginal;
+                    $classname = Server::$httpControllerPackageNameOriginal."\\".CaGt::$httpNotFoundNameOriginal;
                 }
                 $controller = new $classname();
             }

@@ -2,10 +2,13 @@
 namespace com\github\tncrazvan\CatPaw\Http;
 
 use Exception;
-use com\github\tncrazvan\CatPaw\Tools\G;
 use com\github\tncrazvan\CatPaw\Tools\Http;
 use com\github\tncrazvan\CatPaw\Tools\Mime;
+use com\github\tncrazvan\CatPaw\Tools\Server;
+use com\github\tncrazvan\CatPaw\Tools\Status;
 use com\github\tncrazvan\CatPaw\Tools\Strings;
+use com\github\tncrazvan\CatPaw\Http\EventManager;
+use com\github\tncrazvan\CatPaw\Http\HttpResponse;
 
 abstract class HttpEventManager extends EventManager{
     protected 
@@ -35,7 +38,7 @@ abstract class HttpEventManager extends EventManager{
      */
     public function run(){
         $this->findUserLanguages();
-        $filename = G::$webRoot."/".$this->location;
+        $filename = Server::$webRoot."/".$this->location;
         if($this->location === "favicon.ico"){
             if(!\file_exists($filename)){
                 $this->send(new HttpResponse([
@@ -72,7 +75,7 @@ abstract class HttpEventManager extends EventManager{
             if($this->alive){
                 $body = &$data->getBody();
                 $accepted = preg_split("/\\s*,\\s*/",$this->clientHeader->get("Accept-Encoding"));
-                if(G::$compress !== null && Strings::compress($type,$body,G::$compress,$accepted)){
+                if(Server::$compress !== null && Strings::compress($type,$body,Server::$compress,$accepted)){
                     $len = strlen($body);
                     $data->getHeader()->set("Content-Encoding",$type);
                     $data->getHeader()->set("Content-Length",$len);

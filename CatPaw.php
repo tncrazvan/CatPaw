@@ -1,12 +1,13 @@
 <?php
 namespace com\github\tncrazvan\CatPaw;
 
-use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Tools\Server;
 use com\github\tncrazvan\CatPaw\Tools\Session;
 use com\github\tncrazvan\CatPaw\Tools\Strings;
+use com\github\tncrazvan\CatPaw\Tools\Minifier;
 use com\github\tncrazvan\CatPaw\Http\HttpEventListener;
 
-class CatPaw extends G{
+class CatPaw extends Server{
     private $socket,
             $binding,
             $listening;
@@ -23,15 +24,39 @@ class CatPaw extends G{
         $protocol="tcp";
         $argsLength = count($args);
         if($argsLength > 1 && file_exists($args[1])){
-            $settings = G::init($args[1]);
+
+            //SETTINGS INIT
+            $settings = Server::init($args[1]);
+
+            //MINIFIER INIT
+            try{
+                $pid = pcntl_fork();
+                if ($pid == -1) {
+                    die('could not fork');
+            } else if ($pid) {
+                /*PARENT*/
+            } else {
+                /*CHILD*/
+                while(true){
+                    $assets = json_decode(\file_get_contents(Server::$webRoot."/assets.json"),true);
+                    $minifier = new Minifier(Server::$webRoot,$assets);
+                    $minifier->minify();
+                    \usleep(Server::$minifier["sleep"]*1000);
+                }
+            }
+            }catch(Exception $e){
+                die("Something went wrong while forking...");
+            }
+            
+
             $context = stream_context_create();
             //check if SSL certificate file is specified
-            if(G::$certificateName !== ""){
+            if(Server::$certificateName !== ""){
                 //use the SSL certificate
-                stream_context_set_option($context, 'ssl', 'local_cert', G::$certificateName);
+                stream_context_set_option($context, 'ssl', 'local_cert', Server::$certificateName);
                 if(isset($settings["certificate"]["privateKey"]))
-                    stream_context_set_option($context, 'ssl', 'local_pk', G::$certificatePrivateKey);
-                stream_context_set_option($context, 'ssl', 'passphrase', G::$certificatePassphrase);
+                    stream_context_set_option($context, 'ssl', 'local_pk', Server::$certificatePrivateKey);
+                stream_context_set_option($context, 'ssl', 'passphrase', Server::$certificatePassphrase);
                 stream_context_set_option($context, 'ssl', 'cyphers', 2);
                 stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
                 stream_context_set_option($context, 'ssl', 'verify_peer', false);
@@ -40,19 +65,19 @@ class CatPaw extends G{
             if($intercept !== null) $intercept($context);
             // Create the server socket
             $this->socket = stream_socket_server(
-                $protocol.'://'.G::$bindAddress.':'.G::$port,
+                $protocol.'://'.Server::$bindAddress.':'.Server::$port,
                 $errno,
                 $errstr,
                 STREAM_SERVER_BIND|STREAM_SERVER_LISTEN,
                 $context
             );
-            if(G::$certificateName !== "")
+            if(Server::$certificateName !== "")
                 stream_socket_enable_crypto($this->socket, false);
             if ($this->socket === false) throw new \Exception("$errstr ($errno)\n");
             $this->listening=true;
 
             //check if developer allows ramdisk for session storage
-            if(G::$ramSession["allow"]){
+            if(Server::$ramSession["allow"]){
                 //if ramdisk is allowed, mount a new one
                 Session::mount();
                 //WARNING: ramdisk will remain mounted untill the next session is started
@@ -123,6 +148,7 @@ class CatPaw extends G{
             so don't load the main process with too much data, or it won't be long
             before your memory gets filled due to excessive copies.
             */
+            
             if ($pid === -1) {
                 /*
                     fork request failed,
@@ -135,7 +161,7 @@ class CatPaw extends G{
                 @fclose($client);
             } else if ($pid) {
                 /*
-                    we are the parent, the children took over,
+                    we are the parent,
                     removed socket pointer from the clients array and the
                     the copied array (unsetting the copied one is not required) and
                     kill the current socket handler
@@ -145,7 +171,7 @@ class CatPaw extends G{
                 @fclose($client);
             } else {
                 //check if certificate is specified
-                if(G::$certificateName !== ""){
+                if(Server::$certificateName !== ""){
                     //block the connection until SSL is done.
                     stream_set_blocking ($client, true);
                     //enable socket crypto method
@@ -163,7 +189,7 @@ class CatPaw extends G{
                 $listener->run();
                 
                 //check if certificate is specified and unblock the socket
-                if(G::$certificateName !== "")
+                if(Server::$certificateName !== "")
                     stream_set_blocking ($client, false);
                 exit;
             }

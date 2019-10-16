@@ -2,7 +2,7 @@
 
 namespace com\github\tncrazvan\CatPaw\WebSocket;
 
-use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Tools\Server;
 use com\github\tncrazvan\CatPaw\Http\HttpHeader;
 use com\github\tncrazvan\CatPaw\Http\EventManager;
 
@@ -19,7 +19,7 @@ abstract class WebSocketManager extends EventManager{
         $this->content=$content;
     }
     public function run(){
-        $acceptKey = base64_encode(sha1($this->clientHeader->get("Sec-WebSocket-Key").G::$wsAcceptKey,true));
+        $acceptKey = base64_encode(sha1($this->clientHeader->get("Sec-WebSocket-Key").Server::$wsAcceptKey,true));
         $this->serverHeader->set("Status","HTTP/1.1 101 Switching Protocols");
         $this->serverHeader->set("Connection","Upgrade");
         $this->serverHeader->set("Upgrade","websocket");
@@ -28,14 +28,14 @@ abstract class WebSocketManager extends EventManager{
         fwrite($this->client, $handshake, strlen($handshake));
         $this->onOpen();
         while($this->connected){
-            $masked = fread($this->client, G::$wsMtu);
+            $masked = fread($this->client, Server::$wsMtu);
             $opcode = (ord($masked[0]) & 0x0F);
             if ($masked === FALSE || $opcode === 8) {
                 $this->close();
             } else if($masked !== null && unpack("C", $masked)[1] !== 136){
                 $this->onMessage($this->unmask($masked));
             }
-            usleep(G::$sleep);
+            usleep(Server::$sleep);
         }
     }
     

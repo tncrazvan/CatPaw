@@ -1,12 +1,13 @@
 <?php
 namespace com\github\tncrazvan\CatPaw\Http;
 
-use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Tools\Server;
 use com\github\tncrazvan\CatPaw\Http\HttpHeader;
+use com\github\tncrazvan\CatPaw\Http\HttpEventManager;
 use com\github\tncrazvan\CatPaw\Http\HttpSessionManager;
 use com\github\tncrazvan\CatPaw\Exception\HeaderFieldNotFoundException;
 
-class EventManager extends G{
+class EventManager extends Server{
     
     protected 
             $client,
@@ -135,7 +136,7 @@ class EventManager extends G{
         
     /**
      * Set the status of your response.
-     * @param string $status a status code. Multiple status codes can be found in the Cat class, suche as G::STATUS_SUCCESS.
+     * @param string $status a status code. Multiple status codes can be found in the Cat class, suche as Server::STATUS_SUCCESS.
      */
     public function setStatus(string $status):void{
         $this->setHeaderField("Status", "HTTP/1.1 $status");

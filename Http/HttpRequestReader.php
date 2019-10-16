@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\CatPaw\Http;
 
-use com\github\tncrazvan\CatPaw\Tools\G;
+use com\github\tncrazvan\CatPaw\Tools\Server;
 use com\github\tncrazvan\CatPaw\Http\HttpHeader;
 
 abstract class HttpRequestReader{
@@ -15,7 +15,7 @@ abstract class HttpRequestReader{
     }
     
     public function run():void{
-        $input = fread($this->client, G::$httpMtu);
+        $input = fread($this->client, Server::$httpMtu);
         if(!$input){
             return;
         }
