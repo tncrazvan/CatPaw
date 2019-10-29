@@ -10,6 +10,7 @@ abstract class Server extends Http{
 
     public static function &init(string $settingsFile,bool $print=true):array{
         //$settings = json_decode(file_get_contents($settingsFile),true);
+        $storage = new \stdClass();
         $settings = include($settingsFile);
         $settingsDir = dirname($settingsFile);
         if(isset($settings["compress"]))
