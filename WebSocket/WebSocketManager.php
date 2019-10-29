@@ -29,6 +29,7 @@ abstract class WebSocketManager extends EventManager{
         $this->onOpen();
         while($this->connected){
             $masked = fread($this->client, Server::$wsMtu);
+            if(!isset($masked)) continue;
             $opcode = (ord($masked[0]) & 0x0F);
             if ($masked === FALSE || $opcode === 8) {
                 $this->close();
