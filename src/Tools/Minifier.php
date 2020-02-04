@@ -1,8 +1,8 @@
 <?php
-namespace com\github\tncrazvan\CatPaw\Tools;
+namespace com\github\tncrazvan\catpaw\tools;
 
-use com\github\tncrazvan\CatPaw\Tools\Server;
-use com\github\tncrazvan\CatPaw\Tools\Strings;
+use com\github\tncrazvan\catpaw\tools\Server;
+use com\github\tncrazvan\catpaw\tools\Strings;
 
 class Minifier{
     private 

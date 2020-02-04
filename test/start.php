@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__.'/../vendor/autoload.php';
-use com\github\tncrazvan\CatPaw\CatPaw;
+use com\github\tncrazvan\catpaw\CatPaw;
 if(count($argv) === 1) $argv[1] = __DIR__."/config/http.php";
 
 error_reporting(E_ALL);

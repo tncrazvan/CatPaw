@@ -1,11 +1,11 @@
 <?php
-namespace com\github\tncrazvan\CatPaw\Http;
+namespace com\github\tncrazvan\catpaw\http;
 
-use com\github\tncrazvan\CatPaw\Tools\Server;
-use com\github\tncrazvan\CatPaw\Http\HttpHeader;
-use com\github\tncrazvan\CatPaw\Http\HttpEventManager;
-use com\github\tncrazvan\CatPaw\Http\HttpSessionManager;
-use com\github\tncrazvan\CatPaw\Exception\HeaderFieldNotFoundException;
+use com\github\tncrazvan\catpaw\tools\Server;
+use com\github\tncrazvan\catpaw\http\HttpHeader;
+use com\github\tncrazvan\catpaw\http\HttpEventManager;
+use com\github\tncrazvan\catpaw\http\HttpSessionManager;
+use com\github\tncrazvan\catpaw\exception\HeaderFieldNotFoundException;
 
 class EventManager extends Server{
     
@@ -155,7 +155,7 @@ class EventManager extends Server{
 
     /**
      * Get response header.
-     * @return \com\github\tncrazvan\CatPaw\Http\HttpHeader header of the your response message.
+     * @return \com\github\tncrazvan\catpaw\http\httpHeader header of the your response message.
      */
     public function &getHeader():HttpHeader{
         return $this->serverHeader;
@@ -180,7 +180,7 @@ class EventManager extends Server{
     
     /**
      * Get request header.
-     * @return \com\github\tncrazvan\CatPaw\Http\HttpHeader header of the client request.
+     * @return \com\github\tncrazvan\catpaw\http\httpHeader header of the client request.
      */
     public function getClientHeader():HttpHeader{
         return $this->clientHeader;

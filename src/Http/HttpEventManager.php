@@ -1,14 +1,14 @@
 <?php
-namespace com\github\tncrazvan\CatPaw\Http;
+namespace com\github\tncrazvan\catpaw\http;
 
 use Exception;
-use com\github\tncrazvan\CatPaw\Tools\Http;
-use com\github\tncrazvan\CatPaw\Tools\Mime;
-use com\github\tncrazvan\CatPaw\Tools\Server;
-use com\github\tncrazvan\CatPaw\Tools\Status;
-use com\github\tncrazvan\CatPaw\Tools\Strings;
-use com\github\tncrazvan\CatPaw\Http\EventManager;
-use com\github\tncrazvan\CatPaw\Http\HttpResponse;
+use com\github\tncrazvan\catpaw\tools\Http;
+use com\github\tncrazvan\catpaw\tools\Mime;
+use com\github\tncrazvan\catpaw\tools\Server;
+use com\github\tncrazvan\catpaw\tools\Status;
+use com\github\tncrazvan\catpaw\tools\Strings;
+use com\github\tncrazvan\catpaw\http\EventManager;
+use com\github\tncrazvan\catpaw\http\HttpResponse;
 
 abstract class HttpEventManager extends EventManager{
     protected 

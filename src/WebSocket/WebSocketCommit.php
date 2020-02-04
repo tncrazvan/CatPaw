@@ -1,7 +1,7 @@
 <?php
-namespace com\github\tncrazvan\CatPaw\WebSocket;
+namespace com\github\tncrazvan\catpaw\websocket;
 
-use com\github\tncrazvan\CatPaw\WebSocket\WebSocketEvent;
+use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 class WebSocketCommit{
     private $data,$length;

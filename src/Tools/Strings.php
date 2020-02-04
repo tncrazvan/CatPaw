@@ -1,8 +1,8 @@
 <?php
-namespace com\github\tncrazvan\CatPaw\Tools;
+namespace com\github\tncrazvan\catpaw\tools;
 
 use MatthiasMullie\Minify;
-use com\github\tncrazvan\AsciiTable\AsciiTable;
+use com\github\tncrazvan\asciitable\AsciiTable;
 
 abstract class Strings{
     const DATE_FORMAT = "D j M Y G:i:s T";

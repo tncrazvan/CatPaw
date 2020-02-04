@@ -4,8 +4,8 @@ return [
     "webRoot" => "../www",
     "bindAddress" => "0.0.0.0",
     "controllers" => [
-        "http" => "app\\http",
-        "ws" => "app\\websocket"
+        "http" => "com\\github\\tncrazvan\\catpaw\app\\http",
+        "ws" => "com\\github\\tncrazvan\\catpaw\\app\\websocket"
     ],
     "sessionName" => "_SESSION",
     "compress" => ["deflate"],

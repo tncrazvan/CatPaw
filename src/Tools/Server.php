@@ -1,9 +1,9 @@
 <?php
-namespace com\github\tncrazvan\CatPaw\Tools;
+namespace com\github\tncrazvan\catpaw\tools;
 
-use com\github\tncrazvan\CatPaw\Tools\Http;
-use com\github\tncrazvan\CatPaw\Tools\Strings;
-use com\github\tncrazvan\AsciiTable\AsciiTable;
+use com\github\tncrazvan\catpaw\tools\http;
+use com\github\tncrazvan\catpaw\tools\Strings;
+use com\github\tncrazvan\asciitable\AsciiTable;
 
 abstract class Server extends Http{
     const DIR = __DIR__;
@@ -224,11 +224,11 @@ abstract class Server extends Http{
             $charset="UTF-8",
             $bindAddress="127.0.0.1",
             
-            $httpControllerPackageNameOriginal="com\\github\\tncrazvan\\CatPaw\\Controller\\Http",
-            $httpControllerPackageName="com\\github\\tncrazvan\\CatPaw\\Controller\\Http",
+            $httpControllerPackageNameOriginal="com\\github\\tncrazvan\\catpaw\\Controller\\http",
+            $httpControllerPackageName="com\\github\\tncrazvan\\catpaw\\Controller\\http",
             
-            $wsControllerPackageNameOriginal="com\\github\\tncrazvan\\CatPaw\\Controller\\WebSocket",
-            $wsControllerPackageName="com\\github\\tncrazvan\\CatPaw\\Controller\\WebSocket",
+            $wsControllerPackageNameOriginal="com\\github\\tncrazvan\\catpaw\\Controller\\WebSocket",
+            $wsControllerPackageName="com\\github\\tncrazvan\\catpaw\\Controller\\WebSocket",
             
             $httpNotFoundNameOriginal="ControllerNotFound",
             $httpNotFoundName="ControllerNotFound",

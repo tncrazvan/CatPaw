@@ -1,5 +1,5 @@
 <?php
-namespace com\github\tncrazvan\CatPaw\Tools;
+namespace com\github\tncrazvan\catpaw\tools;
 
 class LinkedList
 {

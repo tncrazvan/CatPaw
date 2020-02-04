@@ -1,9 +1,9 @@
 <?php
-namespace com\github\tncrazvan\CatPaw\Http;
+namespace com\github\tncrazvan\catpaw\http;
 
-use com\github\tncrazvan\CatPaw\Tools\Server;
-use com\github\tncrazvan\CatPaw\Http\HttpEvent;
-use com\github\tncrazvan\CatPaw\Http\HttpSession;
+use com\github\tncrazvan\catpaw\tools\Server;
+use com\github\tncrazvan\catpaw\http\HttpEvent;
+use com\github\tncrazvan\catpaw\http\HttpSession;
 
 class HttpSessionManager extends HttpSession{
     protected function __construct($e) {

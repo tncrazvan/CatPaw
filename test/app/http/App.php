@@ -1,9 +1,9 @@
 <?php
-namespace app\http;
+namespace com\github\tncrazvan\catpaw\app\http;
 
-use com\github\tncrazvan\CatPaw\Http\HttpEvent;
-use com\github\tncrazvan\CatPaw\Http\HttpResponse;
-use com\github\tncrazvan\CatPaw\Http\HttpController;
+use com\github\tncrazvan\catpaw\http\HttpEvent;
+use com\github\tncrazvan\catpaw\http\HttpResponse;
+use com\github\tncrazvan\catpaw\http\HttpController;
 
 class App extends HttpController{
     public function main(HttpEvent &$e,array &$path,string &$content){

@@ -1,12 +1,12 @@
 <?php
 
-namespace com\github\tncrazvan\CatPaw\WebSocket;
+namespace com\github\tncrazvan\catpaw\websocket;
 
-use com\github\tncrazvan\CatPaw\Tools\Server;
-use com\github\tncrazvan\CatPaw\Http\HttpHeader;
-use com\github\tncrazvan\CatPaw\Tools\LinkedList;
-use com\github\tncrazvan\CatPaw\Http\EventManager;
-use com\github\tncrazvan\CatPaw\WebSocket\WebSocketCommit;
+use com\github\tncrazvan\catpaw\tools\Server;
+use com\github\tncrazvan\catpaw\http\HttpHeader;
+use com\github\tncrazvan\catpaw\tools\LinkedList;
+use com\github\tncrazvan\catpaw\http\EventManager;
+use com\github\tncrazvan\catpaw\websocket\WebSocketCommit;
 
 abstract class WebSocketManager extends EventManager{
     protected $controller,$classname;

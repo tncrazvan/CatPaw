@@ -1,11 +1,11 @@
 <?php
-namespace com\github\tncrazvan\CatPaw\Http;
+namespace com\github\tncrazvan\catpaw\http;
 
-use com\github\tncrazvan\CatPaw\Tools\Server;
-use com\github\tncrazvan\CatPaw\Tools\Status;
-use com\github\tncrazvan\CatPaw\Http\HttpHeader;
-use com\github\tncrazvan\CatPaw\Http\HttpResponse;
-use com\github\tncrazvan\CatPaw\Http\HttpEventManager;
+use com\github\tncrazvan\catpaw\tools\Server;
+use com\github\tncrazvan\catpaw\tools\Status;
+use com\github\tncrazvan\catpaw\http\HttpHeader;
+use com\github\tncrazvan\catpaw\http\HttpResponse;
+use com\github\tncrazvan\catpaw\http\HttpEventManager;
 
 
 

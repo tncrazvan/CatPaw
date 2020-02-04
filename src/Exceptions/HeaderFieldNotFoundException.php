@@ -1,5 +1,5 @@
 <?php
-namespace com\github\tncrazvan\CatPaw\Exception;
+namespace com\github\tncrazvan\catpaw\exception;
 /**
  * Define a custom exception class
  */

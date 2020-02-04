@@ -1,12 +1,12 @@
 <?php
-namespace com\github\tncrazvan\CatPaw;
+namespace com\github\tncrazvan\catpaw;
 
-use com\github\tncrazvan\CatPaw\Tools\Server;
-use com\github\tncrazvan\CatPaw\Tools\Session;
-use com\github\tncrazvan\CatPaw\Tools\Strings;
-use com\github\tncrazvan\CatPaw\Tools\Minifier;
-use com\github\tncrazvan\CatPaw\Http\HttpEventListener;
-use com\github\tncrazvan\CatPaw\WebSocket\WebSocketManager;
+use com\github\tncrazvan\catpaw\tools\Server;
+use com\github\tncrazvan\catpaw\tools\Session;
+use com\github\tncrazvan\catpaw\tools\Strings;
+use com\github\tncrazvan\catpaw\tools\Minifier;
+use com\github\tncrazvan\catpaw\http\HttpEventListener;
+use com\github\tncrazvan\catpaw\websocket\WebSocketManager;
 
 class CatPaw extends Server{
     private $socket,

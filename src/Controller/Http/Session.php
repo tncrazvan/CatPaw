@@ -1,10 +1,10 @@
 <?php
-namespace App\Http;
+namespace com\github\tncrazvan\catpaw\controller\http;
 
-use com\github\tncrazvan\CatPaw\Tools\Http;
-use com\github\tncrazvan\CatPaw\Tools\Status;
-use com\github\tncrazvan\CatPaw\Http\HttpEvent;
-use com\github\tncrazvan\CatPaw\Http\HttpController;
+use com\github\tncrazvan\catpaw\tools\Http;
+use com\github\tncrazvan\catpaw\tools\Status;
+use com\github\tncrazvan\catpaw\http\HttpEvent;
+use com\github\tncrazvan\catpaw\http\HttpController;
 
 
 class Session extends HttpController{
