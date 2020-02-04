@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools;
 
-use com\github\tncrazvan\catpaw\tools\http;
+use com\github\tncrazvan\catpaw\tools\Http;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\asciitable\AsciiTable;
 
