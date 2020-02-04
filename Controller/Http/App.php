@@ -11,7 +11,7 @@ use com\github\tncrazvan\CatPaw\Exception\HeaderFieldNotFoundException;
 
 class App extends HttpController{
     
-    public function &main(HttpEvent &$e, array &$path, string &$content) {
+    public function main(HttpEvent &$e, array &$path, string &$content) {
         switch($e->getClientMethod()){
             case "GET":
                 return Http::getFile($e->getClientHeader(),Server::$webRoot."/".Server::$entryPoint);

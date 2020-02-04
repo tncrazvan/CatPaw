@@ -6,7 +6,6 @@ use com\github\tncrazvan\CatPaw\Http\HttpHeader;
 use com\github\tncrazvan\CatPaw\WebSocket\WebSocketManager;
 
 class WebSocketEvent extends WebSocketManager{
-    private $controller,$classname;
     const args=[];
     public function __construct(&$client, HttpHeader &$clientHeader, string &$content) {
         parent::__construct($client, $clientHeader, $content);
@@ -22,7 +21,13 @@ class WebSocketEvent extends WebSocketManager{
         $classId = self::getClassNameIndex(Server::$wsControllerPackageName, $location);
         if($classId >= 0){
             $this->classname = self::resolveClassName($classId,Server::$wsControllerPackageName,$location);
-            $this->controller = new $this->classname();
+            if(substr($this->classname,0,1) !=="\\")
+                $this->classname = "\\".$this->classname;
+            $classname = $this->classname;
+            $controller = new $classname;
+            $this->controller = $controller;
+            
+            print_r($controller);
             $this->args = self::resolveMethodArgs($classId+2, $location);
         }else{
             $this->classname = Server::$wsControllerPackageName."\\".Server::$wsNotFoundName;
@@ -41,7 +46,7 @@ class WebSocketEvent extends WebSocketManager{
         }
         try{
             $this->controller->onOpen($this,$this->args);
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             echo "\n$ex\n";
             $this->close();
         }
@@ -50,7 +55,7 @@ class WebSocketEvent extends WebSocketManager{
     protected function onMessage($data): void {
         try{
             $this->controller->onMessage($this,$data,$this->args);
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             echo "\n$ex\n";
             $this->close();
         }
@@ -60,8 +65,8 @@ class WebSocketEvent extends WebSocketManager{
         try{
             unset(Server::$wsEvents[$this->classname][$this->requestId]);
             $this->controller->onClose($this,$this->args);
-        } catch (Exception $ex) {
-            socket_close($client);
+        } catch (\Exception $ex) {
+            socket_close($this->client);
             exit;
         }
     }

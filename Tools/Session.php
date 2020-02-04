@@ -46,7 +46,9 @@ abstract class Session{
      */
     public static function init():void{
         //try to umount session
+
         self::umount();
+        
         //make the session directory again
         echo shell_exec("mkdir ".Server::$sessionDir);
     }

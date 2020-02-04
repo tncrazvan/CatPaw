@@ -6,6 +6,7 @@ use com\github\tncrazvan\CatPaw\Tools\Session;
 use com\github\tncrazvan\CatPaw\Tools\Strings;
 use com\github\tncrazvan\CatPaw\Tools\Minifier;
 use com\github\tncrazvan\CatPaw\Http\HttpEventListener;
+use com\github\tncrazvan\CatPaw\WebSocket\WebSocketManager;
 
 class CatPaw extends Server{
     private $socket,
@@ -29,25 +30,26 @@ class CatPaw extends Server{
             $settings = Server::init($args[1]);
 
             //MINIFIER INIT
+            /*
             try{
                 $pid = pcntl_fork();
-                if ($pid == -1) {
-                    die('could not fork');
-            } else if ($pid) {
-                /*PARENT*/
-            } else {
-                /*CHILD*/
-                while(true){
-                    $assets = json_decode(\file_get_contents(Server::$webRoot."/assets.json"),true);
-                    $minifier = new Minifier(Server::$webRoot,$assets);
-                    $minifier->minify();
-                    \usleep(Server::$minifier["sleep"]*1000);
+                    if ($pid == -1) {
+                        die('could not fork');
+                } else if ($pid) {
+                    //PARENT
+                } else {
+                    //CHILD
+                    while(true){
+                        $assets = json_decode(\file_get_contents(Server::$webRoot."/assets.json"),true);
+                        $minifier = new Minifier(Server::$webRoot,$assets);
+                        $minifier->minify();
+                        \usleep(Server::$minifier["sleep"]*1000);
+                    }
                 }
-            }
-            }catch(Exception $e){
+            }catch(\Exception $e){
                 die("Something went wrong while forking...");
             }
-            
+            */
 
             $context = stream_context_create();
             //check if SSL certificate file is specified
@@ -79,12 +81,14 @@ class CatPaw extends Server{
             //check if developer allows ramdisk for session storage
             if(Server::$ramSession["allow"]){
                 //if ramdisk is allowed, mount a new one
-                Session::mount();
+                
+                //Session::mount();
+                
                 //WARNING: ramdisk will remain mounted untill the next session is started
                 //which means the ramdisk could be alive after the server shuts down.
                 //you can run ./sessionMount.php to umount the current session
             }else{
-                Session::init();
+                //Session::init();
             }
 
             $this->start();
@@ -112,8 +116,11 @@ class CatPaw extends Server{
                 it's critical the original array doesn't get intercepted and changedù
             */
             $copy = $this->clients;
+            $write = NULL;
+            $except = NULL;
+            $tv_sec = 0;
             //check if something interesting is going on with clients array ($copy)
-            if (@stream_select($copy, $write = NULL, $except = NULL, 0, self::$sleep) < 1){
+            if (@stream_select($copy, $write, $except, $tv_sec, self::$sleep) < 1){
                 /*
                     stream_select returns the number of connections acquired,
                     so skip if it returns < 1
@@ -131,13 +138,54 @@ class CatPaw extends Server{
                 unset($copy[$key]);
             }
             //watch and serve clients from the copied array
-            $this->watchClients($copy);
+            //$this->watchClients($copy);
+            try{
+                $this->watchClientsNonBlocking($copy);
+            }catch(\Exception $e){
+                echo $e->getTraceAsString()."\n";
+            }
         }
         //close socket when server stops listening
         fclose($this->socket);
         echo "\nServer stopped.\n";
     }
     
+    private function watchClientsNonBlocking(array &$copy):void{
+        foreach($copy as &$client){
+            //get the array key of the client
+            $key = array_search($client, $copy);
+            //check for certificate
+            if(Server::$certificateName !== ""){
+                //block the connection until SSL is done.
+                stream_set_blocking($client, true);
+                //enable socket crypto method
+                @stream_socket_enable_crypto($client, true, STREAM_CRYPTO_METHOD_SSLv3_SERVER);
+            }
+            
+            $listener = new HttpEventListener($client, $this->clients);
+            $listener->run();
+                
+            //check if certificate is specified, assume the socket has been blocked and then unblock it
+            if(Server::$certificateName !== "")
+                stream_set_blocking($client, false);
+            //exit;
+
+            unset($copy[$key]);
+            unset($this->clients[$key]);
+        }
+        //read websockets
+        while(WebSocketManager::$connections != null && !WebSocketManager::$connections->isEmpty()){
+            $e = WebSocketManager::$connections->readNode(1);
+            $e->push();
+            $e->read();
+            if(WebSocketManager::$connections->isLast($e)){
+                echo "breaking\n";
+                break;
+            }
+        }
+        
+    }
+
     private function watchClients(array &$copy):void{
         foreach($copy as &$client){
             //get the array key of the client

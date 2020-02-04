@@ -28,7 +28,7 @@ abstract class Http{
      * The response ranges will be set as specified by the request header fields 
      * or from 0 to the end of file if ranges are not found.
      */
-    public static function getFile(HttpHeader &$clientHeader, string ...$filename):HttpResponse{
+    public static function getFile(HttpHeader $clientHeader, string ...$filename):HttpResponse{
         $resultHeader = new HttpHeader();
         $result = "";
         $filenameLength = count($filename);
@@ -54,7 +54,7 @@ abstract class Http{
             $rangesLength = count($ranges);
             $rangeStart = array_fill(0, $rangesLength, null);
             $rangeEnd = array_fill(0, $rangesLength, null);
-            $lastIndex;
+            $lastIndex = null;
             for($i = 0; $i < $rangesLength; $i++){
                 $lastIndex = strlen($ranges[$i])-1;
                 $tmp = preg_split("/-/",$ranges[$i]);
@@ -69,8 +69,8 @@ abstract class Http{
                     $rangeEnd[$i] = intval($tmp[1]);
                 }
             }
-            $start;
-            $end;
+            $start = null;
+            $end = null;
             $rangeStartLength = count($rangeStart);
             if($rangeStartLength > 1){
                 $resultHeader->setStatus(Status::PARTIAL_CONTENT);

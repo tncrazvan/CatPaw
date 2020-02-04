@@ -4,10 +4,13 @@ namespace com\github\tncrazvan\CatPaw\WebSocket;
 
 use com\github\tncrazvan\CatPaw\Tools\Server;
 use com\github\tncrazvan\CatPaw\Http\HttpHeader;
+use com\github\tncrazvan\CatPaw\Tools\LinkedList;
 use com\github\tncrazvan\CatPaw\Http\EventManager;
+use com\github\tncrazvan\CatPaw\WebSocket\WebSocketCommit;
 
 abstract class WebSocketManager extends EventManager{
-    protected $subscriptions = [],
+    protected $controller,$classname;
+    public $subscriptions = [],
             $client,
             $requestId,
             $connected = true,
@@ -18,7 +21,13 @@ abstract class WebSocketManager extends EventManager{
         $this->requestId = spl_object_hash($this).rand();
         $this->content=$content;
     }
-    public function run(){
+
+    public static $connections = null;
+
+    public function run():void{
+        if(self::$connections == null){
+            self::$connections = new LinkedList();
+        }
         $acceptKey = base64_encode(sha1($this->clientHeader->get("Sec-WebSocket-Key").Server::$wsAcceptKey,true));
         $this->serverHeader->set("Status","HTTP/1.1 101 Switching Protocols");
         $this->serverHeader->set("Connection","Upgrade");
@@ -26,18 +35,27 @@ abstract class WebSocketManager extends EventManager{
         $this->serverHeader->set("Sec-WebSocket-Accept",$acceptKey);
         $handshake = $this->serverHeader->toString()."\r\n";
         fwrite($this->client, $handshake, strlen($handshake));
+        self::$connections->insertLast($this);
         $this->onOpen();
-        while($this->connected){
+        $this->read();
+    }
+
+    /**
+     * Attempt to read once from the socket
+     * */
+    public function read():void{
+        if(!$this->connected) return;
+        //while($this->connected){
             $masked = fread($this->client, Server::$wsMtu);
-            if(!isset($masked)) continue;
+            if(!isset($masked)) return;
             $opcode = (ord($masked[0]) & 0x0F);
             if ($masked === FALSE || $opcode === 8) {
                 $this->close();
             } else if($masked !== null && unpack("C", $masked)[1] !== 136){
                 $this->onMessage($this->unmask($masked));
             }
-            usleep(Server::$sleep);
-        }
+            //usleep(Server::$sleep);
+        //}
     }
     
     /*
@@ -113,9 +131,35 @@ abstract class WebSocketManager extends EventManager{
         $this->connected = false;
         fclose($this->client);
         $this->onClose();
-        exit;
+        self::$connections->deleteNode($this);
+        //exit;
     }
     
+    private $commits = null;
+    public function commit($data):void{
+        if($this->commits === null)
+            $this->commits = new LinkedList();
+        $string = $this->mask($data,$length);
+        $this->commits->insertLast(new WebSocketCommit($string,$length));
+    }
+
+    public function push(int $count=-1){
+        if($this->commits === null)
+            $this->commits = new LinkedList();
+        $i = 0;
+        while(!$this->commits->isEmpty() && ($count < 0 || ($count > 0 && $i < $count))){
+            $wsCommit = $this->commits->readNode(1);
+            if($wsCommit === null){
+                $i++;
+                continue;
+            }
+            if(!@fwrite($this->client, $wsCommit->getData(), $wsCommit->getLength())){
+                $this->close();
+            }
+            $i++;
+        }
+    }
+
     public function send($data):void{
         $string = $this->mask($data,$length);
         if(!@fwrite($this->client, $string, $length)){

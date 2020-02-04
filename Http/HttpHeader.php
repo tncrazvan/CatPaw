@@ -2,7 +2,6 @@
 namespace com\github\tncrazvan\CatPaw\Http;
 
 use com\github\tncrazvan\CatPaw\Tools\Server;
-use com\github\tncrazvan\CatPaw\Http\HttpHeader;
 
 
 class HttpHeader{

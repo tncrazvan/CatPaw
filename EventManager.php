@@ -9,18 +9,18 @@ use com\github\tncrazvan\CatPaw\Exception\HeaderFieldNotFoundException;
 
 class EventManager extends Server{
     
-    protected 
-            $client,
-            $clientHeader,
-            $location,
-            $alive=true,
-            $userLanguages=[],
-            $queryString=[],
-            $serverHeader,
-            $session = null,
-            $sessionId = null;
+    public 
+        $client,
+        $clientHeader,
+        $location,
+        $alive=true,
+        $userLanguages=[],
+        $queryString=[],
+        $serverHeader,
+        $session = null,
+        $sessionId = null;
     
-    public function __construct(&$client,HttpHeader $clientHeader) {
+    public function __construct($client,HttpHeader $clientHeader) {
         $this->client=$client;
         $this->serverHeader = new HttpHeader();
         $this->clientHeader = $clientHeader;
@@ -64,7 +64,7 @@ class EventManager extends Server{
         for($i=0;$i<=$classId;$i++){
             $classname .="\\".$location[$i];
         }
-        return $classname;
+        return trim($classname);
     }
     
     protected static function resolveMethodArgs(int $offset, array &$location):array{
@@ -102,9 +102,12 @@ class EventManager extends Server{
      * @return void This method WILL NOT invoke the "onClose" method.
      */
     public function close():void{
-        @socket_set_option($this->client, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));
-        @socket_close($this->client);
-        if($this->session !== null) HttpSessionManager::saveSession (HttpSessionManager::getSession($this->sessionId));
+        $type = get_resource_type($this->client);
+        fclose($this->client);
+        //@socket_set_option($this->client, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));
+        //@socket_close($this->client);
+        if($this->session !== null) 
+            HttpSessionManager::saveSession(HttpSessionManager::getSession($this->sessionId));
     }
     
 
@@ -179,11 +182,11 @@ class EventManager extends Server{
      * Get request header.
      * @return \com\github\tncrazvan\CatPaw\Http\HttpHeader header of the client request.
      */
-    public function &getClientHeader():HttpHeader{
+    public function getClientHeader():HttpHeader{
         return $this->clientHeader;
     }
 
-    public function &getClientHeaderField(string $key){
+    public function getClientHeaderField(string $key){
         return $this->clientHeader->get($key);
     }
     
@@ -191,7 +194,7 @@ class EventManager extends Server{
      * Get request method.
      * @return string method of the client request.
      */
-    public function &getClientMethod(){
+    public function getClientMethod(){
         return $this->getClientHeaderField("Method");
     }
     
@@ -202,7 +205,7 @@ class EventManager extends Server{
      * Get the default user language from the request header.
      * @return &string
      */
-    public function &getUserDefaultLanguage():string{
+    public function getUserDefaultLanguage():string{
         return $this->userLanguages["DEFAULT-LANGUAGE"];
     }
     
@@ -210,7 +213,7 @@ class EventManager extends Server{
      * Get the user agent of the client.
      * @return &string
      */
-    public function &getUserAgent():string{
+    public function getUserAgent():string{
         return $this->getClientHeader()->get("User-Agent");
     }
     
@@ -242,7 +245,8 @@ class EventManager extends Server{
      */
     public function issetSession():bool{
         if($this->session === null) return false;
-        return HttpSessionManager::issetSession($e);
+        $sessionID = null;
+        return HttpSessionManager::issetSession($this,$sessionID);
     }
     
     /**
