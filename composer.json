@@ -11,9 +11,15 @@
 	],
 	"minimum-stability": "dev",
 	"require": {
-		"php":">=7.2.6"
+		"php":">=7.2.6",
+		"tncrazvan/asciitable": "dev-master"
 	},
 	"config": {
 		"preferred-install": "source"
+	},
+	"autoload": {
+		"psr-4": {
+			"":["src","test","vendor"]
+		}
 	}
 }

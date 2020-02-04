@@ -1,0 +1,56 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "72ff54b22a50e943a16ff01a2a154241",
+    "packages": [
+        {
+            "name": "tncrazvan/asciitable",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/tncrazvan/PhpAsciiTable.git",
+                "reference": "3ef7c4ccc250d64dc28534bb218a2e01cec86a1b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/tncrazvan/PhpAsciiTable/zipball/3ef7c4ccc250d64dc28534bb218a2e01cec86a1b",
+                "reference": "3ef7c4ccc250d64dc28534bb218a2e01cec86a1b",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.3"
+            },
+            "require-dev": {
+                "php": "^7.3"
+            },
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Razvan Tanase",
+                    "email": "tangent.jotey@gmail.com"
+                }
+            ],
+            "description": "Php cli ascii table",
+            "time": "2019-08-22T15:59:47+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "dev",
+    "stability-flags": {
+        "tncrazvan/asciitable": 20
+    },
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": ">=7.2.6"
+    },
+    "platform-dev": []
+}
