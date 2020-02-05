@@ -1,6 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw;
 
+use Closure;
 use com\github\tncrazvan\catpaw\tools\Server;
 use com\github\tncrazvan\catpaw\tools\Session;
 use com\github\tncrazvan\catpaw\tools\Strings;
@@ -11,7 +12,8 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketManager;
 class CatPaw extends Server{
     private $socket,
             $binding,
-            $listening;
+            $listening,
+            $minifyOperation=null;
     
     /**
      * @param &$config This is the name of the config json file, for example "http.json".
@@ -40,7 +42,7 @@ class CatPaw extends Server{
                 stream_context_set_option($context, 'ssl', 'verify_peer', false);
             }
             //let the developer intercept the stream context
-            if($intercept !== null) $intercept($context);
+            if($intercept !== null) $intercept($context,$this->minifyOperation);
             // Create the server socket
             $this->socket = stream_socket_server(
                 $protocol.'://'.Server::$bindAddress.':'.Server::$port,
@@ -65,19 +67,24 @@ class CatPaw extends Server{
             }else{
                 Session::init();
             }
-
-            $this->start();
         }else{
             throw new \Exception ("\nSettings json file doesn't exist\n");
         }
     }
     
+    public function whileListening(Closure $action){
+        $this->whileListeningWorking = false;
+        $this->whileListeningOperation = $action;
+        $this->lastWhileWorkingOperationTime = microtime(true)*1000;
+    }
+    private $lastMinifyTime = 0;
+    private $lastWhileWorkingOperationTime = false;
     private $clients = [];
     /**
      * Start listening for requests.
      * @return void
      */
-    private function start():void{
+    public function start():void{
         //if the server is not supposed to listen for requests, kill the server.
         if (!$this->listening) return;
         //push the server socket (the one listening) to the clients array
@@ -85,6 +92,12 @@ class CatPaw extends Server{
         echo "\nServer started.\n";
         //as long as the server is supposed to listen...
         while($this->listening){
+            if($this->whileListeningOperation !== null && (microtime(true)*1000) - $this->lastMinifyTime >= Server::$minifier["sleep"] && !$this->lastWhileWorkingOperationTime) {
+                $this->lastWhileWorkingOperationTime = true;
+                ($this->whileListeningOperation)();
+                $this->lastMinifyTime = microtime(true)*1000;
+                $this->lastWhileWorkingOperationTime = false;
+            }
             /**
              * Listen for web sockets.
              * Read incoming messages and push pending commits.
