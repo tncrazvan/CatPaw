@@ -224,11 +224,11 @@ abstract class Server extends Http{
             $charset="UTF-8",
             $bindAddress="127.0.0.1",
             
-            $httpControllerPackageNameOriginal="com\\github\\tncrazvan\\catpaw\\Controller\\http",
-            $httpControllerPackageName="com\\github\\tncrazvan\\catpaw\\Controller\\http",
+            $httpControllerPackageNameOriginal="com\\github\\tncrazvan\\catpaw\\controller\\http",
+            $httpControllerPackageName="com\\github\\tncrazvan\\catpaw\\controller\\http",
             
-            $wsControllerPackageNameOriginal="com\\github\\tncrazvan\\catpaw\\Controller\\WebSocket",
-            $wsControllerPackageName="com\\github\\tncrazvan\\catpaw\\Controller\\WebSocket",
+            $wsControllerPackageNameOriginal="com\\github\\tncrazvan\\catpaw\\controller\\WebSocket",
+            $wsControllerPackageName="com\\github\\tncrazvan\\catpaw\\controller\\WebSocket",
             
             $httpNotFoundNameOriginal="ControllerNotFound",
             $httpNotFoundName="ControllerNotFound",
