@@ -5,7 +5,7 @@ use com\github\tncrazvan\catpaw\tools\Mime;
 use com\github\tncrazvan\catpaw\tools\Server;
 use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\tools\Strings;
-use com\github\tncrazvan\catpaw\http\HhttpHeader;
+use com\github\tncrazvan\catpaw\http\HttpHeader;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
 
 abstract class Http{
