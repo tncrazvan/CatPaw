@@ -9,7 +9,7 @@ use com\github\tncrazvan\catpaw\http\HttpController;
 
 class ControllerNotFound extends HttpController{
     
-    public function &main(HttpEvent &$e, array &$path, string &$content) {
+    public function main() {
         return new HttpResponse([
             "Status"=>Status::NOT_FOUND
         ]);

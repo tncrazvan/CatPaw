@@ -11,13 +11,7 @@ use com\github\tncrazvan\catpaw\http\EventManager;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
 
 abstract class HttpEventManager extends EventManager{
-    protected 
-            $defaultHeader=true,
-            $content;
-    public function __construct($client,HttpHeader &$clientHeader,string &$content) {
-        parent::__construct($client,$clientHeader);
-        $this->content=$content;
-    }
+    protected $defaultHeader=true;
     
     /**
      * Checks if event is alive.
@@ -26,48 +20,12 @@ abstract class HttpEventManager extends EventManager{
     public function isAlive():bool{
         return $this->alive;
     }
-    
-    /**
-     * Execute the current event.
-     * 
-     * @return void This method is invoked once by the server to trigger all the required components 
-     * in order to reply to the http request
-     * such as the appropriate http header and requested file or controller.
-     * 
-     * Be aware that missuse of this method could lead to request loops.
-     */
-    public function run(){
-        $this->findUserLanguages();
-        $filename = Server::$webRoot."/".$this->location;
-        if($this->location === "favicon.ico"){
-            if(!\file_exists($filename)){
-                $this->send(new HttpResponse([
-                    "Status"=>Status::NOT_FOUND
-                ]));
-            }else{
-                $this->send(Http::getFile($this->clientHeader,$filename));
-            }
-        }else{
-            if(file_exists($filename)){
-                if(!is_dir($filename)){
-                    $this->send(Http::getFile($this->clientHeader,$filename));
-                }else{
-                    $this->send($this->onControllerRequest($this->location));
-                }
-            }else{
-                $this->send($this->onControllerRequest($this->location));
-            }
-        }
-        
-        $this->close();
-    }
-
     /**
      * Send data to the client.
      * @param string $data data to be sent to the client.
      * @return int number of bytes sent to the client. Returns -1 if an error occured.
      */
-    protected function send($data):int{
+    public function send($data):int{
         if(!is_a($data,HttpResponse::class)){
             return $this->send(new HttpResponse($this->serverHeader,$data));
         }
@@ -93,6 +51,4 @@ abstract class HttpEventManager extends EventManager{
             return -1;
         }
     }
-
-    protected abstract function &onControllerRequest(string &$location);
 }

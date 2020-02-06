@@ -9,17 +9,15 @@ use com\github\tncrazvan\catpaw\http\EventManager;
 use com\github\tncrazvan\catpaw\websocket\WebSocketCommit;
 
 abstract class WebSocketManager extends EventManager{
-    protected $controller,$classname;
+
+    protected $classname;
     public $subscriptions = [],
             $client,
             $requestId,
             $connected = true,
             $content;
-    public function __construct(&$client,HttpHeader &$clientHeader,string &$content) {
-        parent::__construct($client,$clientHeader);
-        $this->client=$client;
+    public function __construct() {
         $this->requestId = spl_object_hash($this).rand();
-        $this->content=$content;
     }
 
     public static $connections = null;
@@ -36,7 +34,7 @@ abstract class WebSocketManager extends EventManager{
         $handshake = $this->serverHeader->toString()."\r\n";
         fwrite($this->client, $handshake, strlen($handshake));
         self::$connections->insertLast($this);
-        $this->onOpen();
+        $this->onOpenCaller();
         $this->read();
     }
 
@@ -52,7 +50,7 @@ abstract class WebSocketManager extends EventManager{
             if ($masked === FALSE || $opcode === 8) {
                 $this->close();
             } else if($masked !== null && unpack("C", $masked)[1] !== 136){
-                $this->onMessage($this->unmask($masked));
+                $this->onMessageCaller($this->unmask($masked));
             }
             //usleep(Server::$sleep);
         //}
@@ -130,7 +128,7 @@ abstract class WebSocketManager extends EventManager{
     public function close():void{
         $this->connected = false;
         fclose($this->client);
-        $this->onClose();
+        $this->onCloseCaller();
         self::$connections->deleteNode($this);
         //exit;
     }
@@ -167,7 +165,10 @@ abstract class WebSocketManager extends EventManager{
         }
     }
     
-    protected abstract function onOpen():void;
-    protected abstract function onMessage($data):void;
-    protected abstract function onClose():void;
+
+    const GROUP_MANAGER = null;
+    protected abstract function onOpenCaller():void;
+    protected abstract function onMessageCaller(string $data):void;
+    protected abstract function onCloseCaller():void;
+
 }

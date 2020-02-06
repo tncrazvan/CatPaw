@@ -21,13 +21,6 @@ abstract class Server extends Http{
         if(isset($settings["webRoot"]))
         Server::$webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".$settings["webRoot"]."/");
 
-        if(isset($settings["minifier"])){
-            if(isset($settings["minifier"]["location"]))
-            Server::$minifier["location"] = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".$settings["minifier"]["location"]);
-            if(isset($settings["minifier"]["sleep"]))
-            Server::$minifier["sleep"] = $settings["minifier"]["sleep"];
-        }
-
         if(isset($settings["port"]))
         Server::$port = $settings["port"];
         if(isset($settings["timeout"]))
@@ -97,9 +90,6 @@ abstract class Server extends Http{
                 "webRoot\n\n"
                 ."This is the public directory your clients will be able to access."
                     =>Server::$webRoot,
-                "minifier\n\n"
-                ."This is the application that will minify your assets."
-                    =>Server::$minifier,
                 "charset\n\n"
                 ."This is the charset your server will be using to decode/encode data."
                     =>Server::$charset,
@@ -217,10 +207,6 @@ abstract class Server extends Http{
             $port=80,
             $timeout=3000,
             $webRoot="/www/",
-            $minifier=[
-                "location"=>"",
-                "sleep"=>1000
-            ],
             $charset="UTF-8",
             $bindAddress="127.0.0.1",
             

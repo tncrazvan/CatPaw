@@ -5,64 +5,56 @@ use com\github\tncrazvan\catpaw\tools\Server;
 use com\github\tncrazvan\catpaw\http\HttpHeader;
 use com\github\tncrazvan\catpaw\websocket\WebSocketManager;
 
-class WebSocketEvent extends WebSocketManager{
-    const args=[];
-    public function __construct(&$client, HttpHeader &$clientHeader, string &$content) {
-        parent::__construct($client, $clientHeader, $content);
-        $this->serveController(preg_split("/\\//m", $this->location));
-    }
-    
-    private function serveController(array $location):void{
-        $this->args = [];
+abstract class WebSocketEvent extends WebSocketManager{
+    public static function serveController(array &$location,&$controller,$client,HttpHeader $clientHeader,string &$content):void{
         $locationLength = count($location);
         if($locationLength === 0 || $locationLength === 1 && $location[0] === ""){
             $location = [Server::$wsNotFoundName];
         }
         $classId = self::getClassNameIndex(Server::$wsControllerPackageName, $location);
         if($classId >= 0){
-            $this->classname = self::resolveClassName($classId,Server::$wsControllerPackageName,$location);
-            if(substr($this->classname,0,1) !=="\\")
-                $this->classname = "\\".$this->classname;
-            $classname = $this->classname;
+            $classname = self::resolveClassName($classId,Server::$wsControllerPackageName,$location);
+            if(substr($classname,0,1) !=="\\")
+            $classname = "\\".$classname;
             $controller = new $classname;
-            $this->controller = $controller;
-            $this->args = self::resolveMethodArgs($classId+2, $location);
+            $controller->args = self::resolveMethodArgs($classId+2, $location);
         }else{
-            $this->classname = Server::$wsControllerPackageName."\\".Server::$wsNotFoundName;
-            if(!class_exists($this->classname)){
-                $this->classname = Server::$wsControllerPackageNameOriginal."\\".Server::$wsNotFoundNameOriginal;
+            $classname = Server::$wsControllerPackageName."\\".Server::$wsNotFoundName;
+            if(!class_exists($classname)){
+                $classname = Server::$wsControllerPackageNameOriginal."\\".Server::$wsNotFoundNameOriginal;
             }
-            $this->controller = new $this->classname();
+            $controller = new $classname();
         }
+        $controller->classname = $classname;
     }
-    
-    protected function onOpen(): void {
+
+    protected function onOpenCaller(): void {
         if(!isset(Server::$wsEvents[$this->classname])){
             Server::$wsEvents[$this->classname] = [$this->requestId => $this];
         }else{
             Server::$wsEvents[$this->classname][$this->requestId] = $this;
         }
         try{
-            $this->controller->onOpen($this,$this->args);
+            $this->onOpen();
         } catch (\Exception $ex) {
             echo "\n$ex\n";
             $this->close();
         }
     }
 
-    protected function onMessage($data): void {
+    protected function onMessageCaller($data): void {
         try{
-            $this->controller->onMessage($this,$data,$this->args);
+            $this->onMessage($data);
         } catch (\Exception $ex) {
             echo "\n$ex\n";
             $this->close();
         }
     }
 
-    protected function onClose(): void {
+    protected function onCloseCaller(): void {
         try{
             unset(Server::$wsEvents[$this->classname][$this->requestId]);
-            $this->controller->onClose($this,$this->args);
+            $this->onClose();
         } catch (\Exception $ex) {
             socket_close($this->client);
             exit;

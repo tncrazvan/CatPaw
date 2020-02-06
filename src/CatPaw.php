@@ -84,19 +84,23 @@ class CatPaw extends Server{
      * Start listening for requests.
      * @return void
      */
-    public function start():void{
+    public function listen(Closure $action=null,int $actionTimeout=1000):void{
         //if the server is not supposed to listen for requests, kill the server.
         if (!$this->listening) return;
+        
+        $lastTime = 0;
+        $actionWorking = false;
+
         //push the server socket (the one listening) to the clients array
         array_push($this->clients, $this->socket);
         echo "\nServer started.\n";
         //as long as the server is supposed to listen...
         while($this->listening){
-            if($this->whileListeningOperation !== null && (microtime(true)*1000) - $this->lastMinifyTime >= Server::$minifier["sleep"] && !$this->lastWhileWorkingOperationTime) {
-                $this->lastWhileWorkingOperationTime = true;
-                ($this->whileListeningOperation)();
-                $this->lastMinifyTime = microtime(true)*1000;
-                $this->lastWhileWorkingOperationTime = false;
+            if($action !== null && (microtime(true)*1000) - $lastTime >= $actionTimeout && !$actionWorking) {
+                $actionWorking = true;
+                $action();
+                $lastTime = microtime(true)*1000;
+                $actionWorking = false;
             }
             /**
              * Listen for web sockets.

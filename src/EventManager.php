@@ -18,9 +18,10 @@ class EventManager extends Server{
         $queryString=[],
         $serverHeader,
         $session = null,
-        $sessionId = null;
+        $sessionId = null,
+        $content;
     
-    public function __construct($client,HttpHeader $clientHeader) {
+    public function install($client,HttpHeader $clientHeader, string &$content){
         $this->client=$client;
         $this->serverHeader = new HttpHeader();
         $this->clientHeader = $clientHeader;
@@ -42,9 +43,10 @@ class EventManager extends Server{
                 }
             }
         }
+        $this->content = $content;
+        
+        $this->findUserLanguages();
     }
-    
-    public function run(){}
 
 
     protected static function getClassNameIndex(string $root, array &$location):int{

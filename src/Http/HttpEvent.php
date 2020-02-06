@@ -1,6 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\http;
 
+use Closure;
 use com\github\tncrazvan\catpaw\tools\Server;
 use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\http\HttpHeader;
@@ -10,13 +11,9 @@ use com\github\tncrazvan\catpaw\http\HttpEventManager;
 
 
 class HttpEvent extends HttpEventManager{
-    public function __construct($client, HttpHeader &$clientHeader, string &$content) {
-        parent::__construct($client, $clientHeader, $content);
-    }
-    
-    private function &serveController(array $location){
-        $result = null;
-        $args = [];
+    public $args = [];
+
+    public static function serveController(array &$location,&$controller,&$serve,$client,HttpHeader $clientHeader, string &$content){
         $locationLength = count($location);
         if($locationLength === 0 || $locationLength === 1 && $location[0] === ""){
             $location = [Server::$httpDefaultName];
@@ -26,47 +23,49 @@ class HttpEvent extends HttpEventManager{
         if($classId>=0){
             $classname = self::resolveClassName($classId,Server::$httpControllerPackageName,$location);
             $controller = new $classname();
+            $controller->install($client,$clientHeader,$content);
             $methodname = $locationLength-1>$classId?$location[$classId+1]:"main";
-            $args = self::resolveMethodArgs($classId+2, $location);
+            $controller->args = self::resolveMethodArgs($classId+2, $location);
             if(method_exists($controller, $methodname)){
-                $result = @$controller->{$methodname}($this,$args, $this->content);
+                $serve = function() use(&$controller,&$methodname){
+                    return @$controller->{$methodname}();
+                };
             }else if(method_exists($controller, "main")){
-                $args = self::resolveMethodArgs($classId+1, $location);
-                $result = @$controller->main($this,$args, $this->content);
+                $controller->args = self::resolveMethodArgs($classId+1, $location);
+                $serve = function() use(&$controller){
+                    return @$controller->main();
+                };
             }else{
-                $result = new HttpResponse([
-                    "Status"=>Status::NOT_FOUND
-                ],null);
+                $serve = function(){
+                    return new HttpResponse([
+                        "Status"=>Status::NOT_FOUND
+                    ],null);
+                };
             }
-            if(method_exists($controller, "onClose"))
-                $controller->onClose();
         }else{
             if($location[0] === Server::$httpDefaultName){
                 $classname = Server::$httpControllerPackageNameOriginal."\\".Server::$httpDefaultNameOriginal;
                 $controller = new $classname();
+                $controller->install($client,$clientHeader,$content);
             }else{
                 $classname = Server::$httpControllerPackageName."\\".Server::$httpNotFoundName;
                 if(!class_exists($classname)){
                     $classname = Server::$httpControllerPackageNameOriginal."\\".Server::$httpNotFoundNameOriginal;
                 }
                 $controller = new $classname();
+                $controller->install($client,$clientHeader,$content);
             }
             if(method_exists($controller, "main")){
-                $result = @$controller->main($this,$args,$this->content);
+                $serve = function() use(&$controller){
+                    return @$controller->main();
+                };
             }else{
-                $result = new HttpResponse([
-                    "Status"=>Status::NOT_FOUND
-                ],null);
+                $serve = function(){
+                    return new HttpResponse([
+                        "Status"=>Status::NOT_FOUND
+                    ],null);
+                };
             }
-            if(method_exists($controller, "onClose"))
-                $controller->onClose();
         }
-        return $result;
     }
-    
-    protected function &onControllerRequest(string &$url){
-        $result = &$this->serveController(preg_split("/\\//m",$url));
-        return $result;
-    }
-
 }

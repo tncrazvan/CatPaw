@@ -9,22 +9,22 @@ use com\github\tncrazvan\catpaw\http\HttpController;
 
 class Session extends HttpController{
     
-    public function &main(HttpEvent &$e, array &$path, string &$content) {
-        switch($e->getClientMethod()){
+    public function main() {
+        switch($this->getClientMethod()){
             case "DELETE":
-                return $this->delete($e);
+                return $this->delete();
             break;
             case "PUT":
-                return $this->put($e);
+                return $this->put();
             break;
             case "POST":
-                return $this->post($e);
+                return $this->post();
             break;
             case "GET":
-                return $this->get($e);
+                return $this->get();
             break;
             default:
-                $e->setStatus(Status::BAD_REQUEST);
+                $this->setStatus(Status::BAD_REQUEST);
             break;
         }
     }
@@ -36,8 +36,8 @@ class Session extends HttpController{
      * @return void
      */
     protected function delete(HttpEvent &$e):void{
-        $_SESSION = &$e->startSession();
-        $queries = $e->getUrlQueries();
+        $_SESSION = &$this->startSession();
+        $queries = $this->getUrlQueries();
         $keys = array_keys($queries);
         if(\count($keys) === 0) {
             foreach(array_keys($_SESSION) as &$key){
@@ -59,8 +59,8 @@ class Session extends HttpController{
      * @return void
      */
     protected function put(HttpEvent &$e):void{
-        $_SESSION = &$e->startSession();
-        foreach($e->getUrlQueries() as $key => &$value){
+        $_SESSION = &$this->startSession();
+        foreach($this->getUrlQueries() as $key => &$value){
             if(!isset($_SESSION[$key])) continue;
             $_SESSION[$key] = $value;
         }
@@ -73,8 +73,8 @@ class Session extends HttpController{
      * @return void
      */
     protected function post(HttpEvent &$e):void{
-        $_SESSION = &$e->startSession();
-        foreach($e->getUrlQueries() as $key => &$value){
+        $_SESSION = &$this->startSession();
+        foreach($this->getUrlQueries() as $key => &$value){
             if(isset($_SESSION[$key])) continue;
             $_SESSION[$key] = $value;
         }
@@ -87,9 +87,9 @@ class Session extends HttpController{
      * @return string the selected session field in a json format.
      */
     protected function get(HttpEvent &$e):string{
-        $_SESSION = &$e->startSession();
+        $_SESSION = &$this->startSession();
         $keys = array_keys($queries);
-        $queries = $e->getUrlQueries();
+        $queries = $this->getUrlQueries();
         $len_queries = count($keys);
         if($len_queries > 0){
             $result = [];

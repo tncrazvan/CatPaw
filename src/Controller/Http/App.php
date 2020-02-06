@@ -11,10 +11,10 @@ use com\github\tncrazvan\catpaw\exception\HeaderFieldNotFoundException;
 
 class App extends HttpController{
     
-    public function main(HttpEvent &$e, array &$path, string &$content) {
-        switch($e->getClientMethod()){
+    public function main() {
+        switch($this->getClientMethod()){
             case "GET":
-                return Http::getFile($e->getClientHeader(),Server::$webRoot."/".Server::$entryPoint);
+                return Http::getFile($this->getClientHeader(),Server::$webRoot."/".Server::$entryPoint);
             break;
             default:
                 return new HttpResponse([
