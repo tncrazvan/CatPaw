@@ -15,10 +15,10 @@ abstract class Session{
         //if it does there's a chance it's mounted as a ram disk
         if(file_exists(Server::$sessionDir)){
             //try to umount the ramdisk
-            echo shell_exec("umount ".Server::$sessionDir);
+            echo exec("umount ".Server::$sessionDir);
         }
         //remove the session directory
-        echo shell_exec("rm ".Server::$sessionDir." -fr");
+        echo exec("rm ".Server::$sessionDir." -fr");
     }
     
     /**
@@ -32,9 +32,9 @@ abstract class Session{
         //try to umount session
         self::umount();
         //make the session directory again
-        echo shell_exec("mkdir ".Server::$sessionDir);
+        echo exec("mkdir ".Server::$sessionDir);
         //mount the directory as a new ramdisk
-        echo shell_exec("mount -t tmpfs tmpfs ".Server::$sessionDir." -o size=".Server::$ramSession["size"]);
+        echo exec("mount -t tmpfs tmpfs ".Server::$sessionDir." -o size=".Server::$ramSession["size"]);
         //some feedback
         echo "\nRam disk mounted.\n";
     }
@@ -50,6 +50,6 @@ abstract class Session{
         self::umount();
         
         //make the session directory again
-        echo shell_exec("mkdir ".Server::$sessionDir);
+        echo exec("mkdir ".Server::$sessionDir);
     }
 }

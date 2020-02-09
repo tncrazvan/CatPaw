@@ -47,6 +47,9 @@ abstract class Server extends Http{
         Server::$entryPoint = $settings["entryPoint"];
         if(isset($settings["sessionName"]))
         Server::$sessionName = $settings["sessionName"];
+        if(isset($settings["editor"]))
+        Server::$editor = $settings["editor"];
+        
         if(isset($settings["controller"])){
             if(isset($settings["controller"]["http"]))
             Server::$httpControllerPackageName = $settings["controller"]["http"];
@@ -90,6 +93,10 @@ abstract class Server extends Http{
                 "webRoot\n\n"
                 ."This is the public directory your clients will be able to access."
                     =>Server::$webRoot,
+                "editor\n\n"
+                ."This is the script that launches your chosen code editor.\n"
+                ."This script is used by the controller generator script (./controller) to open your controller in edit more automatically."
+                    =>Server::$editor,
                 "charset\n\n"
                 ."This is the charset your server will be using to decode/encode data."
                     =>Server::$charset,
@@ -190,6 +197,7 @@ abstract class Server extends Http{
             $compress = null,
             $sessionDir = "",
             $sessionName = "/_SESSION",
+            $editor = "",
             $certificateName = "",
             $certificateType = "",
             $certificatePrivateKey = "",
