@@ -2,15 +2,14 @@
 namespace com\github\tncrazvan\catpaw\http;
 
 use com\github\tncrazvan\catpaw\tools\Server;
-use com\github\tncrazvan\catpaw\tools\Strings;
-use com\github\tncrazvan\catpaw\http\HttpHeader;
+use com\github\tncrazvan\catpaw\http\HttpHeaders;
 
 class HttpResponse{
     private $header,$body;
     public function __construct($header=null,$body=null){
         if($body === null) $body = "";
         if(is_array($header)){
-            $this->header = new HttpHeader();
+            $this->header = new HttpHeaders();
             foreach(Server::$header as $key => &$value){
                 if($key === "Status"){
                     $value = "HTTP/1.1 $value";
@@ -24,7 +23,7 @@ class HttpResponse{
                 $this->header->set($key,$value);
             }
         }else if($header === null){
-            $this->header = new HttpHeader();
+            $this->header = new HttpHeaders();
         }else{
             $this->header = $header;
         }
@@ -32,7 +31,7 @@ class HttpResponse{
         $this->body = $body;
     }
 
-    public function &getHeader():HttpHeader{
+    public function &getHeaders():HttpHeaders{
         return $this->header;
     }
 
@@ -44,7 +43,7 @@ class HttpResponse{
         return $this->body;
     }
 
-    public function &toString():string{
+    public function toString():string{
         return $this->header->toString()."\n\n".$this->body;
     }
 }

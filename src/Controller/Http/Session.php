@@ -1,16 +1,14 @@
 <?php
 namespace com\github\tncrazvan\catpaw\controller\http;
 
-use com\github\tncrazvan\catpaw\tools\Http;
 use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpController;
 
-
 class Session extends HttpController{
     
     public function main() {
-        switch($this->getClientMethod()){
+        switch($this->getRequestMethod()){
             case "DELETE":
                 return $this->delete();
             break;

@@ -76,8 +76,8 @@ abstract class Server extends Http{
             if(isset($settings["certificate"]["passphrase"]))
             Server::$certificatePassphrase = $settings["certificate"]["passphrase"];
         }
-        if(isset($settings["header"])){
-            Server::$header = $settings["header"];
+        if(isset($settings["headers"])){
+            Server::$headers = $settings["headers"];
         }
         Server::$sessionDir = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".Server::$sessionName);
         
@@ -162,10 +162,10 @@ abstract class Server extends Http{
                     ."[WARNING]: Don't commit this to github or any public repository!"
                         =>Server::$certificatePassphrase
                 ],
-                "header\n\n"
+                "headers\n\n"
                 ."Extra headers to add to your HttpResponse objects.\n"
                 ."[NOTE]: These can be overwritten at runtime."
-                    =>Server::$header
+                    =>Server::$headers
             ];
             echo Strings::tableFromArray($data,false,function(AsciiTable $table,int $lvl){
                 //echo "LBL: $lvl\n";
@@ -193,7 +193,7 @@ abstract class Server extends Http{
     }
 
     public static
-            $header = [],
+            $headers = [],
             $compress = null,
             $sessionDir = "",
             $sessionName = "/_SESSION",

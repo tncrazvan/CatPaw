@@ -2,30 +2,30 @@
 namespace com\github\tncrazvan\catpaw\websocket;
 
 use com\github\tncrazvan\catpaw\tools\Server;
-use com\github\tncrazvan\catpaw\http\HttpHeader;
+use com\github\tncrazvan\catpaw\http\HttpEventListener;
 use com\github\tncrazvan\catpaw\websocket\WebSocketManager;
 
 abstract class WebSocketEvent extends WebSocketManager{
-    public static function serveController(array &$location,&$controller,$client,HttpHeader $clientHeader,string &$content):void{
-        $locationLength = count($location);
-        if($locationLength === 0 || $locationLength === 1 && $location[0] === ""){
-            $location = [Server::$wsNotFoundName];
-        }
-        $classId = self::getClassNameIndex(Server::$wsControllerPackageName, $location);
+    public static function controller(HttpEventListener &$listener):WebSocketController{
+        if($listener->locationLen === 0 || $listener->locationLen === 1 && $listener->location[0] === "")
+            $listener->location = [Server::$wsNotFoundName];
+        
+        $classId = self::getClassNameIndex(Server::$$wsControllerPackageName, $listener->location, $listener->locationLen);
         if($classId >= 0){
-            $classname = self::resolveClassName($classId,Server::$wsControllerPackageName,$location);
+            $classname = self::resolveClassName(Server::$$wsControllerPackageName, $classId, $listener->location);
             if(substr($classname,0,1) !=="\\")
-            $classname = "\\".$classname;
+                $classname = "\\".$classname;
             $controller = new $classname;
-            $controller->args = self::resolveMethodArgs($classId+2, $location);
+            $controller->args = self::resolveMethodArgs($classId+2, $location, $listener->locationLen);
         }else{
             $classname = Server::$wsControllerPackageName."\\".Server::$wsNotFoundName;
-            if(!class_exists($classname)){
+            if(!class_exists($classname))
                 $classname = Server::$wsControllerPackageNameOriginal."\\".Server::$wsNotFoundNameOriginal;
-            }
             $controller = new $classname();
         }
         $controller->classname = $classname;
+        $controller->install($listener);
+        return $controller;
     }
 
     protected function onOpenCaller(): void {
@@ -56,7 +56,7 @@ abstract class WebSocketEvent extends WebSocketManager{
             unset(Server::$wsEvents[$this->classname][$this->requestId]);
             $this->onClose();
         } catch (\Exception $ex) {
-            socket_close($this->client);
+            socket_close($this->listener->client);
             exit;
         }
     }

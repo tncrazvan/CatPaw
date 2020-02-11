@@ -2,39 +2,34 @@
 namespace com\github\tncrazvan\catpaw\http;
 
 use com\github\tncrazvan\catpaw\tools\Server;
-use com\github\tncrazvan\catpaw\http\HttpHeader;
+use com\github\tncrazvan\catpaw\http\HttpHeaders;
 use com\github\tncrazvan\catpaw\http\HttpEventManager;
+use com\github\tncrazvan\catpaw\http\HttpEventListener;
 use com\github\tncrazvan\catpaw\http\HttpSessionManager;
-use com\github\tncrazvan\catpaw\exception\HeaderFieldNotFoundException;
+
 
 class EventManager extends Server{
     
     public 
-        $client,
-        $clientHeader,
-        $location,
         $alive=true,
-        $userLanguages=[],
         $queryString=[],
-        $serverHeader,
+        $serverHeaders,
         $session = null,
         $sessionId = null,
-        $content;
+        $listener,
+        $requestId;
     
-    public function install($client,HttpHeader $clientHeader, string &$content){
-        $this->client=$client;
-        $this->serverHeader = new HttpHeader();
-        $this->clientHeader = $clientHeader;
-        $parts = preg_split("/\\?|\\&/m",preg_replace("/^\\//m","",urldecode($clientHeader->get("Resource"))));
-        $tmp=[];
+    public function install(HttpEventListener &$listener){
+        $this->requestId = spl_object_hash($this).rand();
+        $this->listener = $listener;
+        $this->serverHeaders = new HttpHeaders();
+        $queries=[];
         $object=[];
-        $this->location = $parts[0];
-        $partsLength = count($parts);
         
-        if($partsLength > 1){
-            $tmp = preg_split("/\\&/",$parts[1]);
-            foreach ($tmp as &$part){
-                $object = preg_split("/=/m",$part);
+        if($listener->resourceLen > 1){
+            $queries = preg_split("/\\&/",$listener->resource[1]);
+            foreach ($queries as &$query){
+                $object = preg_split("/=/m",$query);
                 $objectLength = count($object);
                 if($objectLength > 1){
                     $this->queryString[trim($object[0])] = $object[1];
@@ -43,16 +38,13 @@ class EventManager extends Server{
                 }
             }
         }
-        $this->content = $content;
-        
-        $this->findUserLanguages();
+        //$this->findUserLanguages();
     }
 
 
-    protected static function getClassNameIndex(string $root, array &$location):int{
+    protected static function getClassNameIndex(string &$root, array &$location,int $len):int{
         $classname = $root;
-        $locationLength = count($location);
-        for($i=0;$i<$locationLength;$i++){
+        for($i=0;$i<$len;$i++){
             $classname .="\\".$location[$i];
             if(class_exists($classname,true)){
                 return $i;
@@ -61,7 +53,7 @@ class EventManager extends Server{
         return -1;
     }
     
-    protected static function resolveClassName(int $classId, string $root, array &$location):string{
+    protected static function resolveClassName(string &$root, int $classId, array &$location):string{
         $classname = $root;
         for($i=0;$i<=$classId;$i++){
             $classname .="\\".$location[$i];
@@ -69,21 +61,33 @@ class EventManager extends Server{
         return trim($classname);
     }
     
-    protected static function resolveMethodArgs(int $offset, array &$location):array{
+    protected static function resolveMethodArgs(int $offset, array &$location, int $len):array{
         $args = [];
-        $locationLength = count($location);
-        if($locationLength-1>$offset-1){
+        if($len-1>$offset-1){
             $args = array_slice($location, $offset);
         }
         return $args;
     }
     
     /**
+     * Closes the client connection.
+     * @return void This method WILL NOT invoke the "onClose" method.
+     */
+     public function close():void{
+        $this->alive = false;
+        fclose($this->listener->client);
+        //@socket_set_option($this->clistener->lient, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));
+        //@socket_close($this->listener->client);
+        if($this->session !== null) 
+            HttpSessionManager::saveSession(HttpSessionManager::getSession($this->sessionId));
+    }
+
+    /**
      * Get client ip address
      * @return string the ip address of the client
      */
     public function &getAddress():string{
-        $host = stream_socket_get_name($this->client,true);
+        $host = stream_socket_get_name($this->listener->client,true);
         $hostname = preg_replace("/:[0-9]*/","",$host);
         return $hostname;
     }
@@ -93,33 +97,19 @@ class EventManager extends Server{
      * @return string the port number of the client
      */
     public function &getPort():int{
-        $host = stream_socket_get_name($this->client,true);
+        $host = stream_socket_get_name($this->listener->client,true);
         $port = preg_replace("/.*:/","",$host);
         return intval($port);
     }
     
-    
-    /**
-     * Closes the client connection.
-     * @return void This method WILL NOT invoke the "onClose" method.
-     */
-    public function close():void{
-        $type = get_resource_type($this->client);
-        fclose($this->client);
-        //@socket_set_option($this->client, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));
-        //@socket_close($this->client);
-        if($this->session !== null) 
-            HttpSessionManager::saveSession(HttpSessionManager::getSession($this->sessionId));
-    }
-    
 
     /**
      * Set a field to your response header.
      * @param string $key name of the field
      * @param string $content content of the field
      */
-    public function hasHeaderField(string $key):bool{
-        return $this->serverHeader->has($key);
+    public function hasHeadersField(string $key):bool{
+        return $this->serverHeaders->has($key);
     }
 
     /**
@@ -127,16 +117,16 @@ class EventManager extends Server{
      * @param string $key name of the field
      * @param string $content content of the field
      */
-    public function setHeaderField(string $key, string $content):void{
-        $this->serverHeader->set($key,$content);
+    public function setHeadersField(string $key, string $content):void{
+        $this->serverHeaders->set($key,$content);
     }
 
     /**
      * Set the header of the event.
      * @return void
      */
-    public function setHeader(HttpHeader &$header):void{
-        $this->serverHeader = $header;
+    public function setHeaders(HttpHeaders &$header):void{
+        $this->serverHeaders = $header;
     }
         
     /**
@@ -144,7 +134,7 @@ class EventManager extends Server{
      * @param string $status a status code. Multiple status codes can be found in the Cat class, suche as Server::STATUS_SUCCESS.
      */
     public function setStatus(string $status):void{
-        $this->setHeaderField("Status", "HTTP/1.1 $status");
+        $this->setHeadersField("Status", "HTTP/1.1 $status");
     }
     
     /**
@@ -152,15 +142,15 @@ class EventManager extends Server{
      * @param string $type content type string, such as "text/plain", "text/html" ecc...
      */
     public function setContentType(string $type):void{
-        $this->setHeaderField("Content-Type", $type);
+        $this->setHeadersField("Content-Type", $type);
     }
 
     /**
      * Get response header.
-     * @return \com\github\tncrazvan\catpaw\http\httpHeader header of the your response message.
+     * @return \com\github\tncrazvan\catpaw\http\httpHeaders header of the your response message.
      */
-    public function &getHeader():HttpHeader{
-        return $this->serverHeader;
+    public function &getHeaders():HttpHeaders{
+        return $this->serverHeaders;
     }
 
     /**
@@ -168,8 +158,8 @@ class EventManager extends Server{
      * @param string $key name of the header field.
      * @return string value of the header field.
      */
-    public function &getHeaderField(string $key):string{
-        return $this->serverHeader->get($key);
+    public function &getHeadersField(string $key):string{
+        return $this->serverHeaders->get($key);
     }
     
     /**
@@ -177,38 +167,27 @@ class EventManager extends Server{
      * @return \resource This is the socket of the client.
      */
     public function &getClient(){
-        return $this->client;
+        return $this->listener->client;
     }
     
     /**
      * Get request header.
-     * @return \com\github\tncrazvan\catpaw\http\httpHeader header of the client request.
+     * @return \com\github\tncrazvan\catpaw\http\httpHeaders header of the client request.
      */
-    public function getClientHeader():HttpHeader{
-        return $this->clientHeader;
+    public function getRequestHeaders():HttpHeaders{
+        return $this->listener->requestHeaders;
     }
 
-    public function getClientHeaderField(string $key){
-        return $this->clientHeader->get($key);
+    public function getRequestHeadersField(string $key){
+        return $this->listener->requestHeaders->get($key);
     }
     
     /**
      * Get request method.
      * @return string method of the client request.
      */
-    public function getClientMethod(){
-        return $this->getClientHeaderField("Method");
-    }
-    
-    public function &getUserLanguages():array{
-        return $this->userLanguages;
-    }
-    /**
-     * Get the default user language from the request header.
-     * @return &string
-     */
-    public function getUserDefaultLanguage():string{
-        return $this->userLanguages["DEFAULT-LANGUAGE"];
+    public function getRequestMethod(){
+        return $this->getRequestHeadersField("Method");
     }
     
     /**
@@ -216,7 +195,7 @@ class EventManager extends Server{
      * @return &string
      */
     public function getUserAgent():string{
-        return $this->getClientHeader()->get("User-Agent");
+        return $this->getRequestHeaders()->get("User-Agent");
     }
     
     /**
@@ -277,35 +256,13 @@ class EventManager extends Server{
     }
     
     /**
-     * Finds the languages of the client application.
-     * The value is stored in EventManager#userLanguages.
-     */
-    protected function findUserLanguages():void{
-        if($this->clientHeader->get("Accept-Language") === null){
-            $this->userLanguages["unknown"]="unknown";
-        }else{
-            //prepare array
-            $tmp = array_fill(0, 2, null);
-            $languages = preg_split("/,/",$this->clientHeader->get("Accept-Languages"));
-            $this->userLanguages["DEFAULT-LANGUAGE"]=$languages[0];
-            foreach($languages as &$language){
-                $tmp = preg_split("/;/",$language);
-                if(count($tmp) > 1)
-                    $this->userLanguages[$tmp[0]] = $tmp[1];
-                else
-                    $this->userLanguages["unknown"]="unknown";
-            }
-        }
-    }
-    
-    /**
      * Notices the client to unset the given cookie.
      * @param key name of the cookie
      * @param path path of the cookie
      * @param domain domain of the cookie
      */
     public function unsetCookie(string $key, string $path="/", string $domain=null):void{
-        $this->serverHeader->setCookie($key, "",$path,$domain,"0");
+        $this->serverHeaders->setCookie($key, "",$path,$domain,"0");
     }
     
     /**
@@ -317,7 +274,7 @@ class EventManager extends Server{
      * @param expire time to live of the cookie.
      */
     public function setCookie(string $key, string $content, string $path="/", string $domain=null, string $expire=null):void{
-        $this->serverHeader->setCookie($key, $content, $path, $domain, $expire);
+        $this->serverHeaders->setCookie($key, $content, $path, $domain, $expire);
     }
     
     /**
@@ -326,7 +283,7 @@ class EventManager extends Server{
      * @return value of the cookie.
      */
     public function &getCookie(string $key):string{
-        return $this->clientHeader->getCookie($key);
+        return $this->listener->requestHeaders->getCookie($key);
     }
     
     /**
@@ -334,6 +291,6 @@ class EventManager extends Server{
      * @param key name of the cookie.
      */
     public function issetCookie(string $key){
-        return $this->clientHeader->issetCookie($key);
+        return $this->listener->requestHeaders->issetCookie($key);
     }
 }

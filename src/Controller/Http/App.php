@@ -4,17 +4,15 @@ namespace com\github\tncrazvan\catpaw\controller\http;
 use com\github\tncrazvan\catpaw\tools\Http;
 use com\github\tncrazvan\catpaw\tools\Server;
 use com\github\tncrazvan\catpaw\tools\Status;
-use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
 use com\github\tncrazvan\catpaw\http\HttpController;
-use com\github\tncrazvan\catpaw\exception\HeaderFieldNotFoundException;
 
 class App extends HttpController{
     
     public function main() {
-        switch($this->getClientMethod()){
+        switch($this->getRequestMethod()){
             case "GET":
-                return Http::getFile($this->getClientHeader(),Server::$webRoot."/".Server::$entryPoint);
+                return Http::getFile($this->getRequestHeaders(),Server::$webRoot."/".Server::$entryPoint);
             break;
             default:
                 return new HttpResponse([

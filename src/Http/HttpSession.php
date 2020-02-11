@@ -3,7 +3,6 @@ namespace com\github\tncrazvan\catpaw\http;
 
 use com\github\tncrazvan\catpaw\tools\Server;
 
-
 class HttpSession extends Server{
     public static $LIST = [];
     private $id,$STORAGE = [],$time;

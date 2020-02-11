@@ -5,7 +5,7 @@ use com\github\tncrazvan\catpaw\tools\Mime;
 use com\github\tncrazvan\catpaw\tools\Server;
 use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\tools\Strings;
-use com\github\tncrazvan\catpaw\http\HttpHeader;
+use com\github\tncrazvan\catpaw\http\HttpHeaders;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
 
 abstract class Http{
@@ -15,7 +15,7 @@ abstract class Http{
 
     /**
      * Get the contents of a file.
-     * @param HttpHeader $clientHeader An HttpHeader that indicates the header of the request.
+     * @param HttpHeaders $clientHeaders An HttpHeaders that indicates the header of the request.
      * This is needed so that the method can process other metadata such as byte range fields.
      * @param array $filename An array of strings containing the name of the file. 
      * The elements of this array will be joined on "/" and create a filename.
@@ -28,8 +28,8 @@ abstract class Http{
      * The response ranges will be set as specified by the request header fields 
      * or from 0 to the end of file if ranges are not found.
      */
-    public static function getFile(HttpHeader $clientHeader, string ...$filename):HttpResponse{
-        $resultHeader = new HttpHeader();
+    public static function getFile(HttpHeaders $clientHeaders, string ...$filename):HttpResponse{
+        $resultHeader = new HttpHeaders();
         $result = "";
         $filenameLength = count($filename);
         if($filenameLength === 0) return $result;
@@ -49,8 +49,8 @@ abstract class Http{
         
         $ctype = Mime::getContentType($filename);
         
-        if($clientHeader->has("Range")){
-            $ranges = preg_split("/,/",preg_split("/=/",$clientHeader->get("Range"))[1]);
+        if($clientHeaders->has("Range")){
+            $ranges = preg_split("/,/",preg_split("/=/",$clientHeaders->get("Range"))[1]);
             $rangesLength = count($ranges);
             $rangeStart = array_fill(0, $rangesLength, null);
             $rangeEnd = array_fill(0, $rangesLength, null);

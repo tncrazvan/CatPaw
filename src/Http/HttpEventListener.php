@@ -1,70 +1,74 @@
 <?php
 namespace com\github\tncrazvan\catpaw\http;
 
-use com\github\tncrazvan\catpaw\tools\Http;
 use com\github\tncrazvan\catpaw\tools\Server;
-use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\http\HttpEvent;
-use com\github\tncrazvan\catpaw\http\HttpHeader;
-use com\github\tncrazvan\catpaw\http\HttpResponse;
-use com\github\tncrazvan\catpaw\http\HttpController;
-use com\github\tncrazvan\catpaw\http\HttpRequestReader;
+use com\github\tncrazvan\catpaw\http\HttpHeaders;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
-use com\github\tncrazvan\catpaw\websocket\WebSocketController;
 
-class HttpEventListener extends HttpRequestReader{
-    public function __construct(&$read) {
-        parent::__construct($read);
+class HttpEventListener{
+    public 
+        $client,
+        //request headers
+        $requestHeaders,
+        //content sent (if POST method)
+        $requestContent,
+        //array of url split on "/"
+        $location,
+        //length of the location array
+        $locationLen,
+        //the while requested resource (URL + Query String)
+        $resource,
+        $resourceLen;
+    public function __construct(&$client) {
+        $this->client = $client;
     }
-    public function onRequest(HttpHeader &$clientHeader, string &$content):void{
-       if($clientHeader !== null && $clientHeader->get("Connection") !== null){
-           if(preg_match("/Upgrade/", $clientHeader->get("Connection"))){
+    public function run():void{
+        $this->resolve();
+        $this->serve();
+    }
+
+    private function resolve():void{
+        $input = fread($this->client, Server::$httpMtu);
+        if(!$input){
+            return;
+        }
+        if(trim($input) === ""){
+            return;
+        }
+        $input = preg_split('/\r\n\r\n/', $input,2);
+        $partsCounter = count($input);
+        if($partsCounter === 0){
+            fclose($this->client);
+            return;
+        }
+        $strHeaders = $input[0];
+        $this->requestContent = $partsCounter>1?$input[1]:"";
+        $this->requestHeaders = HttpHeaders::fromString($strHeaders);
+        $this->resource = preg_split("/\\?|\\&/m",preg_replace("/^\\//m","",urldecode($this->requestHeaders->get("Resource"))));
+        $this->resourceLen = count($this->resource);
+        $this->location = preg_split("/\\//m",$this->resource[0]);
+        $this->locationLen = count($this->location);
+    }
+
+    private function serve():void{
+       if($this->requestHeaders !== null && $this->requestHeaders->get("Connection") !== null){
+           if(preg_match("/Upgrade/", $this->requestHeaders->get("Connection"))){
                 //websocket event goes here
-                $url = preg_split("/\\?|\\&/m",preg_replace("/^\\//m","",urldecode($clientHeader->get("Resource"))))[0];
-                $location = preg_split("/\\//m",$url);
-                WebSocketController::serveController($location,$controller,$this->client,$clientHeader,$content);
-                $controller->install($this->client,$clientHeader,$content);
-                $controller->run();
+                $this->websocket();
            }else{
                 //http event goes here
-                //$event = new HttpEvent($this->client,$clientHeader,$content);
-                //$event->run();
-                $url = preg_split("/\\?|\\&/m",preg_replace("/^\\//m","",urldecode($clientHeader->get("Resource"))))[0];
-                $location = preg_split("/\\//m",$url);
-                $serve = function(){
-                    return new HttpResponse([
-                        "Status"=>Status::NOT_FOUND
-                    ],null);
-                };
-                HttpController::serveController($location,$controller,$serve,$this->client,$clientHeader,$content);
-
-                $filename = Server::$webRoot."/".$url;
-                if($url === "favicon.ico"){
-                    if(!\file_exists($filename)){
-                        $controller->send(new HttpResponse([
-                            "Status"=>Status::NOT_FOUND
-                        ]));
-                    }else{
-                        $controller->send(Http::getFile($controller->clientHeader,$filename));
-                    }
-                }else{
-                    if(file_exists($filename)){
-                        if(!is_dir($filename)){
-                            $controller->send(Http::getFile($controller->clientHeader,$filename));
-                        }else{
-                            $controller->send($serve());
-                        }
-                    }else{
-                        $controller->send($serve());
-                    }
-                }
-                
-                if(method_exists($controller, "onClose"))
-                $controller->onClose();
-                $controller->close();
+                $this->http11();
            }
        }
-       return;
     }
 
+    private function websocket(){
+        $controller = WebSocketEvent::controller($this);
+        $controller->run();
+    }
+    private function http11(){
+        $controller = HttpEvent::controller($this);
+        $controller->run();
+    }
 }

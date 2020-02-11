@@ -4,8 +4,7 @@ namespace com\github\tncrazvan\catpaw;
 use Closure;
 use com\github\tncrazvan\catpaw\tools\Server;
 use com\github\tncrazvan\catpaw\tools\Session;
-use com\github\tncrazvan\catpaw\tools\Strings;
-use com\github\tncrazvan\catpaw\tools\Minifier;
+use com\github\tncrazvan\catpaw\http\HttpEventManager;
 use com\github\tncrazvan\catpaw\http\HttpEventListener;
 use com\github\tncrazvan\catpaw\websocket\WebSocketManager;
 
@@ -102,6 +101,7 @@ class CatPaw extends Server{
                 $lastTime = microtime(true)*1000;
                 $actionWorking = false;
             }
+            
             /**
              * Listen for web sockets.
              * Read incoming messages and push pending commits.
@@ -112,6 +112,19 @@ class CatPaw extends Server{
                     $e = $node->readNode();
                     $e->push();
                     $e->read();
+                    $node = $node->next;
+                }
+            }
+
+            /**
+             * Listen for http sockets.
+             * Read incoming messages and push pending commits.
+            */
+            if(HttpEventManager::$connections != null && !HttpEventManager::$connections->isEmpty()){
+                $node = HttpEventManager::$connections->getFirstNode();
+                while($node !== NULL){
+                    $e = $node->readNode();
+                    $e->push();
                     $node = $node->next;
                 }
             }

@@ -1,6 +1,8 @@
 <?php
 namespace com\github\tncrazvan\catpaw\controller\WebSocket;
+
 use com\github\tncrazvan\catpaw\websocket\WebSocketController;
+
 class ControllerNotFound extends WebSocketController{
     
     public function onOpen(): void {
