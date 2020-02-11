@@ -1,12 +1,13 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools;
 
-use com\github\tncrazvan\catpaw\tools\Mime;
-use com\github\tncrazvan\catpaw\tools\Server;
-use com\github\tncrazvan\catpaw\tools\Status;
-use com\github\tncrazvan\catpaw\tools\Strings;
+use com\github\tncrazvan\catpaw\http\HttpController;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
+use com\github\tncrazvan\catpaw\tools\Mime;
+use com\github\tncrazvan\catpaw\tools\SharedObject;
+use com\github\tncrazvan\catpaw\tools\Status;
+use com\github\tncrazvan\catpaw\tools\Strings;
 
 abstract class Http{
     public static function generateMultipartBoundary():string{
@@ -15,7 +16,7 @@ abstract class Http{
 
     /**
      * Get the contents of a file.
-     * @param HttpHeaders $clientHeaders An HttpHeaders that indicates the header of the request.
+     * @param HttpController controller The controller calling this method.
      * This is needed so that the method can process other metadata such as byte range fields.
      * @param array $filename An array of strings containing the name of the file. 
      * The elements of this array will be joined on "/" and create a filename.
@@ -28,8 +29,9 @@ abstract class Http{
      * The response ranges will be set as specified by the request header fields 
      * or from 0 to the end of file if ranges are not found.
      */
-    public static function getFile(HttpHeaders $clientHeaders, string ...$filename):HttpResponse{
-        $resultHeader = new HttpHeaders();
+    public static function getFile(HttpController $controller, string ...$filename):HttpResponse{
+        $requestHeaders = $controller->getRequestHeaders();
+        $responseHeaders = new HttpHeaders($controller);
         $result = "";
         $filenameLength = count($filename);
         if($filenameLength === 0) return $result;
@@ -44,13 +46,13 @@ abstract class Http{
         $fileLength = filesize($filename);
 
         $lastModified=filemtime($filename);
-        $resultHeader->set("Last-Modified", date(Strings::DATE_FORMAT, $lastModified));
-        $resultHeader->set("Last-Timestamp", $lastModified);
+        $responseHeaders->set("Last-Modified", date(Strings::DATE_FORMAT, $lastModified));
+        $responseHeaders->set("Last-Timestamp", $lastModified);
         
         $ctype = Mime::getContentType($filename);
         
-        if($clientHeaders->has("Range")){
-            $ranges = preg_split("/,/",preg_split("/=/",$clientHeaders->get("Range"))[1]);
+        if($requestHeaders->has("Range")){
+            $ranges = preg_split("/,/",preg_split("/=/",$requestHeaders->get("Range"))[1]);
             $rangesLength = count($ranges);
             $rangeStart = array_fill(0, $rangesLength, null);
             $rangeEnd = array_fill(0, $rangesLength, null);
@@ -73,9 +75,9 @@ abstract class Http{
             $end = null;
             $rangeStartLength = count($rangeStart);
             if($rangeStartLength > 1){
-                $resultHeader->setStatus(Status::PARTIAL_CONTENT);
+                $responseHeaders->setStatus(Status::PARTIAL_CONTENT);
                 $boundary = self::generateMultipartBoundary();
-                $resultHeader->setContentType("multipart/byteranges; boundary=$boundary");
+                $responseHeaders->setContentType("multipart/byteranges; boundary=$boundary");
                 
                 for($i = 0; $i < $rangeStartLength; $i++){
                     $start = $rangeStart[$i];
@@ -93,15 +95,15 @@ abstract class Http{
 
                     $result .= $startConnectionStr;
                 
-                    if($end-$start+1 > Server::$httpMtu){
+                    if($end-$start+1 > SharedObject::$httpMtu){
                         $remainingBytes = $end-$start+1;
-                        $readLength = Server::$httpMtu;
+                        $readLength = SharedObject::$httpMtu;
                         fseek($raf, $start);
                         while($remainingBytes > 0){
                             $result = fread($raf, $readLength);
-                            $remainingBytes -= Server::$httpMtu;
+                            $remainingBytes -= SharedObject::$httpMtu;
                             if($remainingBytes < 0){
-                                $readLength = $remainingBytes+Server::$httpMtu;
+                                $readLength = $remainingBytes+SharedObject::$httpMtu;
                                 $remainingBytes = 0;
                             }
                         }
@@ -123,21 +125,21 @@ abstract class Http{
                         $end = $filesize-1;
                     }
                     $len = $end-$start+1;
-                    $resultHeader->set("Content-Range", "bytes $start-$end/$fileLength");
-                    $resultHeader->set("Content-Length", $len);
+                    $responseHeaders->set("Content-Range", "bytes $start-$end/$fileLength");
+                    $responseHeaders->set("Content-Length", $len);
                     fseek($raf, $start);
                     $result = fread($raf,$end-$start+1);
                 }
             }
         }else{
-            $resultHeader->set("Content-Type",$ctype);
-            $resultHeader->set("Content-Length", $fileLength);
+            $responseHeaders->set("Content-Type",$ctype);
+            $responseHeaders->set("Content-Length", $fileLength);
             if($filesize > 0){
                 fseek($raf, 0);
                 $result = fread($raf, $fileLength);
             }
         }
         fclose($raf);
-        return new HttpResponse($resultHeader,$result);
+        return new HttpResponse($responseHeaders,$result);
     }
 }

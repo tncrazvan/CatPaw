@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools;
 
-use com\github\tncrazvan\catpaw\tools\Server;
+use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\tools\Strings;
 
 class Minifier{
@@ -20,8 +20,8 @@ class Minifier{
         $this->assets = $assets;
     }
 
-    public static function minifyContents(string $contents,string $type,string $hashCode=""):string{
-        $tmp = dirname(Server::$webRoot)."/../tmp";
+    public static function &minifyContents(string &$contents,string $type,string $hashCode=""):string{
+        $tmp = dirname(SharedObject::$webRoot)."/../tmp";
         if(!\file_exists($tmp)){
             mkdir($tmp);
         }else if(!\is_dir($tmp)){
@@ -36,7 +36,7 @@ class Minifier{
 
         \file_put_contents($tmp,$contents);
 
-        $result = shell_exec(Server::$minifier["location"]." --type=$type \"$tmp\"");
+        $result = shell_exec(SharedObject::$minifier["location"]." --type=$type \"$tmp\"");
         if($result === null) $result = "";
         if(\file_exists($tmp))
             unlink($tmp);
@@ -78,7 +78,7 @@ class Minifier{
         $this->save($this->css,"css");
     }
 
-    public function save(string $contents,string $type):void{
+    public function save(string &$contents,string $type):void{
         $dir = $this->inputDirname.self::OUTPUT_DIRNAME;
         if(!\file_exists($dir)){
             mkdir($dir);

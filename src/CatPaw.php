@@ -2,17 +2,17 @@
 namespace com\github\tncrazvan\catpaw;
 
 use Closure;
-use com\github\tncrazvan\catpaw\tools\Server;
+use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\tools\Session;
 use com\github\tncrazvan\catpaw\http\HttpEventManager;
 use com\github\tncrazvan\catpaw\http\HttpEventListener;
 use com\github\tncrazvan\catpaw\websocket\WebSocketManager;
 
-class CatPaw extends Server{
+class CatPaw{
     private $socket,
-            $binding,
             $listening,
-            $minifyOperation=null;
+            $minifyOperation=null,
+            $so;
     
     /**
      * @param &$config This is the name of the config json file, for example "http.json".
@@ -25,17 +25,18 @@ class CatPaw extends Server{
     public function __construct(&$config,$intercept=null) {
         $protocol="tcp";
         if(file_exists($config)){
-            //SETTINGS INIT
-            $settings = Server::init($config);
-            
+            //creating SharedObject
+            $so = new SharedObject($config);
+            $this->so = $so;
+            //creating context
             $context = stream_context_create();
             //check if SSL certificate file is specified
-            if(Server::$certificateName !== ""){
+            if($so->certificateName !== ""){
                 //use the SSL certificate
-                stream_context_set_option($context, 'ssl', 'local_cert', Server::$certificateName);
-                if(isset($settings["certificate"]["privateKey"]))
-                    stream_context_set_option($context, 'ssl', 'local_pk', Server::$certificatePrivateKey);
-                stream_context_set_option($context, 'ssl', 'passphrase', Server::$certificatePassphrase);
+                stream_context_set_option($context, 'ssl', 'local_cert', $so->certificateName);
+                if(isset($so["certificate"]["privateKey"]))
+                    stream_context_set_option($context, 'ssl', 'local_pk', $so->certificatePrivateKey);
+                stream_context_set_option($context, 'ssl', 'passphrase', $so->certificatePassphrase);
                 stream_context_set_option($context, 'ssl', 'cyphers', 2);
                 stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
                 stream_context_set_option($context, 'ssl', 'verify_peer', false);
@@ -44,30 +45,30 @@ class CatPaw extends Server{
             if($intercept !== null) $intercept($context,$this->minifyOperation);
             // Create the server socket
             $this->socket = stream_socket_server(
-                $protocol.'://'.Server::$bindAddress.':'.Server::$port,
+                $protocol.'://'.$so->bindAddress.':'.$so->port,
                 $errno,
                 $errstr,
                 STREAM_SERVER_BIND|STREAM_SERVER_LISTEN,
                 $context
             );
-            if(Server::$certificateName !== "")
+            if($so->certificateName !== "")
                 stream_socket_enable_crypto($this->socket, false);
             if ($this->socket === false) throw new \Exception("$errstr ($errno)\n");
             $this->listening=true;
 
             //check if developer allows ramdisk for session storage
-            if(Server::$ramSession["allow"]){
+            if($so->ramSession["allow"]){
                 //if ramdisk is allowed, mount a new one
-                Session::mount();
+                Session::mount($so);
                 
                 //WARNING: ramdisk will remain mounted untill the next session is started
                 //which means the ramdisk could be alive after the server shuts down.
                 //you can run ./sessionMount.php to umount the current session
             }else{
-                Session::init();
+                Session::init($so);
             }
         }else{
-            throw new \Exception ("\nSettings json file doesn't exist\n");
+            throw new \Exception ("\nConfig file \"$config\" doesn't exist\n");
         }
     }
     
@@ -106,8 +107,8 @@ class CatPaw extends Server{
              * Listen for web sockets.
              * Read incoming messages and push pending commits.
             */
-            if(WebSocketManager::$connections != null && !WebSocketManager::$connections->isEmpty()){
-                $node = WebSocketManager::$connections->getFirstNode();
+            if($this->so->websocketConnections != null && !$this->so->websocketConnections->isEmpty()){
+                $node = $this->so->websocketConnections->getFirstNode();
                 while($node !== NULL){
                     $e = $node->readNode();
                     $e->push();
@@ -120,8 +121,8 @@ class CatPaw extends Server{
              * Listen for http sockets.
              * Read incoming messages and push pending commits.
             */
-            if(HttpEventManager::$connections != null && !HttpEventManager::$connections->isEmpty()){
-                $node = HttpEventManager::$connections->getFirstNode();
+            if($this->so->httpConnections != null && !$this->so->httpConnections->isEmpty()){
+                $node = $this->so->httpConnections->getFirstNode();
                 while($node !== NULL){
                     $e = $node->readNode();
                     $e->push();
@@ -139,7 +140,7 @@ class CatPaw extends Server{
             $except = NULL;
             $tv_sec = 0;
             //check if something interesting is going on with clients array ($copy)
-            if (@stream_select($copy, $write, $except, $tv_sec, self::$sleep) < 1){
+            if (@stream_select($copy, $write, $except, $tv_sec, $this->so->sleep) < 1){
                 /*
                     stream_select returns the number of connections acquired,
                     so skip if it returns < 1
@@ -175,7 +176,7 @@ class CatPaw extends Server{
             //get the array key of the client
             $key = array_search($client, $copy);
             //check for certificate
-            if(Server::$certificateName !== ""){
+            if($this->so->certificateName !== ""){
                 //block the connection until SSL is done.
                 stream_set_blocking($client, true);
                 //enable socket crypto method
@@ -183,10 +184,10 @@ class CatPaw extends Server{
             }
 
             //check if certificate is specified, assume the socket has been blocked and then unblock it
-            if(Server::$certificateName !== "")
+            if($this->so->certificateName !== "")
                 stream_set_blocking($client, false);
 
-            $listener = new HttpEventListener($client, $this->clients);
+            $listener = new HttpEventListener($client, $this->so);
             $listener->run();
             
             unset($copy[$key]);
@@ -227,7 +228,7 @@ class CatPaw extends Server{
                 @fclose($client);
             } else {
                 //check if certificate is specified
-                if(Server::$certificateName !== ""){
+                if($this->so->certificateName !== ""){
                     //block the connection until SSL is done.
                     stream_set_blocking ($client, true);
                     //enable socket crypto method
@@ -241,11 +242,11 @@ class CatPaw extends Server{
                     They'll morph into actual WebSocketEvents only after the 
                     handshake is completed.
                 */
-                $listener = new HttpEventListener($client, $this->clients);
+                $listener = new HttpEventListener($client, $this->so);
                 $listener->run();
                 
                 //check if certificate is specified and unblock the socket
-                if(Server::$certificateName !== "")
+                if($this->so->certificateName !== "")
                     stream_set_blocking ($client, false);
                 exit;
             }

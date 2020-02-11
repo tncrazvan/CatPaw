@@ -1,17 +1,42 @@
 <?php
 namespace com\github\tncrazvan\catpaw\http;
-
-use com\github\tncrazvan\catpaw\tools\Server;
 class HttpHeaders{
-    private $headers = [],$cookies = [];
+    private $headers = [], $cookies = [];
+    public $initialized = false;
     const DATE_FORMAT = "D j M Y G:i:s T";
-    public function __construct(bool $createSuccessHeader = true) {
+    public function __construct(EventManager $em=null, bool $createSuccessHeader = true) {
         if($createSuccessHeader){
             $this->headers["Status"] = "HTTP/1.1 200 OK";
             $this->headers["Date"] = date(self::DATE_FORMAT); 
-            foreach(Server::$headers as $key => &$value){
-                $this->headers[$key] = $value;
+            if($em !== null){
+                $this->initialize($em);
             }
+        }
+    }
+
+    public function &getHeadersAray():array{
+        return $this->headers;
+    }
+
+    public function &getCookiesAray():array{
+        return $this->cookies;
+    }
+
+    public function initialize(EventManager $em):void{
+        if(!$this->initialized){
+            foreach($em->listener->so->headers as $key => &$value){
+                $this->set($key, $value);
+            }
+            $this->initialized = true;
+        }
+    }
+
+    public function mix(HttpHeaders $headers):void{
+        foreach($headers->getHeadersAray() as $key => &$value){
+            $this->headers[$key] = $value;
+        }
+        foreach($headers->getCookiesAray() as $key => &$value){
+            $this->cookies[$key] = $value;
         }
     }
     
@@ -31,7 +56,7 @@ class HttpHeaders{
                 .($cookie[3]===null?"":"; expires=".date(self::DATE_FORMAT,$cookie[3]))."\r\n";
     }
     
-    public function toString():string{
+    public function &toString():string{
         $result = "";
         foreach(array_keys($this->headers) as &$key){
             $result .= $this->fieldToString($key);
@@ -58,7 +83,7 @@ class HttpHeaders{
         $this->set("Content-Type",$content);
     }
 
-    public function get(string $key){
+    public function get(string $key):string{
         if(!isset($this->headers[$key])) return null;
         return trim($this->headers[$key]);
     }
@@ -67,7 +92,7 @@ class HttpHeaders{
         return isset($this->cookies[trim($key)]);
     }
     
-    public function &getCookie(string $key):string{
+    public function getCookie(string $key):string{
         return urldecode($this->cookies[$key][0]);
     }
     
@@ -81,8 +106,8 @@ class HttpHeaders{
         $this->cookies[trim($key)] = $cookie;
     }
     
-    public static function fromString(string &$string):HttpHeaders{
-        $httpHeaders = new HttpHeaders();
+    public static function fromString(EventManager $em=null, string &$string):HttpHeaders{
+        $httpHeaders = new HttpHeaders($em,false);
         $lines = preg_split("/\\r\\n/", $string);
         foreach($lines as &$line){
             if($line === "") continue;

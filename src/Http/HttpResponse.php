@@ -1,7 +1,6 @@
 <?php
 namespace com\github\tncrazvan\catpaw\http;
 
-use com\github\tncrazvan\catpaw\tools\Server;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
 
 class HttpResponse{
@@ -10,12 +9,6 @@ class HttpResponse{
         if($body === null) $body = "";
         if(is_array($header)){
             $this->header = new HttpHeaders();
-            foreach(Server::$header as $key => &$value){
-                if($key === "Status"){
-                    $value = "HTTP/1.1 $value";
-                }
-                $this->header->set($key,$value);
-            }
             foreach($header as $key => &$value){
                 if($key === "Status"){
                     $value = "HTTP/1.1 $value";

@@ -1,28 +1,25 @@
 <?php
 namespace com\github\tncrazvan\catpaw\http;
 
-use com\github\tncrazvan\catpaw\tools\Server;
-use com\github\tncrazvan\catpaw\http\HttpHeaders;
-use com\github\tncrazvan\catpaw\http\HttpEventManager;
 use com\github\tncrazvan\catpaw\http\HttpEventListener;
-use com\github\tncrazvan\catpaw\http\HttpSessionManager;
+use com\github\tncrazvan\catpaw\http\HttpHeaders;
 
 
-class EventManager extends Server{
+class EventManager{
     
     public 
         $alive=true,
         $queryString=[],
-        $serverHeaders,
+        $serverHeaders=[],
         $session = null,
         $sessionId = null,
         $listener,
         $requestId;
     
-    public function install(HttpEventListener &$listener){
+    public function install(HttpEventListener &$listener):void{
         $this->requestId = spl_object_hash($this).rand();
         $this->listener = $listener;
-        $this->serverHeaders = new HttpHeaders();
+        $this->serverHeaders = new HttpHeaders($this);
         $queries=[];
         $object=[];
         
@@ -61,7 +58,7 @@ class EventManager extends Server{
         return trim($classname);
     }
     
-    protected static function resolveMethodArgs(int $offset, array &$location, int $len):array{
+    protected static function &resolveMethodArgs(int $offset, array &$location, int $len):array{
         $args = [];
         if($len-1>$offset-1){
             $args = array_slice($location, $offset);
@@ -79,7 +76,7 @@ class EventManager extends Server{
         //@socket_set_option($this->clistener->lient, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));
         //@socket_close($this->listener->client);
         if($this->session !== null) 
-            HttpSessionManager::saveSession(HttpSessionManager::getSession($this->sessionId));
+            $this->listener->so->sessions->saveSession($this,$this->listener->so->sessions->getSession($this->sessionId));
     }
 
     /**
@@ -96,7 +93,7 @@ class EventManager extends Server{
      * Get client port number.
      * @return string the port number of the client
      */
-    public function &getPort():int{
+    public function getPort():int{
         $host = stream_socket_get_name($this->listener->client,true);
         $port = preg_replace("/.*:/","",$host);
         return intval($port);
@@ -174,7 +171,7 @@ class EventManager extends Server{
      * Get request header.
      * @return \com\github\tncrazvan\catpaw\http\httpHeaders header of the client request.
      */
-    public function getRequestHeaders():HttpHeaders{
+    public function &getRequestHeaders():HttpHeaders{
         return $this->listener->requestHeaders;
     }
 
@@ -203,7 +200,7 @@ class EventManager extends Server{
      * @return &array This method returns an array pointer, so any changes made to the array will be saved across all http requests relative to this session, untill the server kills the session due to inactivity. The default session ttl is 24 minutes.
      */
     public function &startSession():array{
-        $this->session = &HttpSessionManager::startSession($this, $this->sessionId);
+        $this->session = &$this->listener->so->sessions->startSession($this, $this->sessionId);
         return $this->session;
     }
     
@@ -217,7 +214,7 @@ class EventManager extends Server{
             $this->startSession();
         }
         $this->session = null;
-        HttpSessionManager::stopSession(HttpSessionManager::getSession($this->sessionId));
+        $this->listener->so->sessions->stopSession($this,$this->listener->so->sessions->getSession($this->sessionId));
     }
     
     /**
@@ -227,7 +224,7 @@ class EventManager extends Server{
     public function issetSession():bool{
         if($this->session === null) return false;
         $sessionID = null;
-        return HttpSessionManager::issetSession($this,$sessionID);
+        return $this->listener->so->sessions->issetSession($this,$sessionID);
     }
     
     /**
@@ -244,7 +241,7 @@ class EventManager extends Server{
      * @param key name of the query.
      * @return the value of the query.
      */
-    public function getUrlQuery(string $key):string{
+    public function &getUrlQuery(string $key):string{
         return $this->queryString[$key];
     }
 
@@ -282,7 +279,7 @@ class EventManager extends Server{
      * @param name name of the cookie.
      * @return value of the cookie.
      */
-    public function &getCookie(string $key):string{
+    public function getCookie(string $key):string{
         return $this->listener->requestHeaders->getCookie($key);
     }
     
@@ -290,7 +287,7 @@ class EventManager extends Server{
      * Checks if the cookie is set.
      * @param key name of the cookie.
      */
-    public function issetCookie(string $key){
+    public function issetCookie(string $key):bool{
         return $this->listener->requestHeaders->issetCookie($key);
     }
 }

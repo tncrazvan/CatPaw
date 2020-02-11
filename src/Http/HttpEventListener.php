@@ -1,9 +1,9 @@
 <?php
 namespace com\github\tncrazvan\catpaw\http;
 
-use com\github\tncrazvan\catpaw\tools\Server;
 use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
+use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 class HttpEventListener{
@@ -19,9 +19,11 @@ class HttpEventListener{
         $locationLen,
         //the while requested resource (URL + Query String)
         $resource,
-        $resourceLen;
-    public function __construct(&$client) {
+        $resourceLen,
+        $so;
+    public function __construct(&$client,SharedObject $so) {
         $this->client = $client;
+        $this->so = $so;
     }
     public function run():void{
         $this->resolve();
@@ -29,7 +31,7 @@ class HttpEventListener{
     }
 
     private function resolve():void{
-        $input = fread($this->client, Server::$httpMtu);
+        $input = fread($this->client, $this->so->httpMtu);
         if(!$input){
             return;
         }
@@ -44,7 +46,7 @@ class HttpEventListener{
         }
         $strHeaders = $input[0];
         $this->requestContent = $partsCounter>1?$input[1]:"";
-        $this->requestHeaders = HttpHeaders::fromString($strHeaders);
+        $this->requestHeaders = HttpHeaders::fromString(null, $strHeaders);
         $this->resource = preg_split("/\\?|\\&/m",preg_replace("/^\\//m","",urldecode($this->requestHeaders->get("Resource"))));
         $this->resourceLen = count($this->resource);
         $this->location = preg_split("/\\//m",$this->resource[0]);

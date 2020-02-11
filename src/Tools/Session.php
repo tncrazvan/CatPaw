@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools;
 
-use com\github\tncrazvan\catpaw\tools\Server;
+use com\github\tncrazvan\catpaw\tools\SharedObject;
 
 abstract class Session{
     /**
@@ -10,15 +10,15 @@ abstract class Session{
      * then remove session directory.
      * @return void
      */
-    public static function umount():void{
+    public static function umount(SharedObject $so):void{
         //check if directory already exists
         //if it does there's a chance it's mounted as a ram disk
-        if(file_exists(Server::$sessionDir)){
+        if(file_exists($so->sessionDir)){
             //try to umount the ramdisk
-            echo exec("umount ".Server::$sessionDir);
+            echo exec("umount ".$so->sessionDir);
+            //remove the session directory recursively
+            Dir::remove($so->sessionDir,true);
         }
-        //remove the session directory
-        echo exec("rm ".Server::$sessionDir." -fr");
     }
     
     /**
@@ -28,15 +28,19 @@ abstract class Session{
      * it's limited to the specified size.
      * @return void
      */
-    public static function mount():void{
+    public static function mount(SharedObject $so):void{
         //try to umount session
-        self::umount();
-        //make the session directory again
-        echo exec("mkdir ".Server::$sessionDir);
-        //mount the directory as a new ramdisk
-        echo exec("mount -t tmpfs tmpfs ".Server::$sessionDir." -o size=".Server::$ramSession["size"]);
-        //some feedback
-        echo "\nRam disk mounted.\n";
+        self::umount($so);
+        try{
+            //make the session directory again
+            mkdir($so->sessionDir);
+            //mount the directory as a new ramdisk
+            echo exec("mount -t tmpfs tmpfs ".$so->sessionDir." -o size=".$so->ramSession["size"]);
+            //some feedback
+            echo "\nRam disk mounted.\n";
+        }catch(\Exception $e){
+            mkdir($so->sessionDir);
+        }
     }
 
     /**
@@ -44,12 +48,9 @@ abstract class Session{
      * After the session is removed, a new one will be made.
      * @return void
      */
-    public static function init():void{
+    public static function init(SharedObject $so):void{
         //try to umount session
-
-        self::umount();
-        
-        //make the session directory again
-        echo exec("mkdir ".Server::$sessionDir);
+        self::umount($so);
+        mkdir($so->sessionDir);
     }
 }

@@ -7,7 +7,7 @@ class WebSocketCommit{
         $this->data = $data;
         $this->length = $length;
     }
-    public function &getDate(){
+    public function &getData(){
         return $this->data;
     }
     public function getLength():int{

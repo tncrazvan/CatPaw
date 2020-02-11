@@ -53,7 +53,7 @@ abstract class Strings{
         }
     }
 
-    public static function escapeJs(string $content):string{
+    public static function escapeJs(string &$content):string{
         return 
         preg_replace(self::PATTERN_JS_ESCAPE_LEFT_START, "&lt;", 
             preg_replace(self::PATTERN_JS_ESCAPE_LEFT_END, "&lt;/", 
@@ -72,7 +72,7 @@ abstract class Strings{
     * @param string $needle substring to look for
     * @return bool true if string starts with $needle, otherwise false
     */
-   public static function startsWith(string $haystack, string $needle):bool{
+   public static function startsWith(string &$haystack, string $needle):bool{
        $length = strlen($needle);
        return (substr($haystack, 0, $length) === $needle);
    }
@@ -83,7 +83,7 @@ abstract class Strings{
     * @param string $needle substring to look for
     * @return bool true if string ends with $needle, otherwise false
     */
-   public static function endsWith(string $haystack, string $needle):bool{
+   public static function endsWith(string &$haystack, string $needle):bool{
        $length = strlen($needle);
        if ($length == 0) {
            return true;
@@ -91,7 +91,7 @@ abstract class Strings{
        return (substr($haystack, -$length) === $needle);
    }
 
-   public static function minify(array $input, string $outputFilename,bool $minify=true):void{
+   public static function minify(array &$input, string $outputFilename,bool $minify=true):void{
        if($minify){
             if(Strings::endsWith($outputFilename,".css")){
                 $minifier = new Minify\CSS();
@@ -113,7 +113,7 @@ abstract class Strings{
         
    }
 
-    public static function tableFromArray(array $input,bool $lineCounter=false,Callable $intercept=null,int $lvl = 0):string{
+    public static function tableFromArray(array &$input,bool $lineCounter=false,Callable $intercept=null,int $lvl = 0):string{
         $table = new AsciiTable();
         if($intercept !== null) $intercept($table,$lvl);
         $table->add("Key","Value");

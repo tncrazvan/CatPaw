@@ -1,13 +1,10 @@
 <?php
 namespace com\github\tncrazvan\catpaw\http;
 
-use com\github\tncrazvan\catpaw\tools\Server;
-
-class HttpSession extends Server{
-    public static $LIST = [];
+class HttpSession {
     private $id,$STORAGE = [],$time;
     
-    protected function __construct($e=null) {
+    public function __construct($e=null) {
         if($e !== null){
             $this->id = hash('sha3-224',$e->getAddress().",".$e->getPort().",".rand());
             $e->setCookie("sessionId", $this->id, "/");
@@ -15,15 +12,15 @@ class HttpSession extends Server{
         }
     }
     
-    protected function setId(string &$id):void{
+    public function setId(string $id):void{
         $this->id = $id;
     }
     
-    protected function getTime():int{
+    public function getTime():int{
         return $this->time;
     }
 
-    protected function setTime(&$time):void{
+    public function setTime(int $time):void{
         $this->time=$time;
     }
 
@@ -35,7 +32,7 @@ class HttpSession extends Server{
         return $this->STORAGE;
     }
     
-    protected function setStorage(&$value):void{
+    public function setStorage(&$value):void{
         $this->STORAGE = $value;
     }
     
@@ -54,5 +51,4 @@ class HttpSession extends Server{
     public function has(string $key):bool{
         return isset($this->STORAGE[$key]);
     }
-    
 }

@@ -1,54 +1,51 @@
 <?php
 namespace com\github\tncrazvan\catpaw\http;
 
-use com\github\tncrazvan\catpaw\tools\Server;
 use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpSession;
+use com\github\tncrazvan\catpaw\http\EventManager;
 
-class HttpSessionManager extends HttpSession{
-    protected function __construct($e) {
-        parent::__construct($e);
-    }
-    
-    public static function &startSession(HttpEvent &$e,&$sessionId):array{
-        if (self::issetSession($e,$sessionId)) {//if session exists
+class HttpSessionManager{
+    public $list= [];
+    public function &startSession(HttpEvent $e,&$sessionId):array{
+        if ($this->issetSession($e,$sessionId)) {//if session exists
             //load the session
-            self::loadSession($sessionId);
+            $this->loadSession($e,$sessionId);
             //if session is expired
-            if(HttpSession::$LIST[$sessionId]->getTime() + self::$sessionTtl < time()){
+            if($this->list[$sessionId]->getTime() + $e->listener->so->sessionTtl < time()){
                 //delete the expired session
-                self::stopSession(HttpSession::$LIST[$sessionId]);
+                $this->stopSession($e,$this->list[$sessionId]);
             }else{ //if session is alive
                 //update the session time, so the server knows its active, and not delete it
                 //after self::$session_ttl seconds
-                HttpSession::$LIST[$sessionId]->setTime(time());
-                self::saveSession(HttpSession::$LIST[$sessionId]);
+                $this->list[$sessionId]->setTime(time());
+                $this->saveSession($e,$this->list[$sessionId]);
                 //return the storage pointer
-                return HttpSession::$LIST[$sessionId]->storage();
+                return $this->list[$sessionId]->storage();
             }
         } 
         //make a new session
         $session = new HttpSession($e);
         $sessionId = $session->id();
         //save session file
-        self::saveSession($session);
-        self::setSession($session);
+        $this->saveSession($e,$session);
+        $this->setSession($session);
         //return the storage pointer
         return $session->storage();
     }
     
-    public static function issetSession(&$e,&$sessionId):bool{
+    public function issetSession(EventManager $e,&$sessionId):bool{
         if($e->issetCookie("sessionId")){
             $sessionId = $e->getCookie("sessionId");
-            if(file_exists(Server::$sessionDir."/$sessionId")){
+            if(file_exists($e->listener->so->sessionDir."/$sessionId")){
                 return true;
             }
         }
         return false;
     }
     
-    public static function loadSession(string &$sessionId):void{
-        $data = json_decode(file_get_contents(Server::$sessionDir."/$sessionId"),true);
+    public function loadSession(EventManager $e,string $sessionId):void{
+        $data = json_decode(file_get_contents($e->listener->so->sessionDir."/$sessionId"),true);
         $session = new HttpSession();
         $session->setStorage($data["STORAGE"]);
         $session->setTime($data["TIME"]);
@@ -56,27 +53,27 @@ class HttpSessionManager extends HttpSession{
         self::setSession($session);
     }
     
-    public static function saveSession(HttpSession &$session):void{
-        file_put_contents(Server::$sessionDir."/".$session->id(), json_encode([
+    public function saveSession(EventManager $e,HttpSession $session):void{
+        file_put_contents($e->listener->so->sessionDir."/".$session->id(), json_encode([
             "STORAGE"=>$session->storage(),
             "TIME"=>$session->getTime()
         ]));
     }
 
-    public static function setSession(HttpSession &$session):void{
-        HttpSession::$LIST[$session->id()] = $session;
+    public function setSession(HttpSession $session):void{
+        $this->list[$session->id()] = $session;
     }
     
-    public static function stopSession(HttpSession &$session):void{
-        unset(HttpSession::$LIST[$session->id()]);
-        unlink(Server::$sessionDir."/".$session->id());
+    public function stopSession(EventManager $e,HttpSession $session):void{
+        unset($this->list[$session->id()]);
+        unlink($e->listener->so->sessionDir."/".$session->id());
     }
     
-    public static function &getSession(string $sessionId):HttpSession{
-        return HttpSession::$LIST[$sessionId];
+    public function &getSession(string $sessionId):HttpSession{
+        return $this->list[$sessionId];
     }
     
-    public static function existsSession(string $sessionId):bool{
-        return isset(HttpSession::$LIST[$sessionId]);
+    public function existsSession(string $sessionId):bool{
+        return isset($this->list[$sessionId]);
     }
 }

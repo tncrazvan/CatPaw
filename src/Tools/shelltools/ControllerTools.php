@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools\shelltools;
 
-use com\github\tncrazvan\catpaw\tools\Server;
+use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\asciitable\AsciiTable;
 
@@ -131,8 +131,8 @@ class ControllerTools{
         }
         shell_exec("composer dump-autoload -o");
         echo "[SUCCESS] Controller [{$metadata['namespace']}\\{$metadata['classname']}] created.\n";
-        if(Server::$editor !== ""){
-            $editor = preg_replace('/@filename/',$metadata["filename"],Server::$editor);
+        if(SharedObject::$editor !== ""){
+            $editor = preg_replace('/@filename/',$metadata["filename"],SharedObject::$editor);
             shell_exec($editor);
         }
     }
@@ -231,7 +231,7 @@ class ControllerTools{
                 mkdir("src/$type$directory");
             }
         }
-        $namespace = Server::$httpControllerPackageName.preg_replace('/\//',"\\",$directory);
+        $namespace = SharedObject::$httpControllerPackageName.preg_replace('/\//',"\\",$directory);
         $filename = "src/$type$directory/$classname.php";
         $metadata["namespace"] = $namespace;
         $metadata["classname"] = $classname;
