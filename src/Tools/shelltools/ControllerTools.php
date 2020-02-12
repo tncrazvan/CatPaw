@@ -1,14 +1,18 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools\shelltools;
 
-use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\asciitable\AsciiTable;
+use com\github\tncrazvan\catpaw\http\HttpResponse;
+use com\github\tncrazvan\catpaw\tools\SharedObject;
+use com\github\tncrazvan\catpaw\http\HttpController;
+use com\github\tncrazvan\catpaw\websocket\WebSocketController;
 
 class ControllerTools{
-    private $actions,$info,$blueprint;
+    private $actions,$info,$blueprint,$so;
     private static $singleton=null;
-    private function __construct(){
+    private function __construct(SharedObject $so){
+        $this->so=$so;
         $blueprint = ["http"=>"","websocket"=>""];
         $blueprint["http"] =
         "<?php\n"
@@ -100,9 +104,9 @@ class ControllerTools{
 
 
     
-    public static function get():ControllerTools{
+    public static function get(SharedObject $so):ControllerTools{
         if(self::$singleton === null)
-        self::$singleton = new ControllerTools();
+        self::$singleton = new ControllerTools($so);
         return self::$singleton;
     }
     public function getDocumentationActions():string{
@@ -119,7 +123,7 @@ class ControllerTools{
         return $blueprint;
     }
 
-    private function create(string $type,string $controller,array &$metadata, bool $force = false){
+    private function create(string $type,string $arg1,array &$metadata, bool $force = false){
         if(!$force && \file_exists($metadata["filename"])){
             echo "[FAILURE] File {$metadata['filename']} already exists. Will not overwrite.\n";
             return;
@@ -131,8 +135,8 @@ class ControllerTools{
         }
         shell_exec("composer dump-autoload -o");
         echo "[SUCCESS] Controller [{$metadata['namespace']}\\{$metadata['classname']}] created.\n";
-        if(SharedObject::$editor !== ""){
-            $editor = preg_replace('/@filename/',$metadata["filename"],SharedObject::$editor);
+        if($this->so->editor !== ""){
+            $editor = preg_replace('/@filename/',$metadata["filename"],$this->so->editor);
             shell_exec($editor);
         }
     }
@@ -150,24 +154,27 @@ class ControllerTools{
         }
     }
 
-    private function assertController(string $controller):bool{
-        if($controller === ""){
-            echo "Please provide a name for your controller.\n";
+    private function assertArgument(string $arg1,string $message):bool{
+        if($arg1 === ""){
+            echo $message;
             return false;
         }
         return true;
     }
 
-    public function action(string $action,string $controller){
+    public function &action(string $action,string $arg1):array{
+        $arg1 = trim($arg1);
+        $metadata = [];
+        if(!$this->assertArgument($arg1,"This action requires arguments, please run \"controller actions\" for more information.\n")) return $metadata;
         switch($action){
             case "remove-http":
             case "delete-http":
-                $metadata = $this->resolveControllerName("http",$controller,true);
+                $metadata = &$this->resolveControllerName("http",$arg1,true);
                 $this->delete($metadata);
             break;
             case "remove-websocket":
             case "delete-websocket":
-                $metadata = $this->resolveControllerName("websocket",$controller,true);
+                $metadata = &$this->resolveControllerName("websocket",$arg1,true);
                 $this->delete($metadata);
             break;
             case "new-http":
@@ -176,9 +183,8 @@ class ControllerTools{
             case "new-http-force":
             case "add-http-force":
             case "create-http-force":
-                if(!$this->assertController($controller)) return;
-                $metadata = $this->resolveControllerName("http",$controller,true);
-                $this->create("http",$controller,$metadata,Strings::endsWith($action,"-force"));
+                $metadata = &$this->resolveControllerName("http",$arg1,true);
+                $this->create("http",$arg1,$metadata,Strings::endsWith($action,"-force"));
             break;
             case "new-websocket":
             case "add-websocket":
@@ -186,9 +192,8 @@ class ControllerTools{
             case "new-websocket-force":
             case "add-websocket-force":
             case "create-websocket-force":
-                if(!$this->assertController($controller)) return;
-                $metadata = $this->resolveControllerName("websocket",$controller,true);
-                $this->create("websocket",$controller,$metadata,Strings::endsWith($action,"-force"));
+                $metadata = &$this->resolveControllerName("websocket",$arg1,true);
+                $this->create("websocket",$arg1,$metadata,Strings::endsWith($action,"-force"));
             break;
             case "actions":
                 $actions = $this->getDocumentationActions();
@@ -204,9 +209,10 @@ class ControllerTools{
                 echo "$info\n";
             break;
         }
+        return $metadata;
     }
 
-    private function resolveControllerName(string $type,string $controller, bool $subdirs):array{
+    private function &resolveControllerName(string $type,string $arg1, bool $subdirs):array{
         if($subdirs){
             if(!\file_exists("src"))
                 mkdir("src");
@@ -220,7 +226,7 @@ class ControllerTools{
         ];
         $classname = "";
         $directory = "";
-        $pieces = preg_split('/\./',$controller);
+        $pieces = preg_split('/\./',$arg1);
         for($i = 0,$len = count($pieces); $i < $len; $i++){
             if($i === $len - 1){
                 $classname = $pieces[$i];
@@ -231,8 +237,9 @@ class ControllerTools{
                 mkdir("src/$type$directory");
             }
         }
-        $namespace = SharedObject::$httpControllerPackageName.preg_replace('/\//',"\\",$directory);
+        $namespace = $this->so->httpControllerPackageName.preg_replace('/\//',"\\",$directory);
         $filename = "src/$type$directory/$classname.php";
+        $metadata["xec"] = "NEW CONTROLLER";
         $metadata["namespace"] = $namespace;
         $metadata["classname"] = $classname;
         $metadata["filename"] = $filename;

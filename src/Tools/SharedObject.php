@@ -11,17 +11,15 @@ class SharedObject extends Http{
     const DIR = __DIR__;
 
     public function __construct(string $settingsFile,bool $print=true){
-        //$settings = json_decode(file_get_contents($settingsFile),true);
-        $storage = new stdClass();
         $settings = include($settingsFile);
-        $settingsDir = dirname($settingsFile);
+        $this->dir = dirname($settingsFile);
         if(isset($settings["compress"]))
         $this->compress = $settings["compress"];
         if(isset($settings["sleep"]))
         $this->sleep = $settings["sleep"];
-        $this->webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/www/");
+        $this->webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$this->dir."/www/");
         if(isset($settings["webRoot"]))
-        $this->webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".$settings["webRoot"]."/");
+        $this->webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$this->dir."/".$settings["webRoot"]."/");
 
         if(isset($settings["port"]))
         $this->port = $settings["port"];
@@ -70,9 +68,9 @@ class SharedObject extends Http{
         }
         if(isset($settings["certificate"])){
             if(isset($settings["certificate"]["name"]))
-            $this->certificateName = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".$settings["certificate"]["name"]);
+            $this->certificateName = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$this->dir."/".$settings["certificate"]["name"]);
             if(isset($settings["certificate"]["privateKey"]))
-            $this->certificatePrivateKey = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".$settings["certificate"]["privateKey"]);
+            $this->certificatePrivateKey = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$this->dir."/".$settings["certificate"]["privateKey"]);
             if(isset($settings["certificate"]["password"]))
             $this->certificatePassphrase = $settings["certificate"]["password"];
             if(isset($settings["certificate"]["passphrase"]))
@@ -81,7 +79,7 @@ class SharedObject extends Http{
         if(isset($settings["headers"])){
             $this->headers = $settings["headers"];
         }
-        $this->sessionDir = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settingsDir."/".$this->sessionName);
+        $this->sessionDir = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$this->dir."/".$this->sessionName);
         
         
         if($print) {
@@ -195,6 +193,7 @@ class SharedObject extends Http{
     }
 
     public
+        $dir,
         $httpConnections = null,
         $websocketConnections = null,
         $sessions,

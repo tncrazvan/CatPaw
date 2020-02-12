@@ -2,32 +2,38 @@
 namespace com\github\tncrazvan\catpaw;
 
 use Closure;
-use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\tools\Session;
-use com\github\tncrazvan\catpaw\http\HttpEventManager;
+use com\github\tncrazvan\catpaw\tools\Strings;
+use com\github\tncrazvan\catpaw\tools\Minifier;
+use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\http\HttpEventListener;
-use com\github\tncrazvan\catpaw\websocket\WebSocketManager;
 
 class CatPaw{
     private $socket,
             $listening,
             $minifyOperation=null,
-            $so;
+            $autoloader=null,
+            $argv;
+        
+    public $so;
     
     /**
-     * @param &$config This is the name of the config json file, for example "http.json".
+     * @param &$argv[1] This is the name of the config json file, for example "http.json".
      * @param $intercept This is an anonymus function that will be called before the server socket is created and after the socket context is created.
      * This function will be fed one parameters: <b>$context</b>, this is the stream context of the server socket (which, by the way, is not created yet at this point).
      * Modify this context to suit your needs.
      * @param $certificate This is the certificate filename. Note that the path is relative to the settings (http.json) file.
      * @param $password This is the passphrase of your certificate.
      */
-    public function __construct(&$config,$intercept=null) {
+    public function __construct(&$argv,$intercept=null) {
+        $this->argv = $argv;
         $protocol="tcp";
-        if(file_exists($config)){
+        if(file_exists($argv[1])){
             //creating SharedObject
-            $so = new SharedObject($config);
+            $so = new SharedObject($argv[1]);
             $this->so = $so;
+            //write down initial args
+            \file_put_contents($so->dir.'/args',$argv[1]);
             //creating context
             $context = stream_context_create();
             //check if SSL certificate file is specified
@@ -68,10 +74,18 @@ class CatPaw{
                 Session::init($so);
             }
         }else{
-            throw new \Exception ("\nConfig file \"$config\" doesn't exist\n");
+            throw new \Exception ("\nConfig file \"{$this->argv[1]}\" doesn't exist\n");
         }
     }
     
+    public function setAutoloader(string $filename){
+        $this->autoloader = $filename;
+    }
+
+    public function minifier(string $script,string $assets):Minifier{
+        return new Minifier($this,$script,$assets);
+    }
+
     public function whileListening(Closure $action){
         $this->whileListeningWorking = false;
         $this->whileListeningOperation = $action;
@@ -84,7 +98,7 @@ class CatPaw{
      * Start listening for requests.
      * @return void
      */
-    public function listen(Closure $action=null,int $actionTimeout=1000):void{
+    public function listen(Closure $action=null,int $actionIntervalMS=1000):void{
         //if the server is not supposed to listen for requests, kill the server.
         if (!$this->listening) return;
         
@@ -96,9 +110,17 @@ class CatPaw{
         echo "\nServer started.\n";
         //as long as the server is supposed to listen...
         while($this->listening){
-            if($action !== null && (microtime(true)*1000) - $lastTime >= $actionTimeout && !$actionWorking) {
+            if((microtime(true)*1000) - $lastTime >= $actionIntervalMS && !$actionWorking) {
                 $actionWorking = true;
-                $action();
+                $args = \file_get_contents($this->so->dir.'/args');
+                if(Strings::startsWith($args,'NEW CONTROLLER:')){
+                    $controllerName = trim(substr($args,15));
+                    echo "New controller detected: $controllerName\n";
+                    require($controllerName);
+                    pcntl_exec($this->argv[0], $this->argv);
+                }
+                if($action !== null) 
+                    $action();
                 $lastTime = microtime(true)*1000;
                 $actionWorking = false;
             }

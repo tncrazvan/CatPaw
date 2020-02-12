@@ -1,54 +1,51 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools;
 
-use com\github\tncrazvan\catpaw\tools\SharedObject;
+use com\github\tncrazvan\catpaw\CatPaw;
 use com\github\tncrazvan\catpaw\tools\Strings;
+use com\github\tncrazvan\catpaw\tools\SharedObject;
 
 class Minifier{
     private 
-        $inputDirname = "",
+        $dirname = "",
         $updates = array(),
         $assets = array(),
+        $assetsFilename,
         $js = "",
-        $css = "";
+        $css = "",
+        $server,
+        $script;
 
     private const 
         OUTPUT_DIRNAME = "minified",
         OUTPUT_FILENAME = "minified";
-    public function __construct(string $inputDirname,array $assets){
-        $this->inputDirname = $inputDirname;
-        $this->assets = $assets;
+    public function __construct(CatPaw $server, string $script,string $assets){
+        $this->server = $server;
+        $this->script = $script;
+        $this->dirname = dirname($assets);
+        $this->assetsFilename = $assets;
     }
 
-    public static function &minifyContents(string &$contents,string $type,string $hashCode=""):string{
-        $tmp = dirname(SharedObject::$webRoot)."/../tmp";
-        if(!\file_exists($tmp)){
-            mkdir($tmp);
-        }else if(!\is_dir($tmp)){
-            unlink($tmp);
-            mkdir($tmp);
-        }
+    public function updateAssets():void{
+        $this->assets = json_decode(file_get_contents($this->assetsFilename),true);
+    }
 
-        $tmp = "$tmp/$hashCode.minified.input.tmp";
-
-        if(\file_exists($tmp))
-            unlink($tmp);
-
-        \file_put_contents($tmp,$contents);
-
-        $result = shell_exec(SharedObject::$minifier["location"]." --type=$type \"$tmp\"");
-        if($result === null) $result = "";
-        if(\file_exists($tmp))
-            unlink($tmp);
+    public function &minifyContents(string $filename,string $type):string{
+        $tmpScript = preg_replace('/\@type/',$type,$this->script);
+        $tmpScript = preg_replace('/\@filename/',$filename,$tmpScript);
+        $result = shell_exec($tmpScript);
+        if($result === null) 
+            $result = "";
         return $result;
     }
 
     public function minify(bool $minify = true):void{
+        $this->updateAssets();
         $size = count($this->assets);
         $changes = false;
         try{
             for($i=0;$i<$size;$i++){
-                $filename = $this->inputDirname.$this->assets[$i];
+                $filename = $this->dirname.'/'.$this->assets[$i];
                 if(!Strings::endsWith($filename,".js") && !Strings::endsWith($filename,".css"))
                     continue;
                 $mtime = \filemtime($filename);
@@ -56,19 +53,23 @@ class Minifier{
                     if(!isset($this->updates[$filename]) || $this->updates[$filename] < $mtime){
                         $changes = true;
                         $this->updates[$filename] = $mtime;
-                        $contents = \file_get_contents($filename);
-                        $this->js .= $minify?self::minifyContents($contents,"js"):$contents;
+                        if($minify)
+                            $this->js .= "\n".$this->minifyContents($filename,"js");
+                        else 
+                            $this->js .= "\n".file_get_contents($filename);
                     }
                 }else if(Strings::endsWith($filename,".css")){
                     if(!isset($this->updates[$filename]) || $this->updates[$filename] < $mtime){
                         $changes = true;
                         $this->updates[$filename] = $mtime;
-                        $contents = \file_get_contents($filename);
-                        $this->css .= $minify?self::minifyContents($contents,"css"):$contents;
+                        if($minify)
+                            $this->css .= "\n".$this->minifyContents($filename,"css");
+                        else 
+                            $this->css .= "\n".file_get_contents($filename);
                     }
                 }
             }
-        }catch(Exception $e){
+        }catch(\Exception $e){
 
         }
 
@@ -79,7 +80,7 @@ class Minifier{
     }
 
     public function save(string &$contents,string $type):void{
-        $dir = $this->inputDirname.self::OUTPUT_DIRNAME;
+        $dir = $this->dirname.'/'.self::OUTPUT_DIRNAME;
         if(!\file_exists($dir)){
             mkdir($dir);
         }
