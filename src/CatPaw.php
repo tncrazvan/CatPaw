@@ -12,7 +12,6 @@ class CatPaw{
     private $socket,
             $listening,
             $minifyOperation=null,
-            $autoloader=null,
             $argv;
         
     public $so;
@@ -77,10 +76,6 @@ class CatPaw{
             throw new \Exception ("\nConfig file \"{$this->argv[1]}\" doesn't exist\n");
         }
     }
-    
-    public function setAutoloader(string $filename){
-        $this->autoloader = $filename;
-    }
 
     public function minifier(string $script,string $assets):Minifier{
         return new Minifier($this,$script,$assets);
@@ -110,17 +105,9 @@ class CatPaw{
         echo "\nServer started.\n";
         //as long as the server is supposed to listen...
         while($this->listening){
-            if((microtime(true)*1000) - $lastTime >= $actionIntervalMS && !$actionWorking) {
+            if($action !== null && (microtime(true)*1000) - $lastTime >= $actionIntervalMS && !$actionWorking) {
                 $actionWorking = true;
-                $args = \file_get_contents($this->so->dir.'/args');
-                if(Strings::startsWith($args,'NEW CONTROLLER:')){
-                    $controllerName = trim(substr($args,15));
-                    echo "New controller detected: $controllerName\n";
-                    require($controllerName);
-                    pcntl_exec($this->argv[0], $this->argv);
-                }
-                if($action !== null) 
-                    $action();
+                $action();
                 $lastTime = microtime(true)*1000;
                 $actionWorking = false;
             }

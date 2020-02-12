@@ -165,15 +165,16 @@ class ControllerTools{
     public function &action(string $action,string $arg1):array{
         $arg1 = trim($arg1);
         $metadata = [];
-        if(!$this->assertArgument($arg1,"This action requires arguments, please run \"controller actions\" for more information.\n")) return $metadata;
         switch($action){
             case "remove-http":
             case "delete-http":
+                if(!$this->assertArgument($arg1,"This action requires arguments, please run \"controller actions\" for more information.\n")) return $metadata;
                 $metadata = &$this->resolveControllerName("http",$arg1,true);
                 $this->delete($metadata);
             break;
             case "remove-websocket":
             case "delete-websocket":
+                if(!$this->assertArgument($arg1,"This action requires arguments, please run \"controller actions\" for more information.\n")) return $metadata;
                 $metadata = &$this->resolveControllerName("websocket",$arg1,true);
                 $this->delete($metadata);
             break;
@@ -183,6 +184,7 @@ class ControllerTools{
             case "new-http-force":
             case "add-http-force":
             case "create-http-force":
+                if(!$this->assertArgument($arg1,"This action requires arguments, please run \"controller actions\" for more information.\n")) return $metadata;
                 $metadata = &$this->resolveControllerName("http",$arg1,true);
                 $this->create("http",$arg1,$metadata,Strings::endsWith($action,"-force"));
             break;
@@ -192,6 +194,7 @@ class ControllerTools{
             case "new-websocket-force":
             case "add-websocket-force":
             case "create-websocket-force":
+                if(!$this->assertArgument($arg1,"This action requires arguments, please run \"controller actions\" for more information.\n")) return $metadata;
                 $metadata = &$this->resolveControllerName("websocket",$arg1,true);
                 $this->create("websocket",$arg1,$metadata,Strings::endsWith($action,"-force"));
             break;
