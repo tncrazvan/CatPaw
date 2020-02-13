@@ -1,6 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools\shelltools;
 
+use com\github\tncrazvan\catpaw\tools\Dir;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\asciitable\AsciiTable;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
@@ -53,38 +54,94 @@ class ControllerTools{
             ."add-http,\n"
             ."create-http",
             "[Creates] a new http controller in your src/http directory.\n"
+            ."This action won't expose the controller, that must be done manually.\n"
             ."----------------------------------------------------------\n"
             ."Arguments:\n"
             ."         |\n"
-            ."         +--[1] full name of your controller."
+            ."         +--[1] full name of your controller.\n"
+            ."                Example: php controller add-http my.package.MyClass@MyProject"
         );
         $actions->add(
             "remove-http,\n"
             ."delete-http",  
             "[Removes] an http controller from your src/http directory.\n"
+            ."This action won't un-expose the controller, that must be done manually.\n"
             ."---------------------------------------------------------\n"
             ."Arguments:\n"
             ."         |\n"
-            ."         +--[1] full name of your controller."
+            ."         +--[1] full name of your controller.\n"
+            ."                Example: php controller remove-http my.package.MyClass@MyProject"
         );
         $actions->add(
             "new-websocket,\n"
             ."add-websocket,\n"
             ."create-websocket",
             "[Creates] a new websocket controller in your src/websocket directory.\n"
+            ."This action won't expose the controller, that must be done manually.\n"
             ."--------------------------------------------------------------------\n"
             ."Arguments:\n"
             ."         |\n"
-            ."         +--[1] full name of your controller."
+            ."         +--[1] full name of your controller.\n"
+            ."                Example: php controller add-http my.package.MyClass@MyProject"
         );
         $actions->add(
             "remove-websocket,\n"
             ."delete-websocket",  
             "[Removes] a websocket controller from your src/websocket directory.\n"
+            ."This action won't un-expose the controller, that must be done manually.\n"
             ."------------------------------------------------------------------\n"
             ."Arguments:\n"
             ."         |\n"
-            ."         +--[1] full name of your controller."
+            ."         +--[1] full name of your controller.\n"
+            ."                Example: php controller remove-http my.package.MyClass@MyProject"
+        );
+
+        $actions->add(
+            "edit-http",
+            "[OPENS] the http controller file using the [editor] script provided \n"
+            ."in the configuration file.\n"
+            ."By default the [editor] script is 'code @filename', which is Visual Studio code.\n"
+            ."This actions opens both exposed and not exposed http controllers.\n"
+            ."------------------------------------------------------------------\n"
+            ."Arguments:\n"
+            ."         |\n"
+            ."         +--[1] full name of your controller and the project name.\n"
+            ."                Example: php controller edit-http my.package.MyClass@MyProject"
+        );
+
+        $actions->add(
+            "edit-websocket",
+            "[OPENS] the websocket controller file using the [editor] script \n"
+            ."provided in the configuration file.\n"
+            ."By default the [editor] script is 'code @filename', which is Visual Studio code.\n"
+            ."This actions opens both exposed and not exposed http controllers.\n"
+            ."------------------------------------------------------------------\n"
+            ."Arguments:\n"
+            ."         |\n"
+            ."         +--[1] full name of your controller and the project name.\n"
+            ."                Example: php controller edit-websocket my.package.MyClass@MyProject"
+        );
+
+        $actions->add(
+            "list-http",
+            "[LISTS] all http controller files showing file classname, namespace\n"
+            .", file name, file size, last modified date and wether or not it's exposed.\n"
+            ."------------------------------------------------------------------\n"
+            ."Arguments:\n"
+            ."         |\n"
+            ."         +--[1] project name.\n"
+            ."                Example: php controller list-files-http @MyProject"
+        );
+
+        $actions->add(
+            "list-websocket",
+            "[LISTS] all websocket controller files showing file classname, namespace\n"
+            .", file name, file size, last modified date and wether or not it's exposed.\n"
+            ."------------------------------------------------------------------\n"
+            ."Arguments:\n"
+            ."         |\n"
+            ."         +--[1] project name.\n"
+            ."                Example: php controller list-files-websocket @MyProject"
         );
 
         $info = new AsciiTable();
@@ -123,7 +180,7 @@ class ControllerTools{
         return $blueprint;
     }
 
-    private function create(string $type,string $arg1,array &$metadata, bool $force = false){
+    private function create(string $type,string $arg1,array &$metadata, bool $force = false):void{
         if(!$force && \file_exists($metadata["filename"])){
             echo "[FAILURE] File {$metadata['filename']} already exists. Will not overwrite.\n";
             return;
@@ -141,7 +198,7 @@ class ControllerTools{
         }
     }
 
-    private function delete(array &$metadata){
+    private function delete(array &$metadata):void{
         if(!\file_exists($metadata["filename"])){
             echo "[FAILURE] File {$metadata['filename']} not found.\n";
             return;
@@ -152,6 +209,55 @@ class ControllerTools{
         }else{
             echo "[FAILURE] Controller [{$metadata['namespace']}\\{$metadata['classname']}] could not be removed.\n";
         }
+    }
+
+    private function edit(string $type,array &$metadata):void{
+        if(!\file_exists($metadata["filename"])){
+            echo "[FAILURE] File {$metadata['filename']} doesn't exist. Try creating the controller using 'php controller add-$type <controller name>@<project name>'.\n";
+            return;
+        }
+        if($this->so->scripts["editor"] !== ""){
+            $editor = preg_replace('/@filename/',$metadata["filename"],$this->so->scripts["editor"]);
+            shell_exec($editor);
+        }else{
+            echo "[FAILURE] Editor script is not set.\n";
+        }
+    }
+
+    private function list(string $type):void{
+        $dir = [];
+        $table = new AsciiTable();
+        $table->add("Class","Namespace","File Name","Size","Last Modified","Exposed","Path");
+        Dir::getFilenamesRecursive("src/$type",$dir);
+        foreach($dir as &$file){
+            $path = "";
+            $exposed = "NO";
+            $namespace = "[unknown]";
+            $classname = "[unknown]";
+            $contents = file_get_contents($file["name"]);
+            $rows = preg_split('/\n/',$contents);
+            $namespaceGroups = preg_grep('/^\s*namespace \s*.*$/',$rows);
+            if(count($namespaceGroups) > 0){
+                $namespace = trim(preg_replace('/^\s*namespace \s*/','',$namespaceGroups[array_key_first($namespaceGroups)]));
+                $namespace = preg_replace('/\s*;\s*$/','',$namespace);
+            }
+            $classnameGroups = preg_grep('/(?<=class)\s+[A-z][A-z0-9_]+\s+/',$rows);
+            
+            if(count($classnameGroups) > 0){
+                $classname = trim($classnameGroups[array_key_first($classnameGroups)]);
+                if(preg_match('/(?<=class)\s+[A-z][A-z0-9_]+\s+/',$classname,$out)){
+                    $classname = trim($out[array_key_first($out)]);
+                }
+            }
+            foreach($this->so->controllers[$type] as $myPath => &$cls){
+                if($cls === $namespace."\\".$classname){
+                    $exposed = "YES";
+                    $path = $myPath;
+                }
+            }
+            $table->add($classname,$namespace,$file["name"],$file["size"],$file["lastChange"],$exposed,$path);
+        }
+        echo "{$table->toString()}\n";
     }
 
     private function assertArgument(string $arg1):bool{
@@ -172,6 +278,24 @@ class ControllerTools{
         $arg1 = trim($arg1);
         $metadata = [];
         switch($action){
+            case "list-http":
+                if(!$this->assertArgument($arg1)) return $metadata;
+                $this->list("http");
+            break;
+            case "list-websocket":
+                if(!$this->assertArgument($arg1)) return $metadata;
+                $this->list("websocket");
+            break;
+            case "edit-http":
+                if(!$this->assertArgument($arg1)) return $metadata;
+                $metadata = &$this->resolveControllerName("http",$arg1,true);
+                $this->edit("http",$metadata);
+            break;
+            case "edit-websocket":
+                if(!$this->assertArgument($arg1)) return $metadata;
+                $metadata = &$this->resolveControllerName("websocket",$arg1,true);
+                $this->edit("websocket",$metadata);
+            break;
             case "remove-http":
             case "delete-http":
                 if(!$this->assertArgument($arg1)) return $metadata;
