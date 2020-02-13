@@ -25,7 +25,8 @@ class HttpHeaders{
     public function initialize(EventManager $em):void{
         if(!$this->initialized){
             foreach($em->listener->so->headers as $key => &$value){
-                $this->set($key, $value);
+                if(!$this->has($key))
+                    $this->set($key, $value);
             }
             $this->initialized = true;
         }
@@ -33,10 +34,12 @@ class HttpHeaders{
 
     public function mix(HttpHeaders $headers):void{
         foreach($headers->getHeadersAray() as $key => &$value){
-            $this->headers[$key] = $value;
+            if(!isset($this->headers[$key]))
+                $this->headers[$key] = $value;
         }
         foreach($headers->getCookiesAray() as $key => &$value){
-            $this->cookies[$key] = $value;
+            if(!isset($this->cookies[$key]))
+                $this->cookies[$key] = $value;
         }
     }
     

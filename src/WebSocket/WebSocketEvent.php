@@ -7,22 +7,13 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketManager;
 
 abstract class WebSocketEvent extends WebSocketManager{
     public static function controller(HttpEventListener &$listener):WebSocketController{
-        if($listener->locationLen === 0 || $listener->locationLen === 1 && $listener->location[0] === "")
+        if($listener->locationLen === 0 || $listener->locationLen === 1 && \preg_match('/\s*\/+\s*/',$listener->location[0]) === 1)
             $listener->location = [$listener->so->wsNotFoundName];
         
-        $classId = self::getClassNameIndex($listener->so->wsControllerPackageName, $listener->location, $listener->locationLen);
-        if($classId >= 0){
-            $classname = self::resolveClassName($listener->so->wsControllerPackageName, $classId, $listener->location);
-            if(substr($classname,0,1) !=="\\")
-                $classname = "\\".$classname;
-            $controller = new $classname;
-            $controller->args = self::resolveMethodArgs($classId+2, $listener->location, $listener->locationLen);
-        }else{
-            $classname = $listener->so->wsControllerPackageName."\\".$listener->so->wsNotFoundName;
-            if(!class_exists($classname))
-                $classname = $listener->so->wsControllerPackageNameOriginal."\\".$listener->so->wsNotFoundNameOriginal;
-            $controller = new $classname();
-        }
+        $classId = self::getClassNameIndex('websocket', $listener, $classname);
+        $controller = new $classname;
+        $controller->args = self::resolveMethodArgs($classId, $listener);
+        
         $controller->classname = $classname;
         $controller->install($listener);
         return $controller;

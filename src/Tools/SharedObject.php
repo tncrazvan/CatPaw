@@ -21,6 +21,10 @@ class SharedObject extends Http{
         if(isset($settings["webRoot"]))
         $this->webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$this->dir."/".$settings["webRoot"]."/");
 
+        
+        if(isset($settings["scripts"]))
+        $this->scripts = $settings["scripts"];
+
         if(isset($settings["port"]))
         $this->port = $settings["port"];
         if(isset($settings["timeout"]))
@@ -60,11 +64,13 @@ class SharedObject extends Http{
         }
         if(isset($settings["controllers"])){
             if(isset($settings["controllers"]["http"]))
-            $this->httpControllerPackageName = $settings["controllers"]["http"];
-            if(isset($settings["controllers"]["ws"]))
-            $this->wsControllerPackageName = $settings["controllers"]["ws"];
+                foreach($settings["controllers"]["http"] as $path => &$classname){
+                    $this->controllers["http"][\strtolower(\trim($path))] = $classname;
+                }
             if(isset($settings["controllers"]["websocket"]))
-            $this->wsControllerPackageName = $settings["controllers"]["websocket"];
+                foreach($settings["controllers"]["websocket"] as $path => &$classname){
+                    $this->controllers["websocket"][\strtolower(\trim($path))] = $classname;
+                }
         }
         if(isset($settings["certificate"])){
             if(isset($settings["certificate"]["name"]))
@@ -165,25 +171,33 @@ class SharedObject extends Http{
                 "headers\n\n"
                 ."Extra headers to add to your HttpResponse objects.\n"
                 ."[NOTE]: These can be overwritten at runtime."
-                    =>$this->headers
+                    =>$this->headers,
+                "scripts\n\n"
+                ."These are some of the scripts the server could use for quality of life improvements.\n"
+                ."For example the scripts.editor script will be executed after running 'php controller' actions.\n"
+                ."To know more about controller actions run the 'php controller actions' script located in the root of this project."
+                    =>$this->scripts,
+                "controllers\n\n"
+                ."There are the exposed Http and WebSocket controllers this server offers."
+                    =>$this->controllers
             ];
             echo Strings::tableFromArray($data,false,function(AsciiTable $table,int $lvl){
                 //echo "LBL: $lvl\n";
                 switch($lvl){
                     case 0:
                         $table->style(0,[
-                            "width"=>37
+                            "width"=>50
                         ]);
                         $table->style(1,[
-                            "width"=>37
+                            "width"=>2048
                         ]);
                     break;
                     case 1:
                         $table->style(0,[
-                            "width"=>25
+                            "width"=>2048
                         ]);
                         $table->style(1,[
-                            "width"=>25
+                            "width"=>2048
                         ]);
                     break;
                 }
@@ -194,6 +208,11 @@ class SharedObject extends Http{
 
     public
         $dir,
+        $scripts=[
+            //"minify" => "minify --type=@type \"@filename\"",
+            "minify" => "'No minify script defined.'",
+            "editor" => "code @filename"
+        ],
         $httpConnections = null,
         $websocketConnections = null,
         $sessions,
@@ -221,6 +240,17 @@ class SharedObject extends Http{
         $webRoot="/www/",
         $charset="UTF-8",
         $bindAddress="127.0.0.1",
+
+        $controllers = [
+            "http"=>[
+                "/"=>\com\github\tncrazvan\catpaw\controller\http\EntryPoint::class,
+                "@file"=>\com\github\tncrazvan\catpaw\controller\http\File::class,
+                "@404"=>\com\github\tncrazvan\catpaw\controller\http\ControllerNotFound::class
+            ],
+            "websocket"=>[
+                "@404"=>\com\github\tncrazvan\catpaw\controller\websocket\ControllerNotFound::class
+            ]
+        ],
 
         $httpControllerPackageNameOriginal="com\\github\\tncrazvan\\catpaw\\controller\\http",
         $httpControllerPackageName="com\\github\\tncrazvan\\catpaw\\controller\\http",

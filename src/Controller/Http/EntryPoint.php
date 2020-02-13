@@ -7,7 +7,7 @@ use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
 use com\github\tncrazvan\catpaw\http\HttpController;
 
-class App extends HttpController{
+class EntryPoint extends HttpController{
     
     public function main() {
         switch($this->getRequestMethod()){

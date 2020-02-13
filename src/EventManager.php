@@ -1,8 +1,9 @@
 <?php
 namespace com\github\tncrazvan\catpaw\http;
 
-use com\github\tncrazvan\catpaw\http\HttpEventListener;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
+use com\github\tncrazvan\catpaw\tools\SharedObject;
+use com\github\tncrazvan\catpaw\http\HttpEventListener;
 
 
 class EventManager{
@@ -38,30 +39,38 @@ class EventManager{
         //$this->findUserLanguages();
     }
 
+    protected static function getClassNameIndex(string $type, HttpEventListener $listener, &$classnameOut){
+        $paths = &$listener->so->controllers[$type];
 
-    protected static function getClassNameIndex(string &$root, array &$location,int $len):int{
-        $classname = $root;
-        for($i=0;$i<$len;$i++){
-            $classname .="\\".$location[$i];
-            if(class_exists($classname,true)){
-                return $i;
+        //checking if it's a file
+        if(\file_exists(($filename = $listener->so->webRoot.\implode('/',$listener->location)))){
+            if(!\is_dir($filename)){
+                $classnameOut = $paths["@file"];
+                return 0;
             }
         }
-        return -1;
-    }
-    
-    protected static function resolveClassName(string &$root, int $classId, array &$location):string{
-        $classname = $root;
-        for($i=0;$i<=$classId;$i++){
-            $classname .="\\".$location[$i];
+
+        //looking for controller
+        $choice = "";
+        for($i=$listener->locationLen;$i>0;$i--){
+            $choice = strtolower(trim('/'.implode('/',array_slice($listener->location,0,$i))));
+            foreach($paths as $path => &$classname){
+                if($path === $choice && class_exists($classname,true)){
+                    $classnameOut = $classname;
+                    return $i-1;
+                }
+            }
         }
-        return trim($classname);
+
+        //if no controller has been found serve 404
+        $classnameOut = $paths["@404"];
+        return 0;
     }
     
-    protected static function &resolveMethodArgs(int $offset, array &$location, int $len):array{
+    protected static function &resolveMethodArgs(int $offset, HttpEventListener $listener):array{
         $args = [];
-        if($len-1>$offset-1){
-            $args = array_slice($location, $offset);
+        if($listener->locationLen-1>$offset-1){
+            $args = array_slice($listener->location, $offset);
         }
         return $args;
     }
@@ -71,6 +80,7 @@ class EventManager{
      * @return void This method WILL NOT invoke the "onClose" method.
      */
      public function close():void{
+         if(!$this->alive) return;
         $this->alive = false;
         fclose($this->listener->client);
         //@socket_set_option($this->clistener->lient, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));

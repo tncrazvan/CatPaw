@@ -79,7 +79,7 @@ abstract class WebSocketManager extends EventManager{
         */
     
     
-    public function mask(&$data,&$length):void{
+    public function mask(&$data,&$length):string{
         $b1 = 0x80 | (0x1 & 0x0f);
         $length = strlen($data);
 

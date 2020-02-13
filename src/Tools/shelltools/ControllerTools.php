@@ -135,8 +135,8 @@ class ControllerTools{
         }
         shell_exec("composer dump-autoload -o");
         echo "[SUCCESS] Controller [{$metadata['namespace']}\\{$metadata['classname']}] created.\n";
-        if($this->so->editor !== ""){
-            $editor = preg_replace('/@filename/',$metadata["filename"],$this->so->editor);
+        if($this->so->scripts["editor"] !== ""){
+            $editor = preg_replace('/@filename/',$metadata["filename"],$this->so->scripts["editor"]);
             shell_exec($editor);
         }
     }
@@ -154,9 +154,15 @@ class ControllerTools{
         }
     }
 
-    private function assertArgument(string $arg1,string $message):bool{
+    private function assertArgument(string $arg1):bool{
         if($arg1 === ""){
-            echo $message;
+            echo "This action requires arguments, please run \"controller actions\" for more information.\n";
+            return false;
+        }
+        $at = \preg_split('/@/',$arg1);
+        $countAt = count($at);
+        if($countAt < 2){
+            echo "Please specify a project name. For example: 'php controller <action> my.package.MyClass@MyProject'.\n";
             return false;
         }
         return true;
@@ -168,13 +174,13 @@ class ControllerTools{
         switch($action){
             case "remove-http":
             case "delete-http":
-                if(!$this->assertArgument($arg1,"This action requires arguments, please run \"controller actions\" for more information.\n")) return $metadata;
+                if(!$this->assertArgument($arg1)) return $metadata;
                 $metadata = &$this->resolveControllerName("http",$arg1,true);
                 $this->delete($metadata);
             break;
             case "remove-websocket":
             case "delete-websocket":
-                if(!$this->assertArgument($arg1,"This action requires arguments, please run \"controller actions\" for more information.\n")) return $metadata;
+                if(!$this->assertArgument($arg1)) return $metadata;
                 $metadata = &$this->resolveControllerName("websocket",$arg1,true);
                 $this->delete($metadata);
             break;
@@ -184,7 +190,7 @@ class ControllerTools{
             case "new-http-force":
             case "add-http-force":
             case "create-http-force":
-                if(!$this->assertArgument($arg1,"This action requires arguments, please run \"controller actions\" for more information.\n")) return $metadata;
+                if(!$this->assertArgument($arg1)) return $metadata;
                 $metadata = &$this->resolveControllerName("http",$arg1,true);
                 $this->create("http",$arg1,$metadata,Strings::endsWith($action,"-force"));
             break;
@@ -194,7 +200,7 @@ class ControllerTools{
             case "new-websocket-force":
             case "add-websocket-force":
             case "create-websocket-force":
-                if(!$this->assertArgument($arg1,"This action requires arguments, please run \"controller actions\" for more information.\n")) return $metadata;
+                if(!$this->assertArgument($arg1)) return $metadata;
                 $metadata = &$this->resolveControllerName("websocket",$arg1,true);
                 $this->create("websocket",$arg1,$metadata,Strings::endsWith($action,"-force"));
             break;
@@ -229,7 +235,14 @@ class ControllerTools{
         ];
         $classname = "";
         $directory = "";
-        $pieces = preg_split('/\./',$arg1);
+        $at = \preg_split('/@/',$arg1);
+        $countAt = count($at);
+        if($countAt > 1){
+            $at[1] = \preg_replace('/\\{2,}|\.+/',"\\",$at[1]);
+        }else
+            return $metadata;
+
+        $pieces = preg_split('/\./',$at[0]);
         for($i = 0,$len = count($pieces); $i < $len; $i++){
             if($i === $len - 1){
                 $classname = $pieces[$i];
@@ -240,7 +253,9 @@ class ControllerTools{
                 mkdir("src/$type$directory");
             }
         }
-        $namespace = $this->so->httpControllerPackageName.preg_replace('/\//',"\\",$directory);
+        
+        $namespace = $at[1].preg_replace('/\//',"\\",'\\'.$type.$directory);
+
         $filename = "src/$type$directory/$classname.php";
         $metadata["xec"] = "NEW CONTROLLER";
         $metadata["namespace"] = $namespace;

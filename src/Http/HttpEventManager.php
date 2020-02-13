@@ -20,96 +20,26 @@ abstract class HttpEventManager extends EventManager{
         if($this->listener->so->httpConnections == null){
             $this->listener->so->httpConnections = new LinkedList();
         }
-        $filename = $this->listener->so->webRoot."/".$this->listener->resource[0];
-        if($this->serve === null){
-            $response = new HttpResponse([
-                "Status"=>Status::NOT_FOUND
-            ]);
-            $response->getHeaders()->initialize($this);
-            $response->getHeaders()->mix($this->serverHeaders);
-            $this->send($response);
-        }else if($this->listener->resource[0] === "favicon.ico"){
-            if(!\file_exists($filename)){
-                $response = new HttpResponse([
-                    "Status"=>Status::NOT_FOUND
-                ]);
-                $response->getHeaders()->initialize($this);
-                $response->getHeaders()->mix($this->serverHeaders);
-                $this->send($response);
-            }else{
-                $response = Http::getFile($this,$filename);
-                $response->getHeaders()->initialize($this);
-                $response->getHeaders()->mix($this->serverHeaders);
-                if($this->isCommit){
-                    $response = $response->toString();
-                    $chunks = str_split($response,1024);
-                    for($i=0,$len=count($chunks);$i<$len;$i++){
-                        if($i === $len -1)
-                            $this->commit($chunks[$i],\strlen($chunks[$i]));
-                        else
-                            $this->commit($chunks[$i]);
-                    }
-                }else {
-                    $this->send(response);
-                }
+        
+        $response = $this->{$this->serve}();
+        if(!is_a($response,HttpResponse::class))
+            $response = new HttpResponse($this->serverHeader,$response);
+
+        $response->getHeaders()->initialize($this);
+        $response->getHeaders()->mix($this->serverHeaders);
+        if($this->isCommit){
+            $response = $response->toString();
+            $chunks = str_split($response,1024);
+            for($i=0,$len=count($chunks);$i<$len;$i++){
+                if($i === $len -1)
+                    $this->commit($chunks[$i],\strlen($chunks[$i]));
+                else
+                    $this->commit($chunks[$i]);
             }
         }else{
-            if(file_exists($filename)){
-                if(!is_dir($filename)){
-                    $response = Http::getFile($this,$filename);
-                    $response->getHeaders()->initialize($this);
-                    $response->getHeaders()->mix($this->serverHeaders);
-                    if($this->isCommit){
-                        $response = $response->toString();
-                        $chunks = str_split($response,1024);
-                        for($i=0,$len=count($chunks);$i<$len;$i++){
-                            if($i === $len -1)
-                                $this->commit($chunks[$i],\strlen($chunks[$i]));
-                            else
-                                $this->commit($chunks[$i]);
-                        }
-                    }else {
-                        $this->send($response);
-                    }
-                }else{
-                    $response = $this->{$this->serve}();
-                    if(!is_a($response,HttpResponse::class))
-                            $response = new HttpResponse($this->serverHeader,$response);
-                    $response->getHeaders()->initialize($this);
-                    $response->getHeaders()->mix($this->serverHeaders);
-                    if($this->isCommit){
-                        $response = $response->toString();
-                        $chunks = str_split($response,1024);
-                        for($i=0,$len=count($chunks);$i<$len;$i++){
-                            if($i === $len -1)
-                                $this->commit($chunks[$i],\strlen($chunks[$i]));
-                            else
-                                $this->commit($chunks[$i]);
-                        }
-                    }else{
-                        $this->send($response);
-                    }
-                }
-            }else{
-                $response = $this->{$this->serve}();
-                if(!is_a($response,HttpResponse::class))
-                    $response = new HttpResponse($this->serverHeader,$response);
-                $response->getHeaders()->initialize($this);
-                $response->getHeaders()->mix($this->serverHeaders);
-                if($this->isCommit){
-                    $response = $response->toString();
-                    $chunks = str_split($response,1024);
-                    for($i=0,$len=count($chunks);$i<$len;$i++){
-                        if($i === $len -1)
-                            $this->commit($chunks[$i],\strlen($chunks[$i]));
-                        else
-                            $this->commit($chunks[$i]);
-                    }
-                }else{
-                    $this->send($response);
-                }
-            }
+            $this->send($response);
         }
+        
         if(!$this->isCommit){
             if(method_exists($this, "onClose"))
                 $this->onClose();

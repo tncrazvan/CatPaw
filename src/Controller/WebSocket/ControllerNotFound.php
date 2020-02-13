@@ -1,5 +1,5 @@
 <?php
-namespace com\github\tncrazvan\catpaw\controller\WebSocket;
+namespace com\github\tncrazvan\catpaw\controller\websocket;
 
 use com\github\tncrazvan\catpaw\websocket\WebSocketController;
 

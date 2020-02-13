@@ -37,6 +37,6 @@ class HttpResponse{
     }
 
     public function toString():string{
-        return $this->header->toString()."\n\n".$this->body;
+        return $this->header->toString()."\r\n".$this->body;
     }
 }
