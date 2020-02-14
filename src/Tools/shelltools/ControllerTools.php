@@ -224,10 +224,22 @@ class ControllerTools{
         }
     }
 
+    private function config():void{
+        if(!\file_exists("config/config.php")){
+            echo "[FAILURE] File 'config/config.php' doesn't exist.\n";
+            return;
+        }
+        if($this->so->scripts["editor"] !== ""){
+            $editor = preg_replace('/@filename/','config/config.php',$this->so->scripts["editor"]);
+            shell_exec($editor);
+        }else{
+            echo "[FAILURE] Editor script is not set.\n";
+        }
+    }
     private function list(string $type):void{
         $dir = [];
         $table = new AsciiTable();
-        $table->add("Class","Namespace","File Name","Size","Last Modified","Exposed","Path");
+        $table->add("Path","Controller Name","File Name","Size","Last Modified","Exposed");
         Dir::getFilenamesRecursive("src/$type",$dir);
         foreach($dir as &$file){
             $path = "";
@@ -255,7 +267,21 @@ class ControllerTools{
                     $path = $myPath;
                 }
             }
-            $table->add($classname,$namespace,$file["name"],$file["size"],$file["lastChange"],$exposed,$path);
+            //app\mysubapp
+            $thisNamespaceEscaped = preg_replace('/\\\+/','\\.',$this->so->namespace);
+            //app.mysubapp
+
+            $namespace = preg_replace('/\\\+/','.',$namespace);
+
+            //app.mysubapp.http
+            $convertedNamespace = preg_replace("/^$thisNamespaceEscaped/",'',$namespace);
+            //http
+
+
+            $convertedNamespace = preg_replace("/^\\.*$type\\.*/",'',$convertedNamespace);
+            $classname = preg_replace('/\\\+/','.',$classname);
+            $classname = ($convertedNamespace !== ""?$convertedNamespace.'.':"").$classname;
+            $table->add($path,$classname,$file["name"],$file["size"],$file["lastChange"],$exposed);
         }
         echo "{$table->toString()}\n";
     }
@@ -265,12 +291,6 @@ class ControllerTools{
             echo "This action requires arguments, please run \"controller actions\" for more information.\n";
             return false;
         }
-        $at = \preg_split('/@/',$arg1);
-        $countAt = count($at);
-        if($countAt < 2){
-            echo "Please specify a project name. For example: 'php controller <action> my.package.MyClass@MyProject'.\n";
-            return false;
-        }
         return true;
     }
 
@@ -278,12 +298,13 @@ class ControllerTools{
         $arg1 = trim($arg1);
         $metadata = [];
         switch($action){
+            case "config":
+                $this->config();
+            break;
             case "list-http":
-                if(!$this->assertArgument($arg1)) return $metadata;
                 $this->list("http");
             break;
             case "list-websocket":
-                if(!$this->assertArgument($arg1)) return $metadata;
                 $this->list("websocket");
             break;
             case "edit-http":
@@ -359,14 +380,8 @@ class ControllerTools{
         ];
         $classname = "";
         $directory = "";
-        $at = \preg_split('/@/',$arg1);
-        $countAt = count($at);
-        if($countAt > 1){
-            $at[1] = \preg_replace('/\\{2,}|\.+/',"\\",$at[1]);
-        }else
-            return $metadata;
 
-        $pieces = preg_split('/\./',$at[0]);
+        $pieces = preg_split('/\./',$arg1);
         for($i = 0,$len = count($pieces); $i < $len; $i++){
             if($i === $len - 1){
                 $classname = $pieces[$i];
@@ -378,7 +393,7 @@ class ControllerTools{
             }
         }
         
-        $namespace = $at[1].preg_replace('/\//',"\\",'\\'.$type.$directory);
+        $namespace = $this->so->namespace.preg_replace('/\//',"\\",'\\'.$type.$directory);
 
         $filename = "src/$type$directory/$classname.php";
         $metadata["xec"] = "NEW CONTROLLER";
