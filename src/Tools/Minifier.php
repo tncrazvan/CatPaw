@@ -101,7 +101,7 @@ class Minifier{
 
         if(!$changes) return;
 
-        $minified = &$this->getMinifiedContents();
+        $minified = &$this->getMinifiedContents($minify);
 
         $this->js = $minified["js"];
         $this->css = $minified["css"];
