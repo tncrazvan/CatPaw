@@ -17,7 +17,21 @@ class EventManager{
         $listener,
         $requestId;
     
-    public function install(HttpEventListener &$listener):void{
+    public function delegate(string $key):HttpController{
+        $classname = $this->listener->so->controllers["http"][$key];
+        $controller = new $classname();
+        $controller->install($this->listener);
+        return $controller;
+    }
+
+    public function uninstall():void{
+        $this->requestId = null;
+        $this->listener = null;
+        $this->serverHeaders = null;
+        $this->queryString = null;
+    }
+
+    public function install(HttpEventListener &$listener){
         $this->requestId = spl_object_hash($this).rand();
         $this->listener = $listener;
         $this->serverHeaders = new HttpHeaders($this);
@@ -36,43 +50,7 @@ class EventManager{
                 }
             }
         }
-        //$this->findUserLanguages();
-    }
-
-    protected static function getClassNameIndex(string $type, HttpEventListener $listener, &$classnameOut){
-        $paths = &$listener->so->controllers[$type];
-
-        //checking if it's a file
-        if(\file_exists(($filename = $listener->so->webRoot.\implode('/',$listener->location)))){
-            if(!\is_dir($filename)){
-                $classnameOut = $paths["@file"];
-                return 0;
-            }
-        }
-
-        //looking for controller
-        $choice = "";
-        for($i=$listener->locationLen;$i>0;$i--){
-            $choice = strtolower(trim('/'.implode('/',array_slice($listener->location,0,$i))));
-            foreach($paths as $path => &$classname){
-                if($path === $choice && class_exists($classname,true)){
-                    $classnameOut = $classname;
-                    return $i-1;
-                }
-            }
-        }
-
-        //if no controller has been found serve 404
-        $classnameOut = $paths["@404"];
-        return 0;
-    }
-    
-    protected static function &resolveMethodArgs(int $offset, HttpEventListener $listener):array{
-        $args = [];
-        if($listener->locationLen-1>$offset-1){
-            $args = array_slice($listener->location, $offset);
-        }
-        return $args;
+        return $this;
     }
     
     /**
@@ -111,11 +89,10 @@ class EventManager{
     
 
     /**
-     * Set a field to your response header.
+     * Check if your response headers contain a specific field
      * @param string $key name of the field
-     * @param string $content content of the field
      */
-    public function hasHeadersField(string $key):bool{
+    public function issetResponseHeader(string $key):bool{
         return $this->serverHeaders->has($key);
     }
 
@@ -124,7 +101,7 @@ class EventManager{
      * @param string $key name of the field
      * @param string $content content of the field
      */
-    public function setHeadersField(string $key, string $content):void{
+    public function setResponseHeader(string $key, string $content):void{
         $this->serverHeaders->set($key,$content);
     }
 
@@ -132,7 +109,7 @@ class EventManager{
      * Set the header of the event.
      * @return void
      */
-    public function setHeaders(HttpHeaders &$header):void{
+    public function setResponseHttpHeaders(HttpHeaders &$header):void{
         $this->serverHeaders = $header;
     }
         
@@ -141,7 +118,7 @@ class EventManager{
      * @param string $status a status code. Multiple status codes can be found in the Cat class, suche as Server::STATUS_SUCCESS.
      */
     public function setStatus(string $status):void{
-        $this->setHeadersField("Status", "HTTP/1.1 $status");
+        $this->setResponseHeader("Status", "HTTP/1.1 $status");
     }
     
     /**
@@ -149,14 +126,14 @@ class EventManager{
      * @param string $type content type string, such as "text/plain", "text/html" ecc...
      */
     public function setContentType(string $type):void{
-        $this->setHeadersField("Content-Type", $type);
+        $this->setResponseHeader("Content-Type", $type);
     }
 
     /**
      * Get response header.
      * @return \com\github\tncrazvan\catpaw\http\httpHeaders header of the your response message.
      */
-    public function &getHeaders():HttpHeaders{
+    public function &getResponseHttpHeaders():HttpHeaders{
         return $this->serverHeaders;
     }
 
@@ -165,7 +142,7 @@ class EventManager{
      * @param string $key name of the header field.
      * @return string value of the header field.
      */
-    public function &getHeadersField(string $key):string{
+    public function &getResponseHeader(string $key):string{
         return $this->serverHeaders->get($key);
     }
     
@@ -181,11 +158,11 @@ class EventManager{
      * Get request header.
      * @return \com\github\tncrazvan\catpaw\http\httpHeaders header of the client request.
      */
-    public function &getRequestHeaders():HttpHeaders{
+    public function &getRequestHttpHeaders():HttpHeaders{
         return $this->listener->requestHeaders;
     }
 
-    public function getRequestHeadersField(string $key){
+    public function getRequestHeader(string $key){
         return $this->listener->requestHeaders->get($key);
     }
     
@@ -194,7 +171,7 @@ class EventManager{
      * @return string method of the client request.
      */
     public function getRequestMethod(){
-        return $this->getRequestHeadersField("Method");
+        return $this->getRequestHeader("Method");
     }
     
     /**
@@ -202,7 +179,7 @@ class EventManager{
      * @return &string
      */
     public function getUserAgent():string{
-        return $this->getRequestHeaders()->get("User-Agent");
+        return $this->getRequestHeader("User-Agent");
     }
     
     /**

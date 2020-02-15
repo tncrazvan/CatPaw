@@ -12,7 +12,7 @@ abstract class HttpEvent extends HttpEventManager{
             $listener->location = [""];
         }
         
-        $classId = self::getClassNameIndex('http', $listener, $classname);
+        $classId = HttpEventListener::getClassNameIndex('http', $listener, $classname);
 
         $methodname = $listener->locationLen-1>$classId?$listener->location[$classId+1]:"main";
         if(method_exists($classname, $methodname)){
@@ -27,7 +27,7 @@ abstract class HttpEvent extends HttpEventManager{
         }
         
         $controller->install($listener);
-        $controller->args = self::resolveMethodArgs($classId, $listener);
+        $controller->args = HttpEventListener::resolveMethodArgs($classId, $listener);
         return $controller;
     }
 }

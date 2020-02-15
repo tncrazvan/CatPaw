@@ -23,7 +23,7 @@ abstract class HttpEventManager extends EventManager{
         
         $response = $this->{$this->serve}();
         if(!is_a($response,HttpResponse::class))
-            $response = new HttpResponse($this->serverHeader,$response);
+            $response = new HttpResponse($this->serverHeaders,$response);
 
         $response->getHeaders()->initialize($this);
         $response->getHeaders()->mix($this->serverHeaders);
@@ -84,6 +84,7 @@ abstract class HttpEventManager extends EventManager{
                 $this->onClose();
                 $this->close();
                 $this->listener->so->httpConnections->deleteNode($this);
+                $this->uninstall();
             }
             $i++;
             $isEmpty = $this->commits->isEmpty();
@@ -93,6 +94,7 @@ abstract class HttpEventManager extends EventManager{
             $this->onClose();
             $this->close();
             $this->listener->so->httpConnections->deleteNode($this);
+            $this->uninstall();
         }
         return $isEmpty;
     }

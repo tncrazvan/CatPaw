@@ -30,7 +30,7 @@ abstract class Http{
      * or from 0 to the end of file if ranges are not found.
      */
     public static function getFile(HttpController $controller, string ...$filename):HttpResponse{
-        $requestHeaders = $controller->getRequestHeaders();
+        $requestHeaders = $controller->getRequestHttpHeaders();
         $responseHeaders = new HttpHeaders($controller);
         $result = "";
         $filenameLength = count($filename);

@@ -87,7 +87,7 @@ class HttpHeaders{
     }
 
     public function get(string $key):string{
-        if(!isset($this->headers[$key])) return '';
+        if(!isset($this->headers[$key])) return null;
         return trim($this->headers[$key]);
     }
     

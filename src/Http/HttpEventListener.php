@@ -30,6 +30,43 @@ class HttpEventListener{
         $this->serve();
     }
 
+    
+    public static function getClassNameIndex(string $type, HttpEventListener $listener, &$classnameOut){
+        $paths = &$listener->so->controllers[$type];
+
+        //checking if it's a file
+        if(\file_exists(($filename = $listener->so->webRoot.\implode('/',$listener->location)))){
+            if(!\is_dir($filename)){
+                $classnameOut = $paths["@file"];
+                return 0;
+            }
+        }
+
+        //looking for controller
+        $choice = "";
+        for($i=$listener->locationLen;$i>0;$i--){
+            $choice = strtolower(trim('/'.implode('/',array_slice($listener->location,0,$i))));
+            foreach($paths as $path => &$classname){
+                if($path === $choice && class_exists($classname,true)){
+                    $classnameOut = $classname;
+                    return $i-1;
+                }
+            }
+        }
+
+        //if no controller has been found serve 404
+        $classnameOut = $paths["@404"];
+        return 0;
+    }
+    
+    public static function &resolveMethodArgs(int $offset, HttpEventListener $listener):array{
+        $args = [];
+        if($listener->locationLen-1>$offset-1){
+            $args = array_slice($listener->location, $offset);
+        }
+        return $args;
+    }
+
     private function resolve():void{
         $input = fread($this->client, $this->so->httpMtu);
         if(!$input){

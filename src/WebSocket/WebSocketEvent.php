@@ -10,9 +10,9 @@ abstract class WebSocketEvent extends WebSocketManager{
         if($listener->locationLen === 0 || $listener->locationLen === 1 && \preg_match('/\s*\/+\s*/',$listener->location[0]) === 1)
             $listener->location = [$listener->so->wsNotFoundName];
         
-        $classId = self::getClassNameIndex('websocket', $listener, $classname);
+        $classId = HttpEventListener::getClassNameIndex('websocket', $listener, $classname);
         $controller = new $classname;
-        $controller->args = self::resolveMethodArgs($classId, $listener);
+        $controller->args = HttpEventListener::resolveMethodArgs($classId, $listener);
         
         $controller->classname = $classname;
         $controller->install($listener);

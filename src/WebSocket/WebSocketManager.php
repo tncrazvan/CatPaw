@@ -157,6 +157,7 @@ abstract class WebSocketManager extends EventManager{
                 $this->onCloseCaller();
                 $this->close();
                 $this->listener->so->websocketConnections->deleteNode($this);
+                $this->uninstall();
             }
             $i++;
         }
@@ -168,6 +169,7 @@ abstract class WebSocketManager extends EventManager{
             $this->onCloseCaller();
             $this->close();
             $this->listener->so->websocketConnections->deleteNode($this);
+            $this->uninstall();
         }
     }
     
