@@ -14,8 +14,7 @@ class Minifier{
         $js = "",
         $css = "",
         $server,
-        $script,
-        $lastCount=-1;
+        $script;
 
     private const 
         OUTPUT_DIRNAME = "minified",
@@ -41,63 +40,53 @@ class Minifier{
     }
 
     public function &getMinifiedContents(bool $minify=true):array{
-        $minified = [
+        $result = [
             "js"=>"",
             "css"=>""
         ];
         $size = count($this->assets);
         for($i=0;$i<$size;$i++){
             $filename = $this->dirname.'/'.$this->assets[$i];
-            $endsWithJS = Strings::endsWith($filename,".js");
-            $endsWithCSS = Strings::endsWith($filename,".css");
-            $mtime = \filemtime($filename);
-            if($endsWithJS){
+            if(Strings::endsWith($filename,".js")){
                 if($minify)
-                    $minified["js"] .= "\n".$this->minifyContents($filename,"js");
+                    $result["js"] .= $this->minifyContents($filename,"js")."\n/*=====@filename: $filename====*/\n";
                 else 
-                    $minified["js"] .= "\n".file_get_contents($filename);
-            }else if($endsWithCSS){
+                    $result["js"] .= file_get_contents($filename)."\n/*=====@filename: $filename====*/\n";
+            }else if(Strings::endsWith($filename,".css")){
                 if($minify)
-                    $minified["css"] .= "\n".$this->minifyContents($filename,"css");
+                    $result["css"] .= $this->minifyContents($filename,"css")."\n/*=====@filename: $filename====*/\n";
                 else 
-                    $minified["css"] .= "\n".file_get_contents($filename);
+                    $result["css"] .= file_get_contents($filename)."\n/*=====@filename: $filename====*/\n";
             }
-            $this->updates[$filename] = $mtime;
         }
-        return $minified;
+        return $result;
     }
 
     public function minify(bool $minify = true):void{
         $this->updateAssets();
         $size = count($this->assets);
         $changes = false;
-        if($this->lastCount >= 0 || ($this->lastCount >= 0 && $this->lastCount !== $size)){
-            try{
-                for($i=0;$i<$size;$i++){
-                    $filename = $this->dirname.'/'.$this->assets[$i];
-                    $endsWithJS = Strings::endsWith($filename,".js");
-                    $endsWithCSS = Strings::endsWith($filename,".css");
-                    if(!$endsWithJS && !$endsWithCSS)
-                        continue;
-                    $mtime = \filemtime($filename);
-                    if($endsWithJS){
-                        if(!isset($this->updates[$filename]) || $this->updates[$filename] < $mtime){
-                            $changes = true;
-                            break;
-                        }
-                    }else if($endsWithCSS){
-                        if(!isset($this->updates[$filename]) || $this->updates[$filename] < $mtime){
-                            $changes = true;
-                            break;
-                        }
+        try{
+            for($i=0;$i<$size;$i++){
+                $filename = $this->dirname.'/'.$this->assets[$i];
+                if(!Strings::endsWith($filename,".js") && !Strings::endsWith($filename,".css"))
+                    continue;
+                $mtime = \filemtime($filename);
+                if(Strings::endsWith($filename,".js")){
+                    if(!isset($this->updates[$filename]) || $this->updates[$filename] < $mtime){
+                        $changes = true;
+                        $this->updates[$filename] = $mtime;
+                    }
+                }else if(Strings::endsWith($filename,".css")){
+                    if(!isset($this->updates[$filename]) || $this->updates[$filename] < $mtime){
+                        $changes = true;
+                        $this->updates[$filename] = $mtime;
                     }
                 }
-            }catch(\Exception $e){
-    
             }
+        }catch(\Exception $e){
+
         }
-        
-        $this->lastCount = $size;
 
         if(!$changes) return;
 
@@ -105,6 +94,7 @@ class Minifier{
 
         $this->js = $minified["js"];
         $this->css = $minified["css"];
+
 
         $this->save($this->js,"js");
         $this->save($this->css,"css");
@@ -119,7 +109,7 @@ class Minifier{
         $minified = $dir.'/'.self::OUTPUT_FILENAME.".$type";
         if(\file_exists($minified))
             \unlink($minified);
-
+        $len = strlen($contents);
         \file_put_contents($minified,$contents);
     }
 }
