@@ -24,7 +24,7 @@ class CatPaw{
      * @param $certificate This is the certificate filename. Note that the path is relative to the settings (http.json) file.
      * @param $password This is the passphrase of your certificate.
      */
-    public function __construct(&$argv,$intercept=null) {
+    public function __construct(&$argv,$beforeStart=null) {
         $this->argv = $argv;
         $protocol="tcp";
         if(file_exists($argv[1])){
@@ -47,7 +47,7 @@ class CatPaw{
                 stream_context_set_option($context, 'ssl', 'verify_peer', false);
             }
             //let the developer intercept the stream context
-            if($intercept !== null) $intercept($context,$this->minifyOperation);
+            if($beforeStart !== null) $beforeStart($context,$this->minifyOperation);
             // Create the server socket
             $this->socket = stream_socket_server(
                 $protocol.'://'.$so->bindAddress.':'.$so->port,
