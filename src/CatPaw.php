@@ -4,7 +4,6 @@ namespace com\github\tncrazvan\catpaw;
 use Closure;
 use com\github\tncrazvan\catpaw\tools\Session;
 use com\github\tncrazvan\catpaw\tools\Strings;
-use com\github\tncrazvan\catpaw\tools\Minifier;
 use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\http\HttpEventListener;
 
@@ -75,10 +74,6 @@ class CatPaw{
         }else{
             throw new \Exception ("\nConfig file \"{$this->argv[1]}\" doesn't exist\n");
         }
-    }
-
-    public function minifier(string $script,string $assets):Minifier{
-        return new Minifier($this,$script,$assets);
     }
 
     public function whileListening(Closure $action){

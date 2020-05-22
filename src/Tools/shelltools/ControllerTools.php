@@ -59,7 +59,7 @@ class ControllerTools{
             ."Arguments:\n"
             ."         |\n"
             ."         +--[1] full name of your controller.\n"
-            ."                Example: php controller add-http my.package.MyClass@MyProject"
+            ."                Example: php controller add-http my.package.MyClass"
         );
         $actions->add(
             "remove-http,\n"
@@ -70,7 +70,7 @@ class ControllerTools{
             ."Arguments:\n"
             ."         |\n"
             ."         +--[1] full name of your controller.\n"
-            ."                Example: php controller remove-http my.package.MyClass@MyProject"
+            ."                Example: php controller remove-http my.package.MyClass"
         );
         $actions->add(
             "new-websocket,\n"
@@ -82,7 +82,7 @@ class ControllerTools{
             ."Arguments:\n"
             ."         |\n"
             ."         +--[1] full name of your controller.\n"
-            ."                Example: php controller add-http my.package.MyClass@MyProject"
+            ."                Example: php controller add-http my.package.MyClass"
         );
         $actions->add(
             "remove-websocket,\n"
@@ -93,7 +93,7 @@ class ControllerTools{
             ."Arguments:\n"
             ."         |\n"
             ."         +--[1] full name of your controller.\n"
-            ."                Example: php controller remove-http my.package.MyClass@MyProject"
+            ."                Example: php controller remove-http my.package.MyClass"
         );
 
         $actions->add(
@@ -106,7 +106,7 @@ class ControllerTools{
             ."Arguments:\n"
             ."         |\n"
             ."         +--[1] full name of your controller and the project name.\n"
-            ."                Example: php controller edit-http my.package.MyClass@MyProject"
+            ."                Example: php controller edit-http my.package.MyClass"
         );
 
         $actions->add(
@@ -119,7 +119,7 @@ class ControllerTools{
             ."Arguments:\n"
             ."         |\n"
             ."         +--[1] full name of your controller and the project name.\n"
-            ."                Example: php controller edit-websocket my.package.MyClass@MyProject"
+            ."                Example: php controller edit-websocket my.package.MyClass"
         );
 
         $actions->add(
@@ -130,7 +130,7 @@ class ControllerTools{
             ."Arguments:\n"
             ."         |\n"
             ."         +--[1] project name.\n"
-            ."                Example: php controller list-files-http @MyProject"
+            ."                Example: php controller list-files-http"
         );
 
         $actions->add(
@@ -141,15 +141,14 @@ class ControllerTools{
             ."Arguments:\n"
             ."         |\n"
             ."         +--[1] project name.\n"
-            ."                Example: php controller list-files-websocket @MyProject"
+            ."                Example: php controller list-files-websocket"
         );
 
         $info = new AsciiTable();
 
         $info->add("What does \"full name of your controller\" mean?");
         $info->add(
-            "The full name of a controller is the [namespace] the class that identifies\n"
-            ."the controller followed by the [class name] itself.\n\n"
+            "The full name of a controller is its [namespace] followed by the [class name].\n\n"
             ."The routing separator is \".\" instead of \"\\\".\n\n"
             ."For example: [creating] a controller named \"FileManager\" under the\n"
             ."namespace \"filesystem\\manager\" would be done executing:\n"
