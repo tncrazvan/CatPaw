@@ -1,7 +1,9 @@
 <?php
 
 use app\HomePage;
+use app\User;
 use app\websockettest\WebSocketTest;
+use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnClose;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnMessage;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 
@@ -17,8 +19,8 @@ return [
         ],
         "websocket"=>[
             "/test" 
-                => fn(WebSocketEventOnOpen &$onOpen, WebSocketEventOnMessage &$onMessage) 
-                    => new WebSocketTest($onOpen,$onMessage)
+                => fn(WebSocketEventOnOpen &$onOpen, WebSocketEventOnMessage &$onMessage, WebSocketEventOnClose &$onClose) 
+                    => new WebSocketTest($onOpen,$onMessage,$onClose)
         ]
     ],
     "sessionName" => "_SESSION",
