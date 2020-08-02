@@ -1,5 +1,5 @@
 <?php
-namespace app;
+namespace com\github\tncrazvan\catpaw\test\models\homepage;
 use com\github\tncrazvan\catpaw\http\HttpRequestBody;
 
 class User extends HttpRequestBody{

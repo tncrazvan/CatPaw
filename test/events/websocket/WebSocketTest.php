@@ -1,5 +1,5 @@
 <?php
-namespace app\websockettest;
+namespace com\github\tncrazvan\catpaw\test\events\websocket\websockettest;
 use com\github\tncrazvan\catpaw\websocket\WebSocketClassEvent;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnClose;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnMessage;

@@ -1,6 +1,8 @@
 <?php
-namespace app;
+namespace com\github\tncrazvan\catpaw\test\events\http\homepage;
 use com\github\tncrazvan\catpaw\http\HttpClassEvent;
+use com\github\tncrazvan\catpaw\test\models\homepage\User;
+
 class HomePage extends HttpClassEvent{
     private string $method;
     private ?User $user;
