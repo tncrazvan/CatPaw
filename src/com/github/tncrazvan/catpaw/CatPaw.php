@@ -33,8 +33,6 @@ class CatPaw{
             //creating SharedObject
             $so = new SharedObject($argv[1]);
             $this->so = $so;
-            //write down initial args
-            \file_put_contents($so->dir.'/args',$argv[1]);
             //creating context
             $context = stream_context_create();
             //check if SSL certificate file is specified

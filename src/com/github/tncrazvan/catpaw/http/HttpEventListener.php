@@ -127,11 +127,11 @@ class HttpEventListener{
     }
 
     private function websocket(){
-        $event = WebSocketEvent::controller($this);
+        $event = WebSocketEvent::make($this);
         $event->run();
     }
     private function http11(){
-        $event = HttpEvent::controller($this);
+        $event = HttpEvent::make($this);
         $event->run();
     }
 }

@@ -117,7 +117,7 @@ class EventManager{
                 case 'array':
                     $name = $parameter->getName();
                     switch ($name) {
-                        case '_SESSION':
+                        case 'session':
                             $params[] = &$this->startSession();
                         break;
                         default:

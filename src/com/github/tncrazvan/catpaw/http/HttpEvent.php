@@ -6,7 +6,7 @@ use com\github\tncrazvan\catpaw\http\HttpEventListener;
 
 class HttpEvent extends HttpEventManager{
     public $args = [];
-    public static function controller(HttpEventListener &$listener):HttpEvent{        
+    public static function make(HttpEventListener &$listener):HttpEvent{        
         //Default 404
         if($listener->locationLen === 0 || $listener->locationLen === 1 && \preg_match('/\s*\/+\s*/',$listener->location[0]) === 1)
             $listener->location = [""];

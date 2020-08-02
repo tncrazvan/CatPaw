@@ -23,31 +23,34 @@ abstract class HttpEventManager extends EventManager{
         }
         $message = '';
         $params = &$this->calculateParameters($message);
-        $response = new HttpResponse([
+        $responseObject = new HttpResponse([
             "Status"=>Status::BAD_REQUEST
         ],$message);
         if($params !== null){
             try{
-                $response = call_user_func_array($this->serve,$params);
+                $responseObject = call_user_func_array($this->serve,$params);
             }catch(HttpEventException $ex){
-                $response = new HttpResponse([
+                $responseObject = new HttpResponse([
                     "Status"=>$ex->getStatus()
                 ],$ex->getMessage()."\n".$ex->getTraceAsString());
             }catch(\Exception $ex){
-                $response = new HttpResponse([
+                $responseObject = new HttpResponse([
                     "Status"=>Status::INTERNAL_SERVER_ERROR
                 ],$ex->getMessage()."\n".$ex->getTraceAsString());
             }
         }
-        if(!is_a($response,HttpResponse::class))
-            $response = new HttpResponse($this->serverHeaders,$response);
+        if(!is_a($responseObject,HttpResponse::class))
+            $responseObject = new HttpResponse($this->serverHeaders,$responseObject);
 
-        $responseHeader = $response->getHeaders();
+        $responseHeader = $responseObject->getHeaders();
         $responseHeader->initialize($this);
         $responseHeader->mix($this->serverHeaders);
 
         if($this->isCommit){
-            $response = $response->toString();
+            if(!$responseHeader->has("Content-Length")){
+                $responseHeader->set("Content-Length",''.strlen($responseObject->getBody()));
+            }
+            $response = $responseObject->toString();
             $chunks = str_split($response,1024);
             for($i=0,$len=count($chunks);$i<$len;$i++){
                 if($i === $len -1)
@@ -135,10 +138,15 @@ abstract class HttpEventManager extends EventManager{
                 if($this->listener->so->compress !== null && Strings::compress($type,$body,$this->listener->so->compress,$accepted)){
                     $len = strlen($body);
                     $headers->set("Content-Encoding",$type);
-                    $headers->set("Content-Length",$len);
+                    //$headers->set("Content-Length",$len);
                 }else{
                     $len = strlen($body);
                 }
+
+                if(!$headers->has("Content-Length")){
+                    $headers->set("Content-Length",$len);
+                }
+
                 $header = ($headers->toString())."\r\n";
                 $bytes = @fwrite($this->listener->client, $header, strlen($header));
                 $bytes += @fwrite($this->listener->client, $body, $len);
