@@ -141,6 +141,8 @@ abstract class WebSocketManager extends EventManager{
     private $remainingLen = 0;
     function &unmask(&$payload):string{
         if($this->remainingLen <= 0){
+            $this->savedIndex = 0;
+            $this->savedMasks = null;
             $length = ord($payload[1]) & 127;
             
             if($length == 126) {

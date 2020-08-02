@@ -6,9 +6,10 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnMessage;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 
 class WebSocketTest extends WebSocketClassEvent{
-    public function __construct(WebSocketEventOnOpen &$onOpen, WebSocketEventOnMessage &$onMessage){
+    public function __construct(?WebSocketEventOnOpen &$onOpen = null, ?WebSocketEventOnMessage &$onMessage = null, ?WebSocketEventOnClose &$onClose = null){
         $onOpen = new Open();
         $onMessage = new Message();
+        $onClose = new Close();
     }
 }
 
