@@ -31,7 +31,7 @@ abstract class HttpEventManager extends EventManager{
                 try{
                     $responseObject = call_user_func_array($this->serve,$params);
                     if(is_a($responseObject,HttpClassEvent::class)){
-                        $responseObject = &$responseObject->run();
+                        $responseObject = $responseObject->run();
                     }
                 }catch(\TypeError $ex){
                     $responseObject = new HttpResponse([
