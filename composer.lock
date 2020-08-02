@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "72ff54b22a50e943a16ff01a2a154241",
+    "content-hash": "7ddba84e2aa5f5e74ddd8b841f79f7b5",
     "packages": [
         {
             "name": "tncrazvan/asciitable",
@@ -12,33 +12,39 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/tncrazvan/PhpAsciiTable.git",
-                "reference": "3ef7c4ccc250d64dc28534bb218a2e01cec86a1b"
+                "reference": "f97e535de88f9d273f9b95560933875365a4a56d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tncrazvan/PhpAsciiTable/zipball/3ef7c4ccc250d64dc28534bb218a2e01cec86a1b",
-                "reference": "3ef7c4ccc250d64dc28534bb218a2e01cec86a1b",
+                "url": "https://api.github.com/repos/tncrazvan/PhpAsciiTable/zipball/f97e535de88f9d273f9b95560933875365a4a56d",
+                "reference": "f97e535de88f9d273f9b95560933875365a4a56d",
                 "shasum": ""
             },
             "require": {
                 "php": "^7.3"
             },
-            "require-dev": {
-                "php": "^7.3"
-            },
             "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "": [
+                        "src",
+                        "test",
+                        "vendor"
+                    ]
+                }
+            },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
             "authors": [
                 {
-                    "name": "Razvan Tanase",
+                    "name": "tncrazvan",
                     "email": "tangent.jotey@gmail.com"
                 }
             ],
             "description": "Php cli ascii table",
-            "time": "2019-08-22T15:59:47+00:00"
+            "time": "2020-08-01T17:19:36+00:00"
         }
     ],
     "packages-dev": [],
@@ -50,7 +56,8 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=7.2.6"
+        "php": "^7.3"
     },
-    "platform-dev": []
+    "platform-dev": [],
+    "plugin-api-version": "1.1.0"
 }
