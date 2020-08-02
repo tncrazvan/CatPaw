@@ -12,9 +12,9 @@ abstract class WebSocketManager extends EventManager{
         $subscriptions = [],
         $serve = null;
 
-    protected $onOpen = null;
-    protected $onMessage = null;
-    protected $onClose = null;
+    public $onOpen = null;
+    public $onMessage = null;
+    public $onClose = null;
 
     public function run():void{
         if($this->listener->so->websocketConnections == null){
@@ -33,7 +33,12 @@ abstract class WebSocketManager extends EventManager{
         $message = '';
         $params = &$this->calculateParameters($message);
         if($this->serve && $params !== null){
-            call_user_func_array($this->serve,$params);
+            try{
+                call_user_func_array($this->serve,$params);
+            }catch(\Exception $ex){
+                echo $ex->getMessage()."\n".$ex->getTraceAsString()."\n";
+                $this->close();
+            }
             if(!isset($this->listener->so->wsEvents[$this->classname])){
                 $this->listener->so->wsEvents[$this->classname] = [$this->requestId => $this];
             }else{
@@ -43,7 +48,7 @@ abstract class WebSocketManager extends EventManager{
                 try{
                     $this->onOpen->run();
                 } catch (\Exception $ex) {
-                    echo "\n$ex\n";
+                    echo $ex->getMessage()."\n".$ex->getTraceAsString()."\n";
                     $this->close();
                 }
             

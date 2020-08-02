@@ -40,18 +40,21 @@ class HttpEventListener{
     public static function callback(string $type,HttpEventListener $listener):\Closure{
         $paths = &$listener->so->events[$type];
         $request = \implode('/',$listener->location);
-        $resource = $listener->so->webRoot.$request;
-        
-        if(is_dir($resource))
-            if(Strings::endsWith($resource,"/"))
-                $resource .= $listener->so->entryPoint;
-            else
-                $resource .= '/'.$listener->so->entryPoint;
-        
-        
-        //checking if it's a file
-        if(\file_exists($resource) && !\is_dir($resource))
-            return $paths["@file"];
+
+        if($type !== 'websocket'){
+            $resource = $listener->so->webRoot.$request;
+            
+            if(is_dir($resource) && $type)
+                if(Strings::endsWith($resource,"/"))
+                    $resource .= $listener->so->entryPoint;
+                else
+                    $resource .= '/'.$listener->so->entryPoint;
+            
+            
+            //checking if it's a file
+            if(\file_exists($resource) && !\is_dir($resource))
+                return $paths["@file"];
+        }
         
         
         foreach($paths as $route => &$callback){

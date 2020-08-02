@@ -1,4 +1,5 @@
 <?php
+namespace app;
 use com\github\tncrazvan\catpaw\http\HttpClassEvent;
 class HomePage extends HttpClassEvent{
     private string $method;
@@ -7,7 +8,8 @@ class HomePage extends HttpClassEvent{
         $this->method = $method;
         $this->user = $user;
     }
-    public function run(){
-        return "hello world";
+    public function &run(){
+        $result = "hello world";
+        return $result;
     }
 }

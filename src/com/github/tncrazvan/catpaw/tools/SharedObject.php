@@ -41,7 +41,7 @@ class SharedObject extends Http{
         $settings["events"]["websocket"]["@404"] = function(WebSocketEvent &$e, WebSocketEventOnOpen &$onOpen){
             $onOpen = new class($e) extends WebSocketEventOnOpen{
                 protected $e;
-                public function __construct(HttpEvent $e){
+                public function __construct(WebSocketEvent $e){
                     $this->e=$e;
                 }
                 public function run():void{

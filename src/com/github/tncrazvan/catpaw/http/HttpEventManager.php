@@ -13,8 +13,8 @@ abstract class HttpEventManager extends EventManager{
     public 
         $isCommit = true,
         $defaultHeader=true,
-        $serve = null,
-        $onClose = null;
+        $serve = null;
+    public $onClose = null;
     public static $connections = null;
 
     public function run():void{
@@ -31,7 +31,7 @@ abstract class HttpEventManager extends EventManager{
                 try{
                     $responseObject = call_user_func_array($this->serve,$params);
                     if(is_a($responseObject,HttpClassEvent::class)){
-                        $responseObject = $responseObject->run();
+                        $responseObject = &$responseObject->run();
                     }
                 }catch(\TypeError $ex){
                     $responseObject = new HttpResponse([
