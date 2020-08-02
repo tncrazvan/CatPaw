@@ -197,7 +197,7 @@ abstract class WebSocketManager extends EventManager{
     public function commit($data,int $length = 0):void{
         if($this->commits === null)
             $this->commits = new LinkedList();
-        $string = &$this->mask($data,$len);
+        $string = $this->mask($data,$len);
         if($length > 0 && $len > $length){
             $chunks = str_split($string,$length);
             for($i=0,$len=count($chunks);$i<$len;$i++){
