@@ -20,11 +20,11 @@ class HttpHeaders{
         }
     }
 
-    public function &getHeadersAray():array{
+    public function &getHeadersArray():array{
         return $this->headers;
     }
 
-    public function &getCookiesAray():array{
+    public function &getCookiesArray():array{
         return $this->cookies;
     }
 
@@ -39,11 +39,11 @@ class HttpHeaders{
     }
 
     public function mix(HttpHeaders $headers):void{
-        foreach($headers->getHeadersAray() as $key => &$value){
+        foreach($headers->getHeadersArray() as $key => &$value){
             if(!isset($this->headers[$key]))
                 $this->headers[$key] = $value;
         }
-        foreach($headers->getCookiesAray() as $key => &$value){
+        foreach($headers->getCookiesArray() as $key => &$value){
             if(!isset($this->cookies[$key]))
                 $this->cookies[$key] = $value;
         }
@@ -56,10 +56,11 @@ class HttpHeaders{
     public function cookieToString(string $key):string{
         $cookie = $this->cookies[$key];
         return $cookie[4].": "
-                .$key."=".$cookie[0]
+                .$key."=".\urlencode($cookie[0])
                 .($cookie[1]===null?"":"; path=".$cookie[1])
                 .($cookie[2]===null?"":"; domain=".$cookie[2])
                 .($cookie[3]===null?"":"; expires=".date(self::DATE_FORMAT,$cookie[3]))."\r\n";
+                
     }
     
     public function &toString():string{
@@ -99,16 +100,17 @@ class HttpHeaders{
         $this->set("Content-Type",$content);
     }
 
-    public function get(string $key){
+    public function &get(string $key){
         if(!isset($this->headers[$key])) return null;
-        return trim($this->headers[$key]);
+        $result = trim($this->headers[$key]);
+        return $result;
     }
 
-    public function getStatus(){
+    public function &getStatus(){
         return $this->status;
     }
 
-    public function getResource(){
+    public function &getResource(){
         return $this->resource;
     }
     
@@ -116,13 +118,25 @@ class HttpHeaders{
         return isset($this->cookies[trim($key)]);
     }
     
-    public function getCookie(string $key):string{
-        return urldecode($this->cookies[$key][0]);
+    public function &getCookie(string $key):string{
+        return $this->cookies[$key][0];
+    }
+
+    public function &getCookies():array{
+        $cookies = [];
+        foreach($this->cookies as $key => &$value){
+            $cookies[$key] = $value[0];
+        }
+        return $cookies;
     }
     
+    public function setCookies(array &$cookies){
+        $this->cookies = $cookies;
+    }
+
     public function setCookie(string $key, string $content, string $path="/", string $domain=null, string $expire=null):void{
         $cookie = array_fill(0, 4, null);
-        $cookie[0] = urlencode($content);
+        $cookie[0] = $content;
         $cookie[1] = $path;
         $cookie[2] = $domain;
         $cookie[3] = $expire;
@@ -145,7 +159,7 @@ class HttpHeaders{
                         $cookieLength = count($cookie);
                         if($cookieLength > 1){
                             $content = array_fill(0, 4, null);
-                            $content[0] = $cookie[1];
+                            $content[0] = \urldecode($cookie[1]);
                             $content[1] = $cookieLength>2?$cookie[2]:null;
                             $content[2] = $cookieLength>3?$cookie[3]:null;
                             $content[3] = $cookieLength>3?$cookie[3]:null;

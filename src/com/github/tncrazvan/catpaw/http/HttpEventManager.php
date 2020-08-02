@@ -27,13 +27,25 @@ abstract class HttpEventManager extends EventManager{
             "Status"=>Status::BAD_REQUEST
         ],$message);
         if($params !== null){
-            $response = call_user_func_array($this->serve,$params);
+            try{
+                $response = call_user_func_array($this->serve,$params);
+            }catch(HttpEventException $ex){
+                $response = new HttpResponse([
+                    "Status"=>$ex->getStatus()
+                ],$ex->getMessage()."\n".$ex->getTraceAsString());
+            }catch(\Exception $ex){
+                $response = new HttpResponse([
+                    "Status"=>Status::INTERNAL_SERVER_ERROR
+                ],$ex->getMessage()."\n".$ex->getTraceAsString());
+            }
         }
         if(!is_a($response,HttpResponse::class))
             $response = new HttpResponse($this->serverHeaders,$response);
 
-        $response->getHeaders()->initialize($this);
-        $response->getHeaders()->mix($this->serverHeaders);
+        $responseHeader = $response->getHeaders();
+        $responseHeader->initialize($this);
+        $responseHeader->mix($this->serverHeaders);
+
         if($this->isCommit){
             $response = $response->toString();
             $chunks = str_split($response,1024);

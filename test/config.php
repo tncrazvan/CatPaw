@@ -1,6 +1,12 @@
 <?php
 use com\github\tncrazvan\catpaw\http\HttpEvent;
+use com\github\tncrazvan\catpaw\http\HttpEventAssert;
+use com\github\tncrazvan\catpaw\http\HttpEventException;
 use com\github\tncrazvan\catpaw\http\HttpEventOnClose;
+use com\github\tncrazvan\catpaw\http\HttpException;
+use com\github\tncrazvan\catpaw\http\HttpRequestCookies;
+use com\github\tncrazvan\catpaw\http\HttpResponseCookies;
+use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnMessage;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 
@@ -8,19 +14,16 @@ return [
     "port" => 80,
     "webRoot" => "../www/public",
     "bindAddress" => "127.0.0.1",
-    "namespace" => "app\\com\\github\\tncrazvan\\catpaw",
     "scripts" => [
         "editor" => "code @filename"
     ],
     "events" => [
         "http"=>[
-            "/home/{test}" => function(int $test,HttpEvent $e,HttpEventOnClose &$onClose){
-                $onClose = new class() extends HttpEventOnClose{
-                    public function run():void{
-                        echo "done!\n";
-                    }
-                };
-                return "test: $test";
+            "/home/{test}" => function(int $test, string &$_METHOD, HttpRequestCookies &$_REQUEST_COOKIES, HttpResponseCookies &$_RESPONSE_COOKIES){
+                HttpEventAssert::true($_METHOD === "GET",new HttpEventException("Method not allowed.",Status::METHOD_NOT_ALLOWED));
+                print_r($_REQUEST_COOKIES->getAll());
+                $_RESPONSE_COOKIES->set("testing2","random-value".time());
+                return "this is a test!";
             }
         ],
         "websocket"=>[

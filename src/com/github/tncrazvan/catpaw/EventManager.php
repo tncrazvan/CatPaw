@@ -5,9 +5,13 @@ use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
 use com\github\tncrazvan\catpaw\http\HttpEventOnClose;
 use com\github\tncrazvan\catpaw\http\HttpEventListener;
+use com\github\tncrazvan\catpaw\http\HttpRequestBody;
+use com\github\tncrazvan\catpaw\http\HttpRequestCookies;
+use com\github\tncrazvan\catpaw\http\HttpResponseCookies;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnClose;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnMessage;
+use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 
 class EventManager{
@@ -54,10 +58,6 @@ class EventManager{
                     };
                     $params[] = &$this->onClose;
                 break;
-                case WebSocketEvent::class://inject the WebSocketEvent instance
-                case HttpEvent::class://inject the HttpEvent instance
-                    $params[] = $this;
-                break;
                 case HttpEventOnClose::class:
                     $this->onClose = new class() extends HttpEventOnClose{
                         public function run():void{
@@ -66,27 +66,83 @@ class EventManager{
                     };
                     $params[] = &$this->onClose;
                 break;
+                case WebSocketEvent::class://inject the WebSocketEvent instance
+                case HttpEvent::class://inject the HttpEvent instance
+                    $params[] = &$this;
+                break;
+                case HttpRequestCookies::class://inject the HttpEvent instance
+                    $params[] = &HttpRequestCookies::factory($this);
+                break;
+                case HttpResponseCookies::class://inject the HttpEvent instance
+                    $params[] = &HttpResponseCookies::factory($this);
+                break;
                 case 'string':
                     $name = $parameter->getName();
-                    if($this->listener->params[$name])
-                        $params[] = $this->listener->params[$name];
-                    else
-                        $params[] = null;
+                    switch($name){
+                        case '_METHOD':
+                            $params[] = &$this->getRequestMethod();
+                        break;
+                        case '_BODY':
+                            $params[] = &$this->listener->requestContent;
+                        break;
+                        default:
+                            if($this->listener->params[$name])
+                                $params[] = &$this->listener->params[$name];
+                            else
+                                $params[] = null;
+                        break;
+                    }
                 break;
                 case 'int':
                     $name = $parameter->getName();
-                    if($this->listener->params[$name])
-                        if(is_numeric($this->listener->params[$name]))
-                            $params[] = intval($this->listener->params[$name]);
-                        else{
-                            $message = 'Parameter {'.$name.'} was expected to be numeric, but non numeric value has been provided instead:'.$this->listener->params[$name];
-                            return $this->null_dummy;
-                        }
-                    else
-                        $params[] = null;
+                    switch($name){
+                        case '_BODY':
+                            $params[] = &$this->listener->requestContent;
+                        break;
+                        default:
+                            if($this->listener->params[$name])
+                                if(is_numeric($this->listener->params[$name]))
+                                    $params[] = intval($this->listener->params[$name]);
+                                else{
+                                    $message = 'Parameter {'.$name.'} was expected to be numeric, but non numeric value has been provided instead:'.$this->listener->params[$name];
+                                    return $this->null_dummy;
+                                }
+                            else{
+                                static $param = null;
+                                $params[] = &$param;
+                            }
+                        break;
+                    }
+                break;
+                case 'array':
+                    $name = $parameter->getName();
+                    switch ($name) {
+                        case '_SESSION':
+                            $params[] = &$this->startSession();
+                        break;
+                        default:
+                            static $param = null;
+                            $params[] = &$param;
+                        break;
+                    }
                 break;
                 default://unknown type, check if it's path parameter, otherwise inject null
-                    $params[] = null;
+                    $name = $parameter->getName();
+                    switch($name){
+                        case '_BODY'://check if it's _BODY
+                            switch($cls){//try convert it to a specific class
+                                default:
+                                    echo "Could not convert _BODY to '$cls', injecting null value.\n";
+                                    $param = null;
+                                    $params[] = &$param;
+                                break;
+                            }
+                        break;
+                        default:
+                            static $param = null;
+                            $params[] = &$param;
+                        break;
+                    }
                 break;
             }
         }
@@ -239,7 +295,7 @@ class EventManager{
         return $this->listener->requestHeaders;
     }
 
-    public function getRequestHeader(string $key){
+    public function &getRequestHeader(string $key){
         return $this->listener->requestHeaders->get($key);
     }
     
@@ -247,7 +303,7 @@ class EventManager{
      * Get request method.
      * @return string method of the client request.
      */
-    public function getRequestMethod(){
+    public function &getRequestMethod(){
         return $this->getRequestHeader("Method");
     }
     
@@ -255,7 +311,7 @@ class EventManager{
      * Get the user agent of the client.
      * @return &string
      */
-    public function getRequestUserAgent():string{
+    public function &getRequestUserAgent():string{
         return $this->getRequestHeader("User-Agent");
     }
     
@@ -334,7 +390,7 @@ class EventManager{
      * @param domain domain of the cooke.
      * @param expire time to live of the cookie.
      */
-    public function setResponseCookie(string $key, string $content, string $path="/", string $domain=null, string $expire=null):void{
+    public function setResponseCookie(string $key, string $content, string $path='/', string $domain=null, string $expire=null):void{
         $this->serverHeaders->setCookie($key, $content, $path, $domain, $expire);
     }
     
@@ -345,6 +401,22 @@ class EventManager{
      */
     public function getRequestCookie(string $key):string{
         return $this->listener->requestHeaders->getCookie($key);
+    }
+
+    /**
+     * Get the cookies of the current request.
+     * @return array of cookies
+     */
+    public function &getRequestCookies():array{
+        return $this->listener->requestHeaders->getCookies();
+    }
+
+    /**
+     * Get the cookies of the current response.
+     * @return array of cookies
+     */
+    public function &getResponseCookies():array{
+        return $this->listener->serverHeaders->getCookies();
     }
     
     /**

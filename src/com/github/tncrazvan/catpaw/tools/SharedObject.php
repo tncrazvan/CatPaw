@@ -64,9 +64,6 @@ class SharedObject extends Http{
         if(isset($settings["scripts"]))
         $this->scripts = $settings["scripts"];
 
-        if(isset($settings["namespace"]))
-        $this->namespace = $settings["namespace"];
-
         if(isset($settings["port"]))
         $this->port = $settings["port"];
         if(isset($settings["timeout"]))
@@ -125,12 +122,6 @@ class SharedObject extends Http{
         
         if($print) {
             $data = [
-                "namespace\n\n"
-                ."This is an information that SHOULD coincide with your application namespace.\n" 
-                ."This value is used by the 'controller' script when it "
-                ."creats,removes or changes your controllers as you"
-                ."run the script."
-                    => $this->namespace,
                 "port\n\n"
                 ."This is the port the server will belistening to."
                     =>$this->port,
@@ -248,7 +239,6 @@ class SharedObject extends Http{
     }
     public
         $dir,
-        $namespace="app",
         $scripts=[
             //"minify" => "minify --type=@type \"@filename\"",
             "minify" => "'No minify script defined.'",
