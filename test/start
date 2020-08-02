@@ -1,0 +1,12 @@
+#!/usr/bin/php
+<?php
+chdir(dirname(__FILE__));
+shell_exec("composer dump-autoload -o");
+require '../vendor/autoload.php';
+use com\github\tncrazvan\catpaw\CatPaw;
+if(count($argv) === 1) $argv[1] = "./main.php";
+error_reporting(E_ALL);
+set_time_limit(0);
+ob_implicit_flush();
+$server = new CatPaw($argv);
+$server->listen();

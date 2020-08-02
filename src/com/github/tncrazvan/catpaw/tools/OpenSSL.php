@@ -54,10 +54,10 @@ abstract class OpenSSL{
             return false;
         }
 
-        //create ssl cert for this scripts life.
+        //create ssl cert for this script's life.
         
-         //Create private key
-         $privkey = openssl_pkey_new(array(
+        //Create private key
+        $privkey = openssl_pkey_new(array(
             "digest_alg" => "sha512",
             "private_key_bits" => 4096,
             "private_key_type" => OPENSSL_KEYTYPE_RSA,

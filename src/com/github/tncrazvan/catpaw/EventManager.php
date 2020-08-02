@@ -8,6 +8,7 @@ use com\github\tncrazvan\catpaw\http\HttpEventListener;
 use com\github\tncrazvan\catpaw\http\HttpRequestBody;
 use com\github\tncrazvan\catpaw\http\HttpRequestCookies;
 use com\github\tncrazvan\catpaw\http\HttpResponseCookies;
+use com\github\tncrazvan\catpaw\tools\StandardClassCustomizer;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnClose;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnMessage;
@@ -78,71 +79,89 @@ class EventManager{
                 break;
                 case 'string':
                     $name = $parameter->getName();
+                    static $param = null;
                     switch($name){
-                        case '_METHOD':
-                            $params[] = &$this->getRequestMethod();
+                        case 'method':
+                            $param = &$this->getRequestMethod();
                         break;
-                        case '_BODY':
-                            $params[] = &$this->listener->requestContent;
+                        case 'body':
+                            $param = &$this->listener->requestContent;
                         break;
                         default:
                             if($this->listener->params[$name])
-                                $params[] = &$this->listener->params[$name];
+                                $param = &$this->listener->params[$name];
                             else
-                                $params[] = null;
+                                $param = null;
                         break;
                     }
+                    $params[] = &$param;
                 break;
                 case 'int':
                     $name = $parameter->getName();
+                    static $param = null;
                     switch($name){
-                        case '_BODY':
-                            $params[] = &$this->listener->requestContent;
+                        case 'body':
+                            if(is_numeric($this->listener->requestContent))
+                                $param = intval($this->listener->requestContent);
+                            else{
+                                $message = 'Body was expected to be numeric, but non numeric value has been provided instead:'.$this->listener->requestContent;
+                                return $this->null_dummy;
+                            }
                         break;
                         default:
                             if($this->listener->params[$name])
                                 if(is_numeric($this->listener->params[$name]))
-                                    $params[] = intval($this->listener->params[$name]);
+                                    $param = intval($this->listener->params[$name]);
                                 else{
                                     $message = 'Parameter {'.$name.'} was expected to be numeric, but non numeric value has been provided instead:'.$this->listener->params[$name];
                                     return $this->null_dummy;
                                 }
                             else{
-                                static $param = null;
-                                $params[] = &$param;
+                                $param = null;
                             }
                         break;
                     }
+                    $params[] = &$param;
                 break;
                 case 'array':
                     $name = $parameter->getName();
+                    static $param = null;
                     switch ($name) {
                         case 'session':
-                            $params[] = &$this->startSession();
+                            $param = &$this->startSession();
                         break;
-                        default:
-                            static $param = null;
-                            $params[] = &$param;
-                        break;
-                    }
-                break;
-                default://unknown type, check if it's path parameter, otherwise inject null
-                    $name = $parameter->getName();
-                    switch($name){
-                        case '_BODY'://check if it's _BODY
-                            switch($cls){//try convert it to a specific class
-                                default:
-                                    echo "Could not convert _BODY to '$cls', injecting null value.\n";
-                                    $param = null;
-                                    $params[] = &$param;
-                                break;
+                        case 'body':
+                            try{
+                                if($this->listener->requestContent === '')
+                                    $param = [];
+                                else
+                                    $param = json_decode($this->listener->requestContent);
+                            }catch(\Exception $e){
+                                echo "Could not convert body to '$cls', injecting null value.\n";
+                                echo 
+                                    $e->getMessage()
+                                    ."\n"
+                                    .$e->getTraceAsString()."\n";
                             }
                         break;
-                        default:
-                            static $param = null;
-                            $params[] = &$param;
-                        break;
                     }
+                    $params[] = &$param;
+                break;
+                default://unknown type, check if it's path parameter, otherwise inject null
+                    static $param = null;
+                    $reflectionClass = new \ReflectionClass($cls);
+                    if($reflectionClass->isSubclassOf(HttpRequestBody::class)){
+                        try{
+                            $param = &StandardClassCustomizer::cast(json_decode($this->listener->requestContent),$cls);
+                        }catch(\Exception $e){
+                            echo "Could not convert body to '$cls', injecting null value.\n";
+                            echo 
+                                $e->getMessage()
+                                ."\n"
+                                .$e->getTraceAsString()."\n";
+                        }
+                    }
+                    $params[] = &$param;
                 break;
             }
         }

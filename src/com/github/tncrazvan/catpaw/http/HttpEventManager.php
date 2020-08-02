@@ -28,7 +28,20 @@ abstract class HttpEventManager extends EventManager{
         ],$message);
         if($params !== null){
             try{
-                $responseObject = call_user_func_array($this->serve,$params);
+                try{
+                    $responseObject = call_user_func_array($this->serve,$params);
+                    if(is_a($responseObject,HttpClassEvent::class)){
+                        $responseObject = $responseObject->run();
+                    }
+                }catch(\TypeError $ex){
+                    $responseObject = new HttpResponse([
+                        "Status"=>Status::INTERNAL_SERVER_ERROR
+                    ],$ex->getMessage()."\n".$ex->getTraceAsString());
+                }catch(\Exception $ex){
+                    $responseObject = new HttpResponse([
+                        "Status"=>Status::INTERNAL_SERVER_ERROR
+                    ],$ex->getMessage()."\n".$ex->getTraceAsString());
+                }
             }catch(HttpEventException $ex){
                 $responseObject = new HttpResponse([
                     "Status"=>$ex->getStatus()
@@ -39,6 +52,7 @@ abstract class HttpEventManager extends EventManager{
                 ],$ex->getMessage()."\n".$ex->getTraceAsString());
             }
         }
+        
         if(!is_a($responseObject,HttpResponse::class))
             $responseObject = new HttpResponse($this->serverHeaders,$responseObject);
 

@@ -60,10 +60,6 @@ class SharedObject extends Http{
         if(isset($settings["webRoot"]))
         $this->webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$this->dir."/".$settings["webRoot"]."/");
 
-        
-        if(isset($settings["scripts"]))
-        $this->scripts = $settings["scripts"];
-
         if(isset($settings["port"]))
         $this->port = $settings["port"];
         if(isset($settings["timeout"]))
@@ -204,11 +200,6 @@ class SharedObject extends Http{
                 ."Extra headers to add to your HttpResponse objects.\n"
                 ."[NOTE]: These can be overwritten at runtime."
                     =>$this->headers,
-                "scripts\n\n"
-                ."These are some of the scripts the server could use for quality of life improvements.\n"
-                ."For example the scripts.editor script will be executed after running 'php controller' actions.\n"
-                ."To know more about controller actions run the 'php controller actions' script located in the root of this project."
-                    =>$this->scripts,
                 "events\n\n"
                 ."There are the exposed Http and WebSocket events this server offers."
                     =>$this->events
@@ -239,11 +230,6 @@ class SharedObject extends Http{
     }
     public
         $dir,
-        $scripts=[
-            //"minify" => "minify --type=@type \"@filename\"",
-            "minify" => "'No minify script defined.'",
-            "editor" => "code @filename"
-        ],
         $httpConnections = null,
         $websocketConnections = null,
         $sessions,
