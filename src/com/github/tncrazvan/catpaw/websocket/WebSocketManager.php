@@ -33,7 +33,7 @@ abstract class WebSocketManager extends EventManager{
         if($valid) try{
             $this->commits = new \SplDoublyLinkedList();
             $this->listOfFragments = new LinkedList();
-            $this->payload = new LinkedList();
+            //$this->payload = new LinkedList();
             //$this->listener->so->websocketConnections->insertLast($this);
             $this->listener->so->websocketConnections[$this->requestId] = $this;
             \call_user_func_array($this->callback,$params);
@@ -103,7 +103,7 @@ abstract class WebSocketManager extends EventManager{
     // private boolean fin,rsv1,rsv2,rsv3;
     private $opcode;
     private /*?array*/ /* $payload = null,  */$mask = null, $length = null;
-    private LinkedList $payload;
+    private \SplFixedArray $payload;
     private bool $isContinuation = false;
     private bool $isFinal = false;
     private LinkedList $listOfFragments;
@@ -233,6 +233,8 @@ abstract class WebSocketManager extends EventManager{
                 $this->reading = self::PAYLOAD;
                 // int l = (int)ByteBuffer.wrap(length).getLong();
                 //$this->payload = array_fill(0,$this->payloadLength,null);
+                //$this->payload = new \SplFixedArray($this->payloadLength);
+                $this->listOfFragments->push(new \SplFixedArray($this->payloadLength));
             }
         }
         //$end = round(microtime(true) * 100000);
@@ -243,7 +245,9 @@ abstract class WebSocketManager extends EventManager{
         $l=count($b);
         for($j=$offset;$j<=$l;$j++){
             //$this->payload[$this->payloadIndex] = chr(($b[$j] ^ $this->mask[($this->payloadIndex) % 4]));
-            $this->payload->push(chr(($b[$j] ^ $this->mask[($this->payloadIndex) % 4])));
+            //$this->payload->push(chr(($b[$j] ^ $this->mask[($this->payloadIndex) % 4])));
+            //$this->payload[$this->payloadIndex] = ($b[$j] ^ $this->mask[($this->payloadIndex) % 4]);
+            $this->listOfFragments->top()[$this->payloadIndex] = ($b[$j] ^ $this->mask[($this->payloadIndex) % 4]);
 
             $this->payloadIndex++;
             
@@ -254,17 +258,14 @@ abstract class WebSocketManager extends EventManager{
                 $this->reading = self::DONE;
 
                 if(null !== $this->onMessage){
-                    $payload = $this->payload;
-                    $this->listOfFragments->push($payload);
+                    //$payload = $this->payload;
+                    //$this->listOfFragments->push($payload);
                     if($this->isFinal){
-                        $res = $this->listOfFragments;
+                        $this->onMessage->run($this->listOfFragments);
                         $this->listOfFragments = new LinkedList();
-                        $this->onMessage->run($res);
                     }
                     
                 }
-                if ($j+1<=$l) 
-                    echo "stop here\n";
 
                 $this->lengthKey = 0;
                 $this->reading = self::FIRST_BYTE;
@@ -272,7 +273,7 @@ abstract class WebSocketManager extends EventManager{
                 $this->payloadLength = 0;
                 $this->maskIndex = 0;
                 $this->payloadIndex = 0;
-                $this->payload = new LinkedList();
+                //$this->payload = new LinkedList();
                 $this->mask = null;
                 $this->length = null;
 
