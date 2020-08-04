@@ -88,7 +88,10 @@ abstract class WebSocketManager extends EventManager{
             echo ("it took $t ms to unpack and count.\n");*/
             
             //$start = (\round(microtime(true) * 1000));
-            $this->unmask($unpacked);
+            $j = $this->unmask($unpacked);
+            while($j > 0){
+                $j = $this->unmask($unpacked,$j);
+            }
             //echo ("it took ".(\round(microtime(true) * 1000) - $start)." ms.\n##########################################\n");
         }
 
@@ -106,9 +109,9 @@ abstract class WebSocketManager extends EventManager{
     private LinkedList $listOfFragments;
 
 
-    private function unmask(array &$unpacked,int $shift = 0){
+    private function unmask(array &$unpacked,int $shift = 0):int{
         if($this->reading === self::PAYLOAD){
-            $this->unmask_payload($unpacked);
+            return $this->unmask_payload($unpacked);
         }else{
             $this->unmask_first_byte($unpacked[1+$shift]);
             $this->unmask_second_byte($unpacked[2+$shift]);
@@ -118,7 +121,7 @@ abstract class WebSocketManager extends EventManager{
                         $unpacked[3+$shift],$unpacked[4+$shift],
                         $unpacked[5+$shift],$unpacked[6+$shift]
                     ]);
-                    $this->unmask_payload($unpacked,7+$shift);
+                    return $this->unmask_payload($unpacked,7+$shift);
                 break;
                 case self::LENGTH2:
                     $this->unmask_length2([$unpacked[3+$shift],$unpacked[4+$shift]]);
@@ -126,7 +129,7 @@ abstract class WebSocketManager extends EventManager{
                         $unpacked[5+$shift],$unpacked[6+$shift],
                         $unpacked[7+$shift],$unpacked[8+$shift]
                     ]);
-                    $this->unmask_payload($unpacked,9+$shift);
+                    return $this->unmask_payload($unpacked,9+$shift);
                 break;
                 case self::LENGTH8:
                     $this->unmask_length8([
@@ -139,10 +142,11 @@ abstract class WebSocketManager extends EventManager{
                         $unpacked[11+$shift],$unpacked[12+$shift],
                         $unpacked[13+$shift],$unpacked[14+$shift]
                     ]);
-                    $this->unmask_payload($unpacked,15+$shift);
+                    return $this->unmask_payload($unpacked,15+$shift);
                 break;
             }
         }
+        return -1;
     }
 
     private function unmask_first_byte(int $b):void{
@@ -235,14 +239,9 @@ abstract class WebSocketManager extends EventManager{
         //echo "MASK took ".($end - $start)."ms\n";
     }
 
-    private function unmask_payload(array &$b,int $offset = 1):void{
+    private function unmask_payload(array &$b,int $offset = 1):int{
         $l=count($b);
         for($j=$offset;$j<=$l;$j++){
-            if ($this->payloadLength === 0) {
-                $this->unmask($b,$j-1);
-                return;
-            }
-
             //$this->payload[$this->payloadIndex] = chr(($b[$j] ^ $this->mask[($this->payloadIndex) % 4]));
             $this->payload->push(chr(($b[$j] ^ $this->mask[($this->payloadIndex) % 4])));
 
@@ -264,6 +263,9 @@ abstract class WebSocketManager extends EventManager{
                     }
                     
                 }
+                if ($j+1<=$l) 
+                    echo "stop here\n";
+
                 $this->lengthKey = 0;
                 $this->reading = self::FIRST_BYTE;
                 $this->lengthIndex = 0;
@@ -273,9 +275,13 @@ abstract class WebSocketManager extends EventManager{
                 $this->payload = new LinkedList();
                 $this->mask = null;
                 $this->length = null;
+
+                if ($j+1<=$l) 
+                    return $j;
             }
             
         }
+        return -1;
     }
     
     /*
