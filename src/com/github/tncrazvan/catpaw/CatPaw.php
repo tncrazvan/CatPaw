@@ -11,12 +11,10 @@ use com\github\tncrazvan\catpaw\tools\Http;
 use com\github\tncrazvan\catpaw\tools\Status;
 
 class CatPaw{
-    private $socket,
-            $listening,
-            $minifyOperation=null,
-            $argv;
-        
-    public $so;
+    private $socket;
+    private bool $listening;
+    private array $argv;
+    public SharedObject $so;
     
     /**
      * @param &$argv[1] This is the name of the config json file, for example "http.json".
@@ -26,7 +24,7 @@ class CatPaw{
      * @param $certificate This is the certificate filename. Note that the path is relative to the settings (http.json) file.
      * @param $password This is the passphrase of your certificate.
      */
-    public function __construct(&$argv,$beforeStart=null) {
+    public function __construct(&$argv,?\Closure $beforeStart=null) {
         $this->argv = $argv;
         $protocol="tcp";
         if(file_exists($argv[1])){
@@ -47,7 +45,7 @@ class CatPaw{
                 stream_context_set_option($context, 'ssl', 'verify_peer', false);
             }
             //let the developer intercept the stream context
-            if($beforeStart !== null) $beforeStart($context,$this->minifyOperation);
+            if($beforeStart !== null) $beforeStart($context);
             // Create the server socket
             $this->socket = stream_socket_server(
                 $protocol.'://'.$so->bindAddress.':'.$so->port,
@@ -77,22 +75,16 @@ class CatPaw{
         }
     }
 
-    public function whileListening(Closure $action){
-        $this->whileListeningWorking = false;
-        $this->whileListeningOperation = $action;
-        $this->lastWhileWorkingOperationTime = microtime(true)*1000;
-    }
-    private $lastMinifyTime = 0;
-    private $lastWhileWorkingOperationTime = false;
     private $clients = [];
     /**
      * Start listening for requests.
      * @return void
      */
-    public function listen(Closure $action=null,int $actionIntervalMS=1000):void{
+    public function listen(?\Closure $action=null):void{
         //if the server is not supposed to listen for requests, kill the server.
         if (!$this->listening) return;
-        
+
+        $actionIntervalMS=1000;
         $lastTime = 0;
         $actionWorking = false;
 
@@ -103,7 +95,7 @@ class CatPaw{
         while($this->listening){
             if($action !== null && (microtime(true)*1000) - $lastTime >= $actionIntervalMS && !$actionWorking) {
                 $actionWorking = true;
-                $action();
+                $actionIntervalMS = $action();
                 $lastTime = microtime(true)*1000;
                 $actionWorking = false;
             }
@@ -112,27 +104,17 @@ class CatPaw{
              * Listen for web sockets.
              * Read incoming messages and push pending commits.
             */
-            if($this->so->websocketConnections != null && !$this->so->websocketConnections->isEmpty()){
-                $node = $this->so->websocketConnections->getFirstNode();
-                while($node !== NULL){
-                    $e = $node->readNode();
-                    $e->push();
-                    $e->read();
-                    $node = $node->next;
-                }
+            foreach($this->so->websocketConnections as &$e){
+                $e->push();
+                $e->read();
             }
 
             /**
              * Listen for http sockets.
              * Read incoming messages and push pending commits.
             */
-            if($this->so->httpConnections != null && !$this->so->httpConnections->isEmpty()){
-                $node = $this->so->httpConnections->getFirstNode();
-                while($node !== NULL){
-                    $e = $node->readNode();
-                    $e->push();
-                    $node = $node->next;
-                }
+            foreach($this->so->httpConnections as &$e){
+                $e->push();
             }
 
             /*

@@ -2,7 +2,9 @@
 namespace com\github\tncrazvan\catpaw\http;
 
 class HttpSession {
-    private $id,$STORAGE = [],$time;
+    private string $id;
+    private array $STORAGE = [];
+    private int $time;
     
     public function __construct($e=null) {
         if($e !== null){

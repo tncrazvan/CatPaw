@@ -2,7 +2,7 @@
 namespace com\github\tncrazvan\catpaw\http;
 
 class HttpRequestCookies{
-    private $event;
+    private HttpEvent $event;
     public function __construct(HttpEvent $event){
         $this->event=$event;
     }

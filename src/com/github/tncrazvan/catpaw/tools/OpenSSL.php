@@ -2,9 +2,8 @@
 namespace com\github\tncrazvan\catpaw\tools;
 
 abstract class OpenSSL{
-    private static 
-        $countryNameRegex = '/^[A-z]{2}$/',
-        $emailRegex = "/(?<=^)[A-z0-9!#$%&'*+-\\/=?^_`{|}~]*\\.?[A-z0-9!#$%&'*+-\\/=?^_`{|}~]*\\@[A-z0-9][A-z0-9]*[A-z0-9](\\.[A-z]+)?(?=$)/";
+    private static string $countryNameRegex = '/^[A-z]{2}$/';
+    private static string $emailRegex = "/(?<=^)[A-z0-9!#$%&'*+-\\/=?^_`{|}~]*\\.?[A-z0-9!#$%&'*+-\\/=?^_`{|}~]*\\@[A-z0-9][A-z0-9]*[A-z0-9](\\.[A-z]+)?(?=$)/";
     /**
      * Creates the contents of a PEM certificate. Save this to a file.pem and load it lader for your socket.
      * @param array $subject an array containing fields required for the certificate.

@@ -2,7 +2,7 @@
 namespace com\github\tncrazvan\catpaw\http;
 
 class HttpEventException extends \Exception{
-    private $status;
+    private string $status;
     public function __construct($message, string $status, $code = 0, \Exception $previous = null) {
         parent::__construct($message, $code, $previous);
         $this->status = $status;

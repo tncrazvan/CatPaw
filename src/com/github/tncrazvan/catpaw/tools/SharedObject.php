@@ -228,10 +228,10 @@ class SharedObject extends Http{
         }
         $this->sessions = new HttpSessionManager();
     }
+    public $dir;
+    public array $httpConnections = [];
+    public array $websocketConnections = [];
     public
-        $dir,
-        $httpConnections = null,
-        $websocketConnections = null,
         $sessions,
         $headers = [],
         $compress = null,
@@ -247,7 +247,7 @@ class SharedObject extends Http{
             "size"=>1024 // 1024 MB
         ],
         $sessionTtl = 1440, // 24 minutes
-        $sleep = 10, //microseconds
+        $sleep = 1, //microseconds
         $listen=true,
         $groupsAllowed=false,
         $smtpAllowed=false,
@@ -278,11 +278,11 @@ class SharedObject extends Http{
         $httpDefaultNameOriginal="App",
         $httpDefaultName="App",
 
-        $wsEvents,
+        //$wsEvents,
         $cookieTtl=60*60*24*365, //year
         $wsGroupMaxClient=10,
-        $wsMtu=65536,
-        $httpMtu=65536,
+        $wsMtu=65535,
+        $httpMtu=65535,
         $cacheMaxAge=60*60*24*365, //year
         $entryPoint="/index.html",
         $wsAcceptKey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11",

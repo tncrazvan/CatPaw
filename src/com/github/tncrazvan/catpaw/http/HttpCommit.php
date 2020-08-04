@@ -2,7 +2,8 @@
 namespace com\github\tncrazvan\catpaw\http;
 
 class HttpCommit{
-    private $data,$length;
+    private $data;
+    private int $length;
     public function __construct(&$data,int $length){
         $this->data = $data;
         $this->length = $length;

@@ -16,19 +16,18 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 
 class EventManager{
+    public ?array $queryString=[];
+    public ?array $session = null;
+    public HttpHeaders $serverHeaders;
+    public HttpEventListener $listener;
+    public string $requestId;
+    public string $sessionId;
+    public bool $alive=true;
+    private array $dummy = [];
     
-    public 
-        $alive=true,
-        $queryString=[],
-        $serverHeaders=null,
-        $session = null,
-        $sessionId = null,
-        $listener,
-        $requestId;
-
-    private $null_dummy = null;
-    protected function &calculateParameters(string &$message){
-        $meta = new \ReflectionFunction($this->serve);
+    protected function &calculateParameters(string &$message, bool &$valid):array{
+        $valid = true;
+        $meta = new \ReflectionFunction($this->callback);
         $parameters = $meta->getParameters();
         $params = [];
         foreach($parameters as &$parameter){
@@ -105,7 +104,8 @@ class EventManager{
                                 $param = intval($this->listener->requestContent);
                             else{
                                 $message = 'Body was expected to be numeric, but non numeric value has been provided instead:'.$this->listener->requestContent;
-                                return $this->null_dummy;
+                                $valid = false;
+                                return $this->dummy;
                             }
                         break;
                         default:
@@ -114,7 +114,8 @@ class EventManager{
                                     $param = intval($this->listener->params[$name]);
                                 else{
                                     $message = 'Parameter {'.$name.'} was expected to be numeric, but non numeric value has been provided instead:'.$this->listener->params[$name];
-                                    return $this->null_dummy;
+                                    $valid = false;
+                                    return $this->dummy;
                                 }
                             else{
                                 $param = null;
@@ -165,6 +166,7 @@ class EventManager{
                 break;
             }
         }
+            
         return $params;
     }
 
@@ -175,32 +177,28 @@ class EventManager{
     }
 
     public function uninstall():void{
-        $this->requestId = null;
-        $this->listener = null;
-        $this->serverHeaders = null;
-        $this->queryString = null;
+        $this->queryString = [];
     }
 
-    public function install(HttpEventListener &$listener){
-        $this->requestId = spl_object_hash($this).rand();
+    public function install(HttpEventListener &$listener):void{
+        $this->requestId = \spl_object_hash($this).rand();
         $this->listener = $listener;
         $this->serverHeaders = new HttpHeaders($this);
         $queries=[];
         $object=[];
         
         if($listener->resourceLen > 1){
-            $queries = preg_split("/\\&/",$listener->resource[1]);
+            $queries = \preg_split("/\\&/",$listener->resource[1]);
             foreach ($queries as &$query){
-                $object = preg_split("/=/m",$query);
-                $objectLength = count($object);
+                $object = \preg_split("/=/m",$query);
+                $objectLength = \count($object);
                 if($objectLength > 1){
-                    $this->queryString[trim($object[0])] = $object[1];
+                    $this->queryString[\trim($object[0])] = $object[1];
                 }else{
-                    $this->queryString[trim($object[0])] = "";
+                    $this->queryString[\trim($object[0])] = "";
                 }
             }
         }
-        return $this;
     }
     
     /**
@@ -210,7 +208,7 @@ class EventManager{
      public function close():void{
         if(!$this->alive) return;
         $this->alive = false;
-        fclose($this->listener->client);
+        \fclose($this->listener->client);
         if($this->onClose !== null)
             $this->onClose->run();
         //@socket_set_option($this->clistener->lient, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));
@@ -224,8 +222,8 @@ class EventManager{
      * @return string the ip address of the client
      */
     public function &getAddress():string{
-        $host = stream_socket_get_name($this->listener->client,true);
-        $hostname = preg_replace("/:[0-9]*/","",$host);
+        $host = \stream_socket_get_name($this->listener->client,true);
+        $hostname = \preg_replace("/:[0-9]*/","",$host);
         return $hostname;
     }
     
@@ -234,9 +232,9 @@ class EventManager{
      * @return string the port number of the client
      */
     public function getPort():int{
-        $host = stream_socket_get_name($this->listener->client,true);
-        $port = preg_replace("/.*:/","",$host);
-        return intval($port);
+        $host = \stream_socket_get_name($this->listener->client,true);
+        $port = \preg_replace("/.*:/","",$host);
+        return \intval($port);
     }
     
 
@@ -397,7 +395,7 @@ class EventManager{
      * @param path path of the cookie
      * @param domain domain of the cookie
      */
-    public function unsetResponseCookie(string $key, string $path="/", string $domain=null):void{
+    public function unsetResponseCookie(string $key, ?string $path="/", ?string $domain=null):void{
         $this->serverHeaders->setCookie($key, "",$path,$domain,"0");
     }
     
@@ -409,7 +407,7 @@ class EventManager{
      * @param domain domain of the cooke.
      * @param expire time to live of the cookie.
      */
-    public function setResponseCookie(string $key, string $content, string $path='/', string $domain=null, string $expire=null):void{
+    public function setResponseCookie(string $key, string $content, ?string $path='/', ?string $domain=null, ?string $expire=null):void{
         $this->serverHeaders->setCookie($key, $content, $path, $domain, $expire);
     }
     

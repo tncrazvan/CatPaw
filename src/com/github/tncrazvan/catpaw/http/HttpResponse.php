@@ -4,31 +4,32 @@ namespace com\github\tncrazvan\catpaw\http;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
 
 class HttpResponse{
-    private $header,$body;
-    public function __construct($header=null,$body=null){
+    private HttpHeaders $headers;
+    private $body;
+    public function __construct($headers=null,$body=null){
         if($body === null) $body = "";
-        if(is_array($header)){
-            $this->header = new HttpHeaders();
-            foreach($header as $key => &$value){
+        if(is_array($headers)){
+            $this->headers = new HttpHeaders();
+            foreach($headers as $key => &$value){
                 if($key === "Status"){
-                    $this->header->setStatus($value);
+                    $this->headers->setStatus($value);
                 }else
-                    $this->header->set($key,$value);
+                    $this->headers->set($key,$value);
             }
-        }else if($header === null){
-            $this->header = new HttpHeaders();
+        }else if($headers === null){
+            $this->headers = new HttpHeaders();
         }else{
-            $this->header = $header;
+            $this->headers = $headers;
         }
         
         $this->body = $body;
     }
 
     public function &getHeaders():HttpHeaders{
-        return $this->header;
+        return $this->headers;
     }
 
-    public function &getBody():string{
+    public function &getBody(){
         if(\is_array($this->body) || \is_object($this->body)){
             $result = json_encode($this->body);
             return $result;
@@ -37,6 +38,6 @@ class HttpResponse{
     }
 
     public function toString():string{
-        return $this->header->toString()."\r\n".$this->body;
+        return $this->headers->toString()."\r\n".$this->body;
     }
 }

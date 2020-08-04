@@ -5,7 +5,7 @@ use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\EventManager;
 
 class HttpSessionManager{
-    public $list= [];
+    public array $list= [];
     public function &startSession(HttpEvent $e,&$sessionId):array{
         if ($this->issetSession($e,$sessionId)) {//if session exists
             //load the session

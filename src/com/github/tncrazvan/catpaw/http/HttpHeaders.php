@@ -4,11 +4,12 @@ use com\github\tncrazvan\catpaw\EventManager;
 use com\github\tncrazvan\catpaw\tools\Status;
 
 class HttpHeaders{
-    private static $VERSION = "HTTP/1.1";
-    private $headers = [], $cookies = [];
-    private $status=null;
-    private $resource=null;
-    public $initialized = false;
+    private static string $VERSION = "HTTP/1.1";
+    private array $headers = [];
+    private array $cookies = [];
+    private string $status = Status::SUCCESS;
+    private ?string $resource = null;
+    public bool $initialized = false;
     const DATE_FORMAT = "D j M Y G:i:s T";
     public function __construct(EventManager $em=null, bool $createSuccessHeader = true) {
         if($createSuccessHeader){
@@ -146,33 +147,33 @@ class HttpHeaders{
     
     public static function fromString(EventManager $em=null, string &$string):HttpHeaders{
         $httpHeaders = new HttpHeaders($em,false);
-        $lines = preg_split("/\\r\\n/", $string);
+        $lines = \preg_split("/\\r\\n/", $string);
         foreach($lines as &$line){
             if($line === "") continue;
-            $item = preg_split("/:\\s*/", $line, 2);
-            $itemLength = count($item);
+            $item = \preg_split("/:\\s*/", $line, 2);
+            $itemLength = \count($item);
             if($itemLength > 1){
                 if($item[0] === "Cookie"){
-                    $cookies= preg_split("/;/", $item[1]);
+                    $cookies= \preg_split("/;/", $item[1]);
                     foreach($cookies as &$cookie){
-                        $cookie = preg_split("/=(?!\\s|\\s|$)/",$cookie);
+                        $cookie = \preg_split("/=(?!\\s|\\s|$)/",$cookie);
                         $cookieLength = count($cookie);
                         if($cookieLength > 1){
-                            $content = array_fill(0, 4, null);
+                            $content = \array_fill(0, 4, null);
                             $content[0] = \urldecode($cookie[1]);
                             $content[1] = $cookieLength>2?$cookie[2]:null;
                             $content[2] = $cookieLength>3?$cookie[3]:null;
                             $content[3] = $cookieLength>3?$cookie[3]:null;
                             $content[4] = "Cookie";
-                            $httpHeaders->cookies[trim($cookie[0])] = $content;
+                            $httpHeaders->cookies[\trim($cookie[0])] = $content;
                         }
                     }
                 }else{
                     $httpHeaders->set($item[0], $item[1]);
                 }
             }else{
-                if(preg_match("/^.+(?=\\s\\/).*HTTP\\/.*\$/", $line) > 0){
-                    $parts = preg_split("/\\s+/", $line);
+                if(\preg_match("/^.+(?=\\s\\/).*HTTP\\/.*\$/", $line) > 0){
+                    $parts = \preg_split("/\\s+/", $line);
                     $httpHeaders->set("Method", $parts[0]);
                     $httpHeaders->setResource($parts[1]);
                     $httpHeaders->set("Version", $parts[2]);

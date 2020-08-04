@@ -15,7 +15,8 @@ namespace com\github\tncrazvan\catpaw\websocket;
  */
 class WebSocketResponse {
     //put your code here
-    public $data,$chunksLength;
+    public $data;
+    private int $chunksLength;
     public function __construct(&$data,int $chunksLength=1024) {
         $this->data = (string) $data;
         $this->chunksLength = $chunksLength;
