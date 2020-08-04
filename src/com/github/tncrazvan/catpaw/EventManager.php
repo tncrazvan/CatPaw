@@ -44,7 +44,7 @@ class EventManager{
                 break;
                 case WebSocketEventOnMessage::class:
                     $this->onMessage = new class() extends WebSocketEventOnMessage{
-                        public function run(string &$data):void{
+                        public function run(\SplDoublyLinkedList &$fragments):void{
                 
                         }
                     };

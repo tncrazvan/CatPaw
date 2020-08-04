@@ -5,6 +5,7 @@ namespace com\github\tncrazvan\catpaw\websocket;
 use com\github\tncrazvan\catpaw\tools\LinkedList;
 use com\github\tncrazvan\catpaw\EventManager;
 use com\github\tncrazvan\catpaw\tools\Status;
+use SplDoublyLinkedList;
 
 abstract class WebSocketManager extends EventManager{
     public array $subscriptions = [];
@@ -31,6 +32,8 @@ abstract class WebSocketManager extends EventManager{
         $params = &$this->calculateParameters($message,$valid);
         if($valid) try{
             $this->commits = new \SplDoublyLinkedList();
+            $this->listOfFragments = new LinkedList();
+            $this->payload = new LinkedList();
             //$this->listener->so->websocketConnections->insertLast($this);
             $this->listener->so->websocketConnections[$this->requestId] = $this;
             \call_user_func_array($this->callback,$params);
@@ -77,16 +80,16 @@ abstract class WebSocketManager extends EventManager{
             $this->uninstall();
         } else {
             if($masked === '') return;
-            $start = \round(microtime(true) * 1000);
+            //$start = \round(microtime(true) * 1000);
             $unpacked = \unpack("C*", $masked);
-            $length = \count($unpacked);
-            $end = \round(microtime(true) * 1000);
+            //$length = \count($unpacked);
+            /*$end = \round(microtime(true) * 1000);
             $t = $end - $start;
-            echo ("it took $t ms to unpack and count.\n");
+            echo ("it took $t ms to unpack and count.\n");*/
             
-            $start = (\round(microtime(true) * 1000));
+            //$start = (\round(microtime(true) * 1000));
             $this->unmask($unpacked);
-            echo ("it took ".(\round(microtime(true) * 1000) - $start)." ms.\n##########################################\n");
+            //echo ("it took ".(\round(microtime(true) * 1000) - $start)." ms.\n##########################################\n");
         }
 
     }
@@ -96,13 +99,11 @@ abstract class WebSocketManager extends EventManager{
             $payloadLength = 0;
     // private boolean fin,rsv1,rsv2,rsv3;
     private $opcode;
-    private /*?array*/ $payload = null, $mask = null, $length = null;
+    private /*?array*/ /* $payload = null,  */$mask = null, $length = null;
+    private LinkedList $payload;
     private bool $isContinuation = false;
     private bool $isFinal = false;
-    private array $listOfPayloads = [];
-    
-    private $startTime = 0;
-    private $endTime;
+    private LinkedList $listOfFragments;
 
 
     private function unmask(array &$unpacked,int $shift = 0){
@@ -150,8 +151,6 @@ abstract class WebSocketManager extends EventManager{
         // rsv1 = ((b & 0x40) != 0);
         // rsv2 = ((b & 0x20) != 0);
         // rsv3 = ((b & 0x10) != 0);
-        if($this->startTime === 0)
-            $this->startTime = round(microtime(true) * 100000);
         
         $this->opcode = ($b & 0x0F);
         $this->isContinuation = $this->opcode === 0;
@@ -229,7 +228,7 @@ abstract class WebSocketManager extends EventManager{
             if ($this->maskIndex === 4) {
                 $this->reading = self::PAYLOAD;
                 // int l = (int)ByteBuffer.wrap(length).getLong();
-                $this->payload = array_fill(0,$this->payloadLength,null);
+                //$this->payload = array_fill(0,$this->payloadLength,null);
             }
         }
         //$end = round(microtime(true) * 100000);
@@ -244,8 +243,8 @@ abstract class WebSocketManager extends EventManager{
                 return;
             }
 
-            $this->payload[$this->payloadIndex] = chr(($b[$j] ^ $this->mask[($this->payloadIndex) % 4]));
-
+            //$this->payload[$this->payloadIndex] = chr(($b[$j] ^ $this->mask[($this->payloadIndex) % 4]));
+            $this->payload->push(chr(($b[$j] ^ $this->mask[($this->payloadIndex) % 4])));
 
             $this->payloadIndex++;
             
@@ -256,13 +255,11 @@ abstract class WebSocketManager extends EventManager{
                 $this->reading = self::DONE;
 
                 if(null !== $this->onMessage){
-
-                    $payload = implode('',$this->payload);
-                    $this->listOfPayloads[] = $payload;
-                    if( $this->isFinal){
-                        $res = implode('',$this->listOfPayloads);
-                        $this->listOfPayloads = [];
-                        $this->startTime = 0;
+                    $payload = $this->payload;
+                    $this->listOfFragments->push($payload);
+                    if($this->isFinal){
+                        $res = $this->listOfFragments;
+                        $this->listOfFragments = new LinkedList();
                         $this->onMessage->run($res);
                     }
                     
@@ -273,7 +270,7 @@ abstract class WebSocketManager extends EventManager{
                 $this->payloadLength = 0;
                 $this->maskIndex = 0;
                 $this->payloadIndex = 0;
-                $this->payload = null;
+                $this->payload = new LinkedList();
                 $this->mask = null;
                 $this->length = null;
             }
