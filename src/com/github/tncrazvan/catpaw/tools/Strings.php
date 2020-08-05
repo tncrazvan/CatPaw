@@ -72,8 +72,7 @@ abstract class Strings{
     * @return bool true if string starts with $needle, otherwise false
     */
    public static function startsWith(string &$haystack, string $needle):bool{
-       $length = strlen($needle);
-       return (substr($haystack, 0, $length) === $needle);
+       return (substr($haystack, 0, strlen($needle)) === $needle);
    }
 
    /**

@@ -5,12 +5,7 @@ use com\github\tncrazvan\catpaw\http\HttpEventManager;
 use com\github\tncrazvan\catpaw\http\HttpEventListener;
 
 class HttpEvent extends HttpEventManager{
-    public static function make(HttpEventListener &$listener):HttpEvent{        
-        //Default 404
-        if($listener->locationLen === 0 || $listener->locationLen === 1 && \preg_match('/\s*\/+\s*/',$listener->location[0]) === 1)
-            $listener->location = [""];
-        
-        
+    public static function make(HttpEventListener &$listener):HttpEvent{    
         $callback = HttpEventListener::callback('http', $listener);
 
         $event = new HttpEvent();

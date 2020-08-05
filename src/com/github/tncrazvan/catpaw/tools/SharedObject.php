@@ -17,26 +17,51 @@ class SharedObject extends Http{
 
     public function __construct(string $settingsFile,bool $print=true){
         $settings = include($settingsFile);
-
-        $settings["events"]["http"]["@404"] = function(){
-            return new HttpResponse([
-                "Status"=>Status::NOT_FOUND
-            ]);
-            
-        };
-        $settings["events"]["http"]["@file"] = function(HttpEvent $e){
-            switch($e->getRequestMethod()){
-                case "GET":
-                    $filename = $e->listener->resource[0] === ""?"index.html":$e->listener->resource[0];
-                    return Http::getFile($e,$e->listener->so->webRoot.$filename);
-                break;
-                default:
-                    return new HttpResponse([
-                        "Status"=>Status::METHOD_NOT_ALLOWED
-                    ]);
-                break;
+        if(isset($settings['webRoot'])){
+            $settings['webRoot'] = \preg_replace('/\/+(?=$)/','',$settings['webRoot']);
+        }
+        if(isset($settings["events"])){
+            foreach($settings["events"] as &$protocol){
+                foreach($protocol as $key => &$value){
+                    if(Strings::startsWith($key,'@') || Strings::startsWith($key,'/')) continue;
+                    $newKey = $key;
+                    if($newKey === '')
+                        $newKey = '/';
+                    else {
+                        if(!Strings::startsWith($key,'/')){
+                            $newKey = '/'.$newKey;
+                        }
+                        if(Strings::endsWith($key,'/')){
+                            $newKey = \substr($newKey,-1);
+                        }
+                    }
+                    $protocol[$newKey] = $value;
+                    unset($protocol[$key]);
+                }
             }
-        };
+        }
+
+        if(!isset($settings["events"]["http"]["@404"]))
+            $settings["events"]["http"]["@404"] = function(){
+                return new HttpResponse([
+                    "Status"=>Status::NOT_FOUND
+                ]);
+                
+            };
+        if(!isset($settings["events"]["http"]["@file"]))
+            $settings["events"]["http"]["@file"] = function(HttpEvent $e){
+                switch($e->getRequestMethod()){
+                    case "GET":
+                        $filename = $e->listener->path === ""?"/index.html":$e->listener->path;
+                        return ServerFile::response($e,$e->listener->so->webRoot,$filename);
+                    break;
+                    default:
+                        return new HttpResponse([
+                            "Status"=>Status::METHOD_NOT_ALLOWED
+                        ]);
+                    break;
+                }
+            };
 
         $settings["events"]["websocket"]["@404"] = function(WebSocketEvent &$e, WebSocketEventOnOpen &$onOpen){
             $onOpen = new class($e) extends WebSocketEventOnOpen{
@@ -56,9 +81,13 @@ class SharedObject extends Http{
         $this->compress = $settings["compress"];
         if(isset($settings["sleep"]))
         $this->sleep = $settings["sleep"];
-        $this->webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$this->dir."/www/");
-        if(isset($settings["webRoot"]))
-        $this->webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$this->dir."/".$settings["webRoot"]."/");
+        $this->webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$this->dir."/www");
+        if(isset($settings["webRoot"])){
+            if($settings["webRoot"][0] === '/')
+                $this->webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$settings["webRoot"]);
+            else
+                $this->webRoot = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$this->dir."/".$settings["webRoot"]);
+        }
 
         if(isset($settings["port"]))
         $this->port = $settings["port"];
@@ -177,15 +206,6 @@ class SharedObject extends Http{
                 ."Type of compression.\n\n"
                 ."There's no fallback compression, is if no compression is specified, the server will not compress the data"
                     =>$this->compress !== null?implode(" > ",$this->compress):"DISABLED",
-                "controllers\n\n"
-                ."This is a mapping of your controllers Http and WebSocket controllers.\n"
-                ."All your controllers should live under these two namespaces.\n"
-                ."The server does not require you to setup any routing system, your client's requests will map directly to your controllers.\n"
-                ."Check the documentation to read more details about the controller/request mapping system."
-                    =>[
-                    "http"=>$this->httpControllerPackageName,
-                    "websocket"=>$this->wsControllerPackageName,
-                ],
                 "certificate\n\n"
                 ."PEM certificate details.\n"
                 ."[NOTE]: You can use /mkcert to make your own certificate, and you can find the /mkcert configuration in /config/certificate.php"
@@ -202,7 +222,27 @@ class SharedObject extends Http{
                     =>$this->headers,
                 "events\n\n"
                 ."There are the exposed Http and WebSocket events this server offers."
-                    =>$this->events
+                ."Each event is identified by an anonymus function.\n\n"
+
+                ."##################################################"
+                ."Http events don't require any special setup, simply\n"
+                ."specify the path of your event as the array key, provide an anonymus function\n"
+                ."as the value. The result of your function will be sent to the client as an \n"
+                ."HttpResponse object. You can choose to wrap your result in an HttpResponse \n"
+                ."but you can also return custom objects, in whichcase the HttpEventManager\n"
+                ."will automatically wrap your object as an HttpResponse.\n\n"
+                
+                ."##################################################"
+                ."WebSocket events require a special setup for them to work properly.\n"
+                ."Like the http event the websocket event requires a key => value pair,\n"
+                ."where the key is the path of your event and the value is your anonymus function.\n"
+                ."Your anonymus function can take 3 special parameters of types: WebSocketEventOnOpen,\n"
+                ."WebSocketEventOnMessage, WebSocketEventOnClose. \n"
+                ."Each being objects that will be called exactly when their names suggest:\n"
+                ."WebSocketEventOnOpen: triggers when the websocket connection is opened (successful handshake).\n"
+                ."WebSocketEventOnMessage: triggers a message is received.\n"
+                ."WebSocketEventOnClose: triggers when the websocket connection is closed by either parties.\n"
+                    => $this->events
             ];
             echo Strings::tableFromArray($data,false,function(AsciiTable $table,int $lvl){
                 //echo "LBL: $lvl\n";
@@ -262,21 +302,6 @@ class SharedObject extends Http{
             "http"=>[],
             "websocket"=>[]
         ],
-
-        $httpControllerPackageNameOriginal="com\\github\\tncrazvan\\catpaw\\controller\\http",
-        $httpControllerPackageName="com\\github\\tncrazvan\\catpaw\\controller\\http",
-
-        $wsControllerPackageNameOriginal="com\\github\\tncrazvan\\catpaw\\controller\\WebSocket",
-        $wsControllerPackageName="com\\github\\tncrazvan\\catpaw\\controller\\WebSocket",
-
-        $httpNotFoundNameOriginal="ControllerNotFound",
-        $httpNotFoundName="ControllerNotFound",
-
-        $wsNotFoundNameOriginal="ControllerNotFound",
-        $wsNotFoundName="ControllerNotFound",
-
-        $httpDefaultNameOriginal="App",
-        $httpDefaultName="App",
 
         //$wsEvents,
         $cookieTtl=60*60*24*365, //year

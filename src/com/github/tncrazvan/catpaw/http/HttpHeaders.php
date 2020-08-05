@@ -102,7 +102,9 @@ class HttpHeaders{
     }
 
     public function &get(string $key){
-        if(!isset($this->headers[$key])) return null;
+        $result = null;
+        if(!isset($this->headers[$key])) 
+            return $result;
         $result = trim($this->headers[$key]);
         return $result;
     }

@@ -13,15 +13,17 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 class HttpEventListener{
     //content sent (if POST method)
     public ?string $requestContent;
-    //the while requested resource (URL + Query String)
-    public ?array $resource;
+    //requested query string
+    public string $queryString;
+    //requested path
+    public string $path;
+    //requested resource (path + query)
+    public string $resource;
     //request headers
     public HttpHeaders $requestHeaders;
-    //array of url split on "/"
-    public array $location;
     //length of the location array
-    public int $locationLen;
-    public int $resourceLen;
+    /*public int $locationLen;
+    public int $resourceLen;*/
     public SharedObject $so;
     public array $params = [];
     public $client;
@@ -40,30 +42,44 @@ class HttpEventListener{
         return [false,false];
     }
 
-    public static function callback(string $type,HttpEventListener $listener):\Closure{
-        $paths = &$listener->so->events[$type];
-        $request = \implode('/',$listener->location);
 
+    private static function _forward(array &$paths, HttpEventListener &$listener):void{
+        if(isset($paths["@forward"]))
+            foreach($paths["@forward"] as $from => &$to){
+                $fromStar = $from[-1] === '*';
+                if($fromStar && $from !== '/'){
+                    $cleaned = \substr($from,0,-1);
+                    if(Strings::startsWith($listener->path,$cleaned)){
+                        $listener->path = $to;  
+                        break; 
+                    }//else don't do anything
+                }else if($listener->path === $from){
+                    $listener->path = $to;
+                    break;
+                }//else don't do anything
+            }
+    }
+
+    private static function _file(string &$type, array &$paths, HttpEventListener &$listener, ?\CLosure &$callback):bool{
         if($type !== 'websocket'){
-            $location = $listener->so->webRoot.$request;
-            
-            if(is_dir($location) && $type)
-                if(Strings::endsWith($location,"/"))
-                    $location .= $listener->so->entryPoint;
-                else
-                    $location .= '/'.$listener->so->entryPoint;
-            
-            
+            $location = $listener->so->webRoot.$listener->path;
+
             //checking if it's a file
-            if(\file_exists($location) && !\is_dir($location))
-                return $paths["@file"];
+            if(\file_exists($location) && !\is_dir($location)){
+                $callback = $paths["@file"];
+                return true;
+            }
         }
-        
-        
-        foreach($paths as $route => &$callback){
+        return false;
+    }
+
+
+    private static function _event(array &$paths, HttpEventListener &$listener, ?\CLosure &$callback):bool{
+        $_event_path = \preg_replace('/(?<=^)\/+/','',$listener->path);
+        foreach($paths as $route => &$cb){
             if($route === '@file' || 
                     $route === '@404' || 
-                        ($route === '/' && $route !== $request)) continue;
+                        ($route === '/' && $route !== $listener->path)) continue;
 
             if($route[0] === '/')
                 $route = \substr($route,1);
@@ -72,29 +88,43 @@ class HttpEventListener{
             
             $len=\count($pieces);
             $c = 0;
-            for($i=0,$lenR = \count($listener->location);$i<$len && $i<$lenR;$i++){
+            $parts = \preg_split('/\//',$_event_path);
+            for($i=0,$lenR = \count($parts);$i<$len && $i<$lenR;$i++){
                 $matches = null;
                 if(\preg_match(self::PATTERN_PATH_PARAM,$pieces[$i],$matches)) {
-                    $listener->params[$matches[0]] = $listener->location[$i];
+                    $listener->params[$matches[0]] = $parts[$i];
                     $c++;
                 }
-                else if($pieces[$i] === $listener->location[$i]) 
-                    $c++;
+                else if($pieces[$i] === $parts[$i])  $c++;
             }
 
-            if($c === $len)
-                return $callback;
+            if($c === $len){
+                $callback = $cb;
+                return true;
+            }
         }
+        return false;
+    }
 
-        return $paths["@404"];
+    public static function callback(string $type,HttpEventListener $listener):\Closure{
+        $paths = &$listener->so->events[$type];
+
+        self::_forward($paths,$listener);
+
+        $callback = $paths["@404"];
+
+        if(self::_file($type,$paths,$listener,$callback))
+            return $callback;
+
+        if(self::_event($paths,$listener,$callback))
+            return $callback;
+
+        return $callback;
     }
 
     private function resolve():bool{
         $input = \fread($this->client, $this->so->httpMtu);
-        if(!$input)
-            return false;
-        
-        if(trim($input) === "")
+        if($input === false || trim($input) === '') //0 is okay, but these are not okay: false || null || ''
             return false;
         
         $input = \preg_split('/\r\n\r\n/', $input,2);
@@ -107,11 +137,21 @@ class HttpEventListener{
         $this->requestHeaders = HttpHeaders::fromString(null, $strHeaders);
         if(!$this->requestHeaders)
             return false;
-        $this->resource = \preg_split("/\\?|\\&/m",\preg_replace("/^\\//m","",\urldecode($this->requestHeaders->getResource())));
-        $this->resourceLen = \count($this->resource);
-        $this->location = \preg_split("/\\//m",$this->resource[0]);
-        $this->locationLen = \count($this->location);
 
+        $this->resource = \urldecode($this->requestHeaders->getResource());
+        if($this->resource === '')
+            $this->resource = '/';
+        if($this->resource[0] !== '/')
+            $this->resource = '/'.$this->resource;
+
+        $_path_and_query = \preg_split('/\?\&/',$this->resource,2);
+
+        $this->path = $_path_and_query[0];
+        if(\count($_path_and_query) > 1)
+            $this->queryString = $_path_and_query[1];
+        else 
+            $this->queryString = '';
+        //$_path_and_query = null; //this is not required since it's scoped
         return true;
     }
 
@@ -125,6 +165,8 @@ class HttpEventListener{
                 //http event goes here
                 return [true,false];
            }
+       }else{
+            return [true,false];
        }
     }
 }

@@ -187,8 +187,8 @@ class EventManager{
         $queries=[];
         $object=[];
         
-        if($listener->resourceLen > 1){
-            $queries = \preg_split("/\\&/",$listener->resource[1]);
+        if($listener->queryString !== ''){
+            $queries = \preg_split("/\\&/",$listener->queryString);
             foreach ($queries as &$query){
                 $object = \preg_split("/=/m",$query);
                 $objectLength = \count($object);

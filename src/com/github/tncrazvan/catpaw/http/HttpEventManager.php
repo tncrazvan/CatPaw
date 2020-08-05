@@ -56,7 +56,8 @@ abstract class HttpEventManager extends EventManager{
         $responseHeader->mix($this->serverHeaders);
 
         if(!$responseHeader->has("Content-Length")){
-            $responseHeader->set("Content-Length",''.strlen($responseObject->getBody()));
+            $length = strlen($responseObject->getBody());
+            $responseHeader->set("Content-Length",''.$length);
         }
 
         $chunks = \str_split($responseObject->toString(),$this->listener->so->httpMtu);
@@ -86,13 +87,15 @@ abstract class HttpEventManager extends EventManager{
         for ($this->commits->rewind(); $this->commits->valid(); $this->commits->next()) {
             $httpCommit = $this->commits->current();
             $contents = &$httpCommit->getData();
-            $result = @\stream_socket_sendto($this->listener->client, $contents);
+            $length = \strlen($contents);
+            $result = @\fwrite($this->listener->client, $contents, $length);
             if(!$result){
                 if($this->onClose !== null)
                     $this->onClose->run();
                 $this->close();
                 unset($this->listener->so->httpConnections[$this->requestId]);
                 $this->uninstall();
+                break;
             }
 
             $i++;
