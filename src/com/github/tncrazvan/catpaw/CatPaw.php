@@ -1,7 +1,6 @@
 <?php
 namespace com\github\tncrazvan\catpaw;
 
-use Closure;
 use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\tools\Session;
 use com\github\tncrazvan\catpaw\tools\SharedObject;
@@ -9,6 +8,7 @@ use com\github\tncrazvan\catpaw\http\HttpEventListener;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
 use com\github\tncrazvan\catpaw\tools\Http;
 use com\github\tncrazvan\catpaw\tools\Status;
+use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 class CatPaw{
     private $socket;
@@ -93,12 +93,15 @@ class CatPaw{
         echo "\nServer started.\n";
         //as long as the server is supposed to listen...
         while($this->listening){
-            if($action !== null && (microtime(true)*1000) - $lastTime >= $actionIntervalMS && !$actionWorking) {
-                $actionWorking = true;
-                $actionIntervalMS = $action();
-                $lastTime = microtime(true)*1000;
-                $actionWorking = false;
+
+            /**
+             * Listen for http sockets.
+             * Read incoming messages and push pending commits.
+            */
+            foreach($this->so->httpConnections as &$e){
+                $e->push();
             }
+            
             
             /**
              * Listen for web sockets.
@@ -109,12 +112,12 @@ class CatPaw{
                 $e->read();
             }
 
-            /**
-             * Listen for http sockets.
-             * Read incoming messages and push pending commits.
-            */
-            foreach($this->so->httpConnections as &$e){
-                $e->push();
+
+            if($action !== null && (microtime(true)*1000) - $lastTime >= $actionIntervalMS && !$actionWorking) {
+                $actionWorking = true;
+                $actionIntervalMS = $action();
+                $lastTime = microtime(true)*1000;
+                $actionWorking = false;
             }
 
             /*
@@ -175,8 +178,15 @@ class CatPaw{
                 stream_set_blocking($client, false);
 
             $listener = new HttpEventListener($client, $this->so);
-            $listener->run();
-            
+            list($isHttp,$isWebsocket) = $listener->run();
+            if($isHttp){
+                $event = HttpEvent::make($listener);
+                $event->run();
+            }else if($isWebsocket){
+                $this->_im_a_fork = true;
+                $event = WebSocketEvent::make($listener);
+                $event->run();
+            }
             unset($copy[$key]);
             unset($this->clients[$key]);
         }

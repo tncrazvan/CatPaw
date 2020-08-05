@@ -25,7 +25,7 @@ abstract class WebSocketManager extends EventManager{
         $this->serverHeaders->set("Upgrade","websocket");
         $this->serverHeaders->set("Sec-WebSocket-Accept",$acceptKey);
         $handshake = $this->serverHeaders->toString()."\r\n";
-        \fwrite($this->listener->client, $handshake, strlen($handshake));
+        @\stream_socket_sendto($this->listener->client, $handshake);
 
         $message = '';
         $valid = false;
@@ -313,7 +313,7 @@ abstract class WebSocketManager extends EventManager{
         fflush($this->listener->client);
         // We need to set only FIN and Opcode.
         
-        if(!fwrite($this->listener->client,$binary?chr(0b10000010):chr(0b10000001))){
+        if(!@\stream_socket_sendto($this->listener->client, $binary?chr(0b10000010):chr(0b10000001))){
             $this->close();
             //$this->listener->so->websocketConnections->deleteNode($this);
             unset($this->listener->so->websocketConnections[$this->requestId]);
@@ -324,7 +324,7 @@ abstract class WebSocketManager extends EventManager{
         $message_length = strlen($messageBytes);
         // Prepare the payload length.
         if ($message_length <= 125) {
-            if(!fwrite($this->listener->client,chr($message_length))){
+            if(!@\stream_socket_sendto($this->listener->client, chr($message_length))){
                 $this->close();
                 //$this->listener->so->websocketConnections->deleteNode($this);
                 unset($this->listener->so->websocketConnections[$this->requestId]);
@@ -332,7 +332,7 @@ abstract class WebSocketManager extends EventManager{
                 return;
             }
         } else { // We assume it is 16 bit length. Not more than that.
-            if(!fwrite($this->listener->client,chr(0b01111110))){
+            if(!@\stream_socket_sendto($this->listener->client, chr(0b01111110))){
                 $this->close();
                 //$this->listener->so->websocketConnections->deleteNode($this);
                 unset($this->listener->so->websocketConnections[$this->requestId]);
@@ -342,14 +342,14 @@ abstract class WebSocketManager extends EventManager{
 
             $b1 = ($message_length >> 8) & 0xff;
             $b2 = $message_length & 0xff;
-            if(!fwrite($this->listener->client,chr($b1))){
+            if(!@\stream_socket_sendto($this->listener->client, chr($b1))){
                 $this->close();
                 //$this->listener->so->websocketConnections->deleteNode($this);
                 unset($this->listener->so->websocketConnections[$this->requestId]);
                 $this->uninstall();
                 return;
             }
-            if(!fwrite($this->listener->client,chr($b2))){
+            if(!stream_socket_sendto($this->listener->client,chr($b2))){
                 $this->close();
                 //$this->listener->so->websocketConnections->deleteNode($this);
                 unset($this->listener->so->websocketConnections[$this->requestId]);
@@ -359,7 +359,7 @@ abstract class WebSocketManager extends EventManager{
         }
         $test = str_replace('a','',$messageBytes);
         // Write the data.
-        if(!fwrite($this->listener->client,$messageBytes)){
+        if(!stream_socket_sendto($this->listener->client,$messageBytes)){
             $this->close();
             //$this->listener->so->websocketConnections->deleteNode($this);
             unset($this->listener->so->websocketConnections[$this->requestId]);

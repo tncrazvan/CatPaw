@@ -32,11 +32,12 @@ class HttpEventListener{
         $this->client = $client;
         $this->so = $so;
     }
-    public function run():void{
+    public function run():array{
         if($this->resolve())
-            $this->serve();
+            return $this->serve();
         else
             \fclose($this->client);
+        return [false,false];
     }
 
     public static function callback(string $type,HttpEventListener $listener):\Closure{
@@ -114,24 +115,16 @@ class HttpEventListener{
         return true;
     }
 
-    private function serve():void{
+    private function serve():array{
        if($this->requestHeaders->get("Connection") !== null){
            if(\preg_match("/Upgrade/", $this->requestHeaders->get("Connection"))){
                 //websocket event goes here
-                $this->websocket();
+                return [false,true];
+                    
            }else{
                 //http event goes here
-                $this->http11();
+                return [true,false];
            }
        }
-    }
-
-    private function websocket():void{
-        $event = WebSocketEvent::make($this);
-        $event->run();
-    }
-    private function http11():void{
-        $event = HttpEvent::make($this);
-        $event->run();
     }
 }
