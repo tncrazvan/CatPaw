@@ -156,8 +156,14 @@ class ServerFile{
         }else{
             $responseHeaders->set("Content-Type",$ctype);
             $responseHeaders->set("Content-Length", $filesize);
-            //if(Strings::startsWith($ctype,'audio/') || Strings::startsWith($ctype,'video/'))
-            if($filesize > 0){
+            if(Strings::startsWith($ctype,'audio/') || Strings::startsWith($ctype,'video/')){
+                $responseHeaders->set("Accept-Ranges","bytes");
+                fseek($raf, 0);
+                $length = \round($filesize/10)+1;
+                if($length> $filesize)
+                    $length = $filesize;
+                $result = fread($raf, $length);
+            }else if($filesize > 0){
                 fseek($raf, 0);
                 $result = fread($raf, $filesize);
             }
