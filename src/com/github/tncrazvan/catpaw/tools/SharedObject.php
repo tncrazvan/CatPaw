@@ -1,13 +1,14 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools;
 
-use stdClass;
 use com\github\tncrazvan\catpaw\tools\Http;
 use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\asciitable\AsciiTable;
 use com\github\tncrazvan\catpaw\http\HttpEvent;
+use com\github\tncrazvan\catpaw\tools\ServerFile;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
+use com\github\tncrazvan\catpaw\http\HttpDefaultEvents;
 use com\github\tncrazvan\catpaw\http\HttpSessionManager;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
@@ -41,27 +42,12 @@ class SharedObject extends Http{
             }
         }
 
+        HttpDefaultEvents::init();
+
         if(!isset($settings["events"]["http"]["@404"]))
-            $settings["events"]["http"]["@404"] = function(){
-                return new HttpResponse([
-                    "Status"=>Status::NOT_FOUND
-                ]);
-                
-            };
+            $settings["events"]["http"]["@404"] = HttpDefaultEvents::$notFound;
         if(!isset($settings["events"]["http"]["@file"]))
-            $settings["events"]["http"]["@file"] = function(HttpEvent $e){
-                switch($e->getRequestMethod()){
-                    case "GET":
-                        $filename = $e->listener->path === ""?"/index.html":$e->listener->path;
-                        return ServerFile::response($e,$e->listener->so->webRoot,$filename);
-                    break;
-                    default:
-                        return new HttpResponse([
-                            "Status"=>Status::METHOD_NOT_ALLOWED
-                        ]);
-                    break;
-                }
-            };
+            $settings["events"]["http"]["@file"] = HttpDefaultEvents::$file;
 
         $settings["events"]["websocket"]["@404"] = function(WebSocketEvent &$e, WebSocketEventOnOpen &$onOpen){
             $onOpen = new class($e) extends WebSocketEventOnOpen{
