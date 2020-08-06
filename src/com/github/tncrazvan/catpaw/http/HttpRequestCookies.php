@@ -11,6 +11,10 @@ class HttpRequestCookies{
         return $this->event->issetRequestCookie($key);
     }
 
+    public function get(string $key):string{
+        return $this->event->getRequestCookie($key);
+    }
+
     public function &getAll():array{
         return $this->event->getRequestCookies();
     }
