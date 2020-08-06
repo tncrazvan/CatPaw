@@ -10,19 +10,17 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnClose;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnMessage;
 
-$webRoot = "../public";
-
 return [
     "port" => 80,
-    "webRoot" => &$webRoot,
+    "webRoot" => "./public",
     "bindAddress" => "127.0.0.1",
     "events" => [
         "http"=>[
-            "/hello/{test}" 
-                => fn(string $test,HttpEvent $e,HttpEventOnClose &$onCLose) 
-                    => new HelloPage($test,$e,$onCLose),
-            "/templating" 
-                => fn() => ServerFile::include('./templates/index.php')
+            "/hello/{test}"  => fn(string $test,HttpEvent $e,HttpEventOnClose &$onCLose)  => new HelloPage($test,$e,$onCLose),
+            "/templating/{username}" => function(string $username){
+                return ServerFile::include('./templates/index.php',$username);
+            }
+                
         ],
         "websocket"=>[
             "/test"

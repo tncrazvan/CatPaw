@@ -1,3 +1,8 @@
+<?php
+    use com\github\tncrazvan\catpaw\tools\scripts\Script;
+    list($username) = Script::args();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,6 +11,6 @@
     <title>Document</title>
 </head>
 <body>
-    werwertweqwrqwrq
+    my username is: <?php echo $username ?>
 </body>
 </html>
