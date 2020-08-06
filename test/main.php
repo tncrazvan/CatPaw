@@ -1,27 +1,33 @@
 <?php
-
-
-use com\github\tncrazvan\catpaw\test\events\http\homepage\HomePage;
-use com\github\tncrazvan\catpaw\test\events\websocket\websockettest\WebSocketTest as WebsockettestWebSocketTest;
-use com\github\tncrazvan\catpaw\test\models\homepage\User;
+namespace app;
+use app\homepage\HelloPage;
+use app\websockettest\WebSocketTest;
+use com\github\tncrazvan\catpaw\http\HttpEvent;
+use com\github\tncrazvan\catpaw\http\HttpEventOnClose;
+use com\github\tncrazvan\catpaw\tools\ServerFile;
+use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
+use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnClose;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnMessage;
-use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
+
+$webRoot = "../public";
 
 return [
     "port" => 80,
-    "webRoot" => "./www/public",
+    "webRoot" => &$webRoot,
     "bindAddress" => "127.0.0.1",
     "events" => [
         "http"=>[
-            "/home/{username}" 
-                => fn(string $method, ?User &$user = null) 
-                    => new HomePage($method,$user)
+            "/hello/{test}" 
+                => fn(string $test,HttpEvent $e,HttpEventOnClose &$onCLose) 
+                    => new HelloPage($test,$e,$onCLose),
+            "/templating" 
+                => fn() => ServerFile::include('./templates/index.php')
         ],
         "websocket"=>[
-            "/test" 
-                => fn(WebSocketEventOnOpen &$onOpen, WebSocketEventOnMessage &$onMessage, WebSocketEventOnClose &$onClose) 
-                    => new WebsockettestWebSocketTest($onOpen,$onMessage,$onClose)
+            "/test"
+                => fn(WebSocketEvent &$e,WebSocketEventOnOpen &$onOpen,WebSocketEventOnMessage &$onMessage,WebSocketEventOnClose &$onClose) 
+                    => new WebSocketTest($e,$onOpen,$onMessage,$onClose)
         ]
     ],
     "sessionName" => "_SESSION",

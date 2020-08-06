@@ -181,7 +181,12 @@ class CatPaw{
             list($isHttp,$isWebsocket) = $listener->run();
             if($isHttp){
                 $event = HttpEvent::make($listener);
+                
+                global $_EVENT;
+                $_EVENT = &$event;
                 $event->run();
+                $_EVENT = null;
+                
             }else if($isWebsocket){
                 $this->_im_a_fork = true;
                 $event = WebSocketEvent::make($listener);

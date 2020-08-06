@@ -6,9 +6,21 @@ use com\github\tncrazvan\catpaw\http\HttpHeaders;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
 
 class ServerFile{
-    public static function include(string... $filename){
-        ob_start();
-        include(\preg_replace('#/+#','/',join("/",$filename)));
+    /**
+     * Include a php script and call \ob_start().
+     * @param e an HttpEvent.
+     * @param args arguments to pass to the script.
+     * This data will be available inside the script through the "global $_ARGS" variable.
+     * This variable can also be a ccessed through Script::args() which also provides type hinting.
+     * @return result of the script.
+     */
+    public static function include(string $filename,...$args){
+        $e_count = 0;
+        global $_ARGS;
+        $_ARGS = $args;
+        \ob_start();
+        include($filename);
+        $_ARGS = null; //remove data after the script is done with it
         return \ob_get_clean();
     }
 
