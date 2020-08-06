@@ -14,9 +14,9 @@ class ServerFile{
      * This variable can also be a ccessed through Script::args() which also provides type hinting.
      * @return result of the script.
      */
-    public static function include(string $filename,...$args){
-        $e_count = 0;
+    public static function include(string $filename,... $args){
         global $_ARGS;
+        global $_EVENT;
         $_ARGS = $args;
         \ob_start();
         include($filename);

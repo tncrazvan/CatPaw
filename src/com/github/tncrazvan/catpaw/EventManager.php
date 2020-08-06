@@ -21,7 +21,7 @@ class EventManager{
     public HttpHeaders $serverHeaders;
     public HttpEventListener $listener;
     public string $requestId;
-    public string $sessionId;
+    public ?string $sessionId;
     public bool $alive=true;
     private array $dummy = [];
     

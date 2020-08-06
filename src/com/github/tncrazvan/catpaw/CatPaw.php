@@ -183,7 +183,7 @@ class CatPaw{
                 $event = HttpEvent::make($listener);
                 
                 global $_EVENT;
-                $_EVENT = &$event;
+                $_EVENT = $event;
                 $event->run();
                 $_EVENT = null;
                 

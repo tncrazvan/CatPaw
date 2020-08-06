@@ -12,4 +12,10 @@ class Script{
         global $_EVENT;
         return $_EVENT;
     }
+    public static function &startSession():array{
+        return self::event()->startSession();
+    }
+    public static function &stopSession():void{
+        self::event()->stopSession();
+    }
 }
