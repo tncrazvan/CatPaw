@@ -6,6 +6,12 @@ use com\github\tncrazvan\catpaw\http\HttpHeaders;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
 
 class ServerFile{
+    public static function include(string... $filename){
+        ob_start();
+        include(\preg_replace('#/+#','/',join("/",$filename)));
+        return \ob_get_clean();
+    }
+
     /**
      * Get the name of the parent directory of this file
      * @param filename an array of strings containing the name of the file. 
@@ -13,7 +19,7 @@ class ServerFile{
      * @return bool true if the file exists, false otherwise.
      */
     public static function dirname(string... $filename):bool{
-        return \dirname(preg_replace('#/+#','/',join("/",$filename)));
+        return \dirname(\preg_replace('#/+#','/',\join("/",$filename)));
     }
     /**
      * Check if a file exists.
@@ -22,7 +28,7 @@ class ServerFile{
      * @return bool true if the file exists, false otherwise.
      */
     public static function exists(string... $filename):bool{
-        return \file_exists(preg_replace('#/+#','/',join("/",$filename)));
+        return \file_exists(\preg_replace('#/+#','/',\join("/",$filename)));
     }
     /**
      * Check if a file is a directory.
@@ -31,7 +37,7 @@ class ServerFile{
      * @return bool true if the file is a directory, false otherwise.
      */
     public static function isDir(string... $filename):bool{
-        return \is_dir(preg_replace('#/+#','/',join("/",$filename)));
+        return \is_dir(preg_replace('#/+#','/',\join("/",$filename)));
     }
     /**
      * Get the contents of a file.
@@ -52,48 +58,52 @@ class ServerFile{
         $requestHeaders = $event->getRequestHttpHeaders();
         $responseHeaders = new HttpHeaders($event);
         $result = "";
-        $filenameLength = count($filename);
+        $filenameLength = \count($filename);
         if($filenameLength === 0) return $result;
-        $filename = preg_replace('#/+#','/',join("/",$filename));
-        $raf = fopen($filename,"r");
+        $filename = \preg_replace('#/+#','/',\join("/",$filename));
+        if(!\file_exists($filename))
+            return new HttpResponse([
+                "Status"=>Status::NOT_FOUND
+            ]);
+        $raf = \fopen($filename,"r");
         if(!$raf){
-            return new HttpResponse(null,[
+            return new HttpResponse([
                 "Status"=>Status::NOT_FOUND
             ]);
         }
-        $filesize = filesize($filename);
+        $filesize = \filesize($filename);
         //$fileLength = filesize($filename);
 
-        $lastModified=filemtime($filename);
-        $responseHeaders->set("Last-Modified", date(Strings::DATE_FORMAT, $lastModified));
+        $lastModified = \filemtime($filename);
+        $responseHeaders->set("Last-Modified", \date(Strings::DATE_FORMAT, $lastModified));
         $responseHeaders->set("Last-Timestamp", $lastModified);
         
         $ctype = Mime::getContentType($filename);
         
         if($requestHeaders->has("Range")){
             $responseHeaders->set("Accept-Ranges","bytes");
-            $ranges = preg_split("/,/",preg_split("/=/",$requestHeaders->get("Range"))[1]);
+            $ranges = \preg_split("/,/",\preg_split("/=/",$requestHeaders->get("Range"))[1]);
             $rangesLength = count($ranges);
-            $rangeStart = array_fill(0, $rangesLength, null);
-            $rangeEnd = array_fill(0, $rangesLength, null);
+            $rangeStart = \array_fill(0, $rangesLength, null);
+            $rangeEnd = \array_fill(0, $rangesLength, null);
             $lastIndex = null;
             for($i = 0; $i < $rangesLength; $i++){
-                $lastIndex = strlen($ranges[$i])-1;
-                $tmp = preg_split("/-/",$ranges[$i]);
-                if(substr($ranges[$i], 0, 1) === "-"){
+                $lastIndex = \strlen($ranges[$i])-1;
+                $tmp = \preg_split("/-/",$ranges[$i]);
+                if(\substr($ranges[$i], 0, 1) === "-"){
                     $rangeStart[$i] = 0;
                 }else{
-                    $rangeStart[$i] = intval($tmp[0]);
+                    $rangeStart[$i] = \intval($tmp[0]);
                 }
-                if(substr($ranges[$i], $lastIndex,$lastIndex+1) === "-"){
+                if(\substr($ranges[$i], $lastIndex,$lastIndex+1) === "-"){
                     $rangeEnd[$i] = $filesize-1;
                 }else{
-                    $rangeEnd[$i] = intval($tmp[1]);
+                    $rangeEnd[$i] = \intval($tmp[1]);
                 }
             }
             $start = null;
             $end = null;
-            $rangeStartLength = count($rangeStart);
+            $rangeStartLength = \count($rangeStart);
             if($rangeStartLength > 1){
                 $responseHeaders->setStatus(Status::PARTIAL_CONTENT);
                 $boundary = Http::generateMultipartBoundary();
@@ -118,9 +128,9 @@ class ServerFile{
                     if($end-$start+1 > SharedObject::$httpMtu){
                         $remainingBytes = $end-$start+1;
                         $readLength = SharedObject::$httpMtu;
-                        fseek($raf, $start);
+                        \fseek($raf, $start);
                         while($remainingBytes > 0){
-                            $result = fread($raf, $readLength);
+                            $result = \fread($raf, $readLength);
                             $remainingBytes -= SharedObject::$httpMtu;
                             if($remainingBytes < 0){
                                 $readLength = $remainingBytes+SharedObject::$httpMtu;
@@ -128,8 +138,8 @@ class ServerFile{
                             }
                         }
                     }else{
-                        fseek($raf, $start);
-                        $result = fread($raf, $end-$start+1);
+                        \fseek($raf, $start);
+                        $result = \fread($raf, $end-$start+1);
                     }
                     if($i > $rangeStartLength-1){
                         $result .= "\r\n";
@@ -149,8 +159,8 @@ class ServerFile{
                     $responseHeaders->set("Content-Type",$ctype);
                     $responseHeaders->set("Content-Range", "bytes $start-$end/$filesize");
                     $responseHeaders->set("Content-Length", $len);
-                    fseek($raf, $start);
-                    $result = fread($raf,$end-$start+1);
+                    \fseek($raf, $start);
+                    $result = \fread($raf,$end-$start+1);
                 }
             }
         }else{
@@ -158,17 +168,17 @@ class ServerFile{
             $responseHeaders->set("Content-Length", $filesize);
             if(Strings::startsWith($ctype,'audio/') || Strings::startsWith($ctype,'video/')){
                 $responseHeaders->set("Accept-Ranges","bytes");
-                fseek($raf, 0);
+                \fseek($raf, 0);
                 $length = \round($filesize/10)+1;
                 if($length> $filesize)
                     $length = $filesize;
-                $result = fread($raf, $length);
+                $result = \fread($raf, $length);
             }else if($filesize > 0){
-                fseek($raf, 0);
-                $result = fread($raf, $filesize);
+                \fseek($raf, 0);
+                $result = \fread($raf, $filesize);
             }
         }
-        fclose($raf);
+        \fclose($raf);
         return new HttpResponse($responseHeaders,$result);
     }
 }

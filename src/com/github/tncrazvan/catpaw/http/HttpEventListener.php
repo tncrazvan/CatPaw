@@ -1,14 +1,9 @@
 <?php
 namespace com\github\tncrazvan\catpaw\http;
 
-use com\github\tncrazvan\catpaw\tools\Http;
-use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\tools\Strings;
-use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
-use com\github\tncrazvan\catpaw\http\HttpResponse;
 use com\github\tncrazvan\catpaw\tools\SharedObject;
-use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 class HttpEventListener{
     //content sent (if POST method)

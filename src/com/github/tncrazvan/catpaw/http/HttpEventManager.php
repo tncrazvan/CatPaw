@@ -4,8 +4,6 @@ namespace com\github\tncrazvan\catpaw\http;
 use com\github\tncrazvan\catpaw\EventManager;
 use com\github\tncrazvan\catpaw\http\HttpCommit;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
-use com\github\tncrazvan\catpaw\tools\Http;
-use com\github\tncrazvan\catpaw\tools\LinkedList;
 use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\tools\Strings;
 
