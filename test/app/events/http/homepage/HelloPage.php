@@ -1,5 +1,5 @@
 <?php
-namespace app\homepage;
+namespace app\events\http\homepage;
 
 use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpEventInterface;
@@ -16,7 +16,6 @@ class HelloPage implements HttpEventInterface{
             $onClose = new Close();
     }
     public function run(){
-        echo "Received test param:$this->test\n";
         return ServerFile::response($this->e,$this->e->listener->so->webRoot,"index.html");
     }
 }

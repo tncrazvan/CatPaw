@@ -7,7 +7,7 @@ use com\github\tncrazvan\catpaw\EventManager;
 use com\github\tncrazvan\catpaw\tools\Status;
 use SplDoublyLinkedList;
 
-abstract class WebSocketManager extends EventManager{
+abstract class WebSocketEventManager extends EventManager{
     public array $subscriptions = [];
     public \Closure $callback;
 

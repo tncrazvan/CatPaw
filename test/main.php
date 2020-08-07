@@ -1,7 +1,7 @@
 <?php
-namespace app;
-use app\homepage\HelloPage;
-use app\websockettest\WebSocketTest;
+
+use app\events\http\homepage\HelloPage;
+use app\events\websocket\websockettest\WebSocketTest;
 use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpEventOnClose;
 use com\github\tncrazvan\catpaw\tools\ServerFile;
@@ -18,7 +18,7 @@ return [
         "http"=>[
             "/hello/{test}"  => fn(string $test,HttpEvent $e,HttpEventOnClose &$onCLose)  => new HelloPage($test,$e,$onCLose),
             "/templating/{username}" => function(string $username){
-                return ServerFile::include('./templates/index.php',$username);
+                return ServerFile::include('./public/index.php',$username);
             }
                 
         ],

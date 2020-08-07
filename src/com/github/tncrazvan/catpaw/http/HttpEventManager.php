@@ -13,6 +13,8 @@ abstract class HttpEventManager extends EventManager{
     public bool $defaultHeader = true;
     public static array $connections = [];
     private \SplDoublyLinkedList $commits;
+    public bool $generator = false;
+    public bool $generatorOver = false;
 
     public function run():void{
         /*if($this->listener->so->httpConnections == null){
