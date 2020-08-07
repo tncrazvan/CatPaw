@@ -5,7 +5,23 @@ use com\github\tncrazvan\catpaw\EventManager;
 use com\github\tncrazvan\catpaw\http\HttpCommit;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
 use com\github\tncrazvan\catpaw\tools\Status;
-use com\github\tncrazvan\catpaw\tools\Strings;
+use Get;
+use HttpMethodCopy;
+use HttpMethodDelete;
+use HttpMethodGet;
+use HttpMethodHead;
+use HttpMethodLink;
+use HttpMethodLock;
+use HttpMethodOptions;
+use HttpMethodPatch;
+use HttpMethodPost;
+use HttpMethodPropfind;
+use HttpMethodPurge;
+use HttpMethodPut;
+use HttpMethodUnknown;
+use HttpMethodUnlink;
+use HttpMethodUnlock;
+use HttpMethodView;
 
 abstract class HttpEventManager extends EventManager{
     public \Closure $callback;
@@ -30,19 +46,43 @@ abstract class HttpEventManager extends EventManager{
             try{
                 $this->commits = new \SplDoublyLinkedList();
                 $responseObject = \call_user_func_array($this->callback,$params);
-                while($responseObject instanceof HttpEventInterface){
-                    $lowermethod = \strtolower($this->getRequestMethod());
-                    if(\method_exists($responseObject,$lowermethod)){
-                        $rfm = new \ReflectionMethod($responseObject,$lowermethod);
-                        if (!$rfm->isPublic()) {
-                            $responseObject = new HttpResponse([
-                                "Status" => Status::METHOD_NOT_ALLOWED
-                            ]);
-                        }else 
-                            $responseObject = $responseObject->$lowermethod();
-                    }else $responseObject = new HttpResponse([
-                        "Status" => Status::METHOD_NOT_ALLOWED
-                    ]);
+                while($responseObject instanceof HttpEventHandler){
+                    if(
+                        $responseObject instanceof HttpMethodGet
+                        || $responseObject instanceof HttpMethodPost
+                        || $responseObject instanceof HttpMethodPut
+                        || $responseObject instanceof HttpMethodPatch
+                        || $responseObject instanceof HttpMethodDelete
+                        || $responseObject instanceof HttpMethodCopy
+                        || $responseObject instanceof HttpMethodHead
+                        || $responseObject instanceof HttpMethodOptions
+                        || $responseObject instanceof HttpMethodLink
+                        || $responseObject instanceof HttpMethodUnlink
+                        || $responseObject instanceof HttpMethodPurge
+                        || $responseObject instanceof HttpMethodLock
+                        || $responseObject instanceof HttpMethodUnlock
+                        || $responseObject instanceof HttpMethodPropfind
+                        || $responseObject instanceof HttpMethodView
+                        || $responseObject instanceof HttpMethodUnknown
+                    ){
+                        $lowermethod = \strtolower($this->getRequestMethod());
+                        if(\method_exists($responseObject,$lowermethod)){
+                            $rfm = new \ReflectionMethod($responseObject,$lowermethod);
+                            if (!$rfm->isPublic()) {
+                                $responseObject = new HttpResponse([
+                                    "Status" => Status::METHOD_NOT_ALLOWED
+                                ]);
+                            }else 
+                                $responseObject = $responseObject->$lowermethod();
+                        }else $responseObject = new HttpResponse([
+                            "Status" => Status::METHOD_NOT_ALLOWED
+                        ]);
+                    }else{
+                        $responseObject = new HttpResponse([
+                            "Status" => Status::METHOD_NOT_ALLOWED
+                        ]);
+                    }
+                
                 }
             }catch(\TypeError $ex){
                 $responseObject = new HttpResponse([

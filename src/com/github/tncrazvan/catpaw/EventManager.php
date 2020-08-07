@@ -8,6 +8,7 @@ use com\github\tncrazvan\catpaw\http\HttpEventListener;
 use com\github\tncrazvan\catpaw\http\HttpRequestBody;
 use com\github\tncrazvan\catpaw\http\HttpRequestCookies;
 use com\github\tncrazvan\catpaw\http\HttpResponseCookies;
+use com\github\tncrazvan\catpaw\tools\Caster;
 use com\github\tncrazvan\catpaw\tools\StandardClassCustomizer;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnClose;
@@ -153,7 +154,7 @@ class EventManager{
                     $reflectionClass = new \ReflectionClass($cls);
                     if($reflectionClass->isSubclassOf(HttpRequestBody::class)){
                         try{
-                            $param = &StandardClassCustomizer::cast(json_decode($this->listener->requestContent),$cls);
+                            $param = &Caster::cast(json_decode($this->listener->requestContent),$cls);
                         }catch(\Exception $e){
                             echo "Could not convert body to '$cls', injecting null value.\n";
                             echo 
