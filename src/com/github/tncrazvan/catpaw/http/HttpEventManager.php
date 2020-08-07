@@ -30,8 +30,19 @@ abstract class HttpEventManager extends EventManager{
             try{
                 $this->commits = new \SplDoublyLinkedList();
                 $responseObject = \call_user_func_array($this->callback,$params);
-                if($responseObject instanceof HttpEventInterface){
-                    $responseObject = $responseObject->run();
+                while($responseObject instanceof HttpEventInterface){
+                    $lowermethod = \strtolower($this->getRequestMethod());
+                    if(\method_exists($responseObject,$lowermethod)){
+                        $rfm = new \ReflectionMethod($responseObject,$lowermethod);
+                        if (!$rfm->isPublic()) {
+                            $responseObject = new HttpResponse([
+                                "Status" => Status::METHOD_NOT_ALLOWED
+                            ]);
+                        }else 
+                            $responseObject = $responseObject->$lowermethod();
+                    }else $responseObject = new HttpResponse([
+                        "Status" => Status::METHOD_NOT_ALLOWED
+                    ]);
                 }
             }catch(\TypeError $ex){
                 $responseObject = new HttpResponse([

@@ -18,4 +18,13 @@ class Script{
     public static function &stopSession():void{
         self::event()->stopSession();
     }
+    public static function &queries():array{
+        return self::event()->getRequestUrlQueries();
+    }
+    public static function &query(string $key):?string{
+        return self::event()->getRequestUrlQuery($key);
+    }
+    public static function &body():?string{
+        return self::event()->listener->requestContent;
+    }
 }

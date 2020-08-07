@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools;
 
-class StandardClassCustomizer{
+class Caster{
     /**
      * Cast and \stdClass object to a specific class.
      * @param $object the object to cast.
@@ -11,7 +11,7 @@ class StandardClassCustomizer{
     public static function &cast($object, string $className){
         if($object === null) return $object;
         $result = new $className();
-        $props = get_object_vars ($object);
+        $props = get_object_vars($object);
         foreach($props as $key => &$value){
             $result->$key = $value;
         }

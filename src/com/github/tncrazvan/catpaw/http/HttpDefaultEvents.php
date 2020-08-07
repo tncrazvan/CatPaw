@@ -4,6 +4,7 @@ namespace com\github\tncrazvan\catpaw\http;
 use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\tools\ServerFile;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
+use com\github\tncrazvan\catpaw\tools\Strings;
 
 class HttpDefaultEvents{
     public static \Closure $notFound;
@@ -14,20 +15,28 @@ class HttpDefaultEvents{
         self::$notFound = function(HttpEvent $e){
             $filename = [$e->listener->so->webRoot,$e->listener->path];
             if(!ServerFile::exists(...$filename)){
-                $filename = [ServerFile::dirname(...$filename),"index.html"];
-                if(!ServerFile::exists(...$filename)){
-                    return new HttpResponse([
-                        "Status" => Status::NOT_FOUND
-                    ]);
-                }
+                $php = [ServerFile::dirname(...$filename),"index.php"];
+                if(!ServerFile::exists(...$php)){
+                    $html = [[ServerFile::dirname(...$filename),"index.php"]];
+                    if(!ServerFile::exists(...$php)){
+                        return new HttpResponse([
+                            "Status" => Status::NOT_FOUND
+                        ]);
+                    }else $filename = $html;
+                }else $filename = $php;
             }else if(ServerFile::isDir(...$filename)){
-                $filename[] = "index.html";
+                $php = [...$filename,"index.php"];
                 if(!ServerFile::exists(...$filename)){
-                    return new HttpResponse([
-                        "Status" => Status::NOT_FOUND
-                    ]);
-                }
+                    $html = [...$filename,"index.html"];
+                    if(!ServerFile::exists(...$filename)){
+                        return new HttpResponse([
+                            "Status" => Status::NOT_FOUND
+                        ]);
+                    }else $filename = $html;
+                }else $filename = $php;
             }
+            if(Strings::endsWith($filename[2],'.php'))
+                return ServerFile::include(join('/',$filename));
             return ServerFile::response($e,...$filename);
         };
 
@@ -36,8 +45,9 @@ class HttpDefaultEvents{
         self::$file = function(HttpEvent $e){
             switch($e->getRequestMethod()){
                 case "GET":
-                    $filename = $e->listener->path === ""?"/index.html":$e->listener->path;
-                    return ServerFile::response($e,$e->listener->so->webRoot,$filename);
+                    if(Strings::endsWith($e->listener->path,'.php'))
+                        return ServerFile::include(join('/',[$e->listener->so->webRoot,$e->listener->path]));
+                    return ServerFile::response($e,$e->listener->so->webRoot,$e->listener->path);
                 break;
                 default:
                     return new HttpResponse([

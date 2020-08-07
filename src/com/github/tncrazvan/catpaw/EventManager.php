@@ -378,7 +378,7 @@ class EventManager{
      * @param key name of the query.
      * @return the value of the query.
      */
-    public function &getRequestUrlQuery(string $key):string{
+    public function &getRequestUrlQuery(string $key):?string{
         return $this->queryString[$key];
     }
 
