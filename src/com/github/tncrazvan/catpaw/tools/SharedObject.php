@@ -16,19 +16,8 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 class SharedObject extends Http{
     const DIR = __DIR__;
 
-    public function checkFordwardRecursion(array $copy, array &$original){
-        $keys = \array_keys($copy);
-        foreach($keys as &$key){
-            if(isset($original[$key]) && isset($original[$original[$key]]))
-                $copy[$key] = $original[$original[$key]];
-        }
-    }
-
     public function __construct(string $settingsFile,bool $print=true){
         $settings = include($settingsFile);
-
-        if(isset($settings["@forward"]))
-            $this->checkFordwardRecursion($settings["@forward"],$settings["@forward"]);
 
         if(isset($settings['webRoot'])){
             $settings['webRoot'] = \preg_replace('/\/+(?=$)/','',$settings['webRoot']);

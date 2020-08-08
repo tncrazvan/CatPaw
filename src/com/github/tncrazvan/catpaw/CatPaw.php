@@ -73,7 +73,23 @@ class CatPaw{
         }else{
             throw new \Exception ("\nConfig file \"{$this->argv[1]}\" doesn't exist\n");
         }
+        
     }
+
+    public function fixFordwardRecursion(array $copy, array &$original):void{
+        $keys = \array_keys($copy);
+        foreach($keys as &$key){
+            if(isset($original[$key]) && isset($original[$original[$key]])){
+                if($key === $original[$original[$key]]){
+                    echo "@forward '{$copy[$key]}' => '{$copy[$copy[$key]]}' removed because it is recursive.\n";
+                    unset($original[$copy[$key]]);
+                    continue;
+                }
+                $copy[$key] = $original[$original[$key]];
+            }
+        }
+    }
+
 
     private $clients = [];
     /**
@@ -91,6 +107,11 @@ class CatPaw{
         //push the server socket (the one listening) to the clients array
         array_push($this->clients, $this->socket);
         echo "\nServer started.\n";
+
+        
+        if(isset($this->so->events["http"]) && isset($this->so->events["http"]["@forward"]))
+            $this->fixFordwardRecursion($this->so->events["http"]["@forward"],$this->so->events["http"]["@forward"]);
+
         //as long as the server is supposed to listen...
         while($this->listening){
 
