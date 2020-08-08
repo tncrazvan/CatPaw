@@ -10,6 +10,7 @@ use com\github\tncrazvan\catpaw\http\HttpRequestCookies;
 use com\github\tncrazvan\catpaw\http\HttpResponseCookies;
 use com\github\tncrazvan\catpaw\tools\Caster;
 use com\github\tncrazvan\catpaw\tools\StandardClassCustomizer;
+use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnClose;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnMessage;
@@ -154,7 +155,7 @@ class EventManager{
                     $reflectionClass = new \ReflectionClass($cls);
                     if($reflectionClass->isSubclassOf(HttpRequestBody::class)){
                         try{
-                            $param = &Caster::cast(json_decode($this->listener->requestContent),$cls);
+                            $param = &$this->getRequestParsedBody($cls);
                         }catch(\Exception $e){
                             echo "Could not convert body to '$cls', injecting null value.\n";
                             echo 
@@ -169,6 +170,52 @@ class EventManager{
         }
             
         return $params;
+    }
+
+    private function form(string &$input,array &$output){
+        // grab multipart boundary from content type header
+        preg_match('/boundary=(.*)$/', $this->getRequestHeader("Content-Type"), $matches);
+        $boundary = $matches[1];
+        
+        // split content by boundary and get rid of last -- element
+        $a_blocks = preg_split("/-+$boundary/", $input);
+        array_pop($a_blocks);
+        
+        // loop data blocks
+        foreach ($a_blocks as $id => $block){
+            if (empty($block))
+                continue;
+        
+            // you'll have to var_dump $block to understand this and maybe replace \n or \r with a visibile char
+        
+            // parse uploaded files
+            if (strpos($block, 'application/octet-stream') !== FALSE){
+                // match "name", then everything after "stream" (optional) except for prepending newlines 
+                preg_match("/name=\"([^\"]*)\".*stream[\n|\r]+([^\n\r].*)?$/s", $block, $matches);
+            }
+            // parse all other fields
+            else{
+                // match "name" and optional value in between newline sequences
+                preg_match('/name=\"([^\"]*)\"[\n|\r]+([^\n\r].*)?\r$/s', $block, $matches);
+            }
+            $output[$matches[1]] = $matches[2];
+        }
+    }
+    public function &getRequestParsedBody(string $classname=null){
+        if($classname !== null){
+            $ctype = $this->getRequestHeader("Content-Type");
+            if(Strings::startsWith($ctype,"application/x-www-form-urlencoded")){
+                \mb_parse_str($this->listener->requestContent,$result);
+            }else if(Strings::startsWith($ctype,"application/json")){
+                $result = \json_decode($this->listener->requestContent);
+            }else if(Strings::startsWith($ctype,"multipart/form-data")){
+                $result = [];
+                $this->form($this->listener->requestContent,$result);
+            }
+            $result = &Caster::cast($result,$classname);
+            return $result;
+        }else
+            return $this->listener->requestContent;
     }
 
 

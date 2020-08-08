@@ -3,6 +3,7 @@ namespace com\github\tncrazvan\catpaw\tools\scripts;
 
 use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\tools\Caster;
+use com\github\tncrazvan\catpaw\tools\Strings;
 
 class Script{
     public static function args():array{
@@ -25,16 +26,7 @@ class Script{
     public static function &query(string $key):?string{
         return self::event()->getRequestUrlQuery($key);
     }
-    public static function &body(string $classname=null, bool $json = false){
-        if($classname !== null){
-            if($json){
-                $result = &Caster::cast(\json_decode(self::event()->listener->requestContent),$classname);
-            }else{
-                $tmp = \parse_str(self::event()->listener->requestContent,$result);
-                $result = &Caster::cast($tmp,$classname);
-            }
-            return $result;
-        }else
-            return self::event()->listener->requestContent;
+    public static function &body(string $classname){
+        return self::event()->getRequestParsedBody($classname);
     }
 }

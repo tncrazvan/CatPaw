@@ -11,9 +11,15 @@ class Caster{
     public static function &cast($object, string $className){
         if($object === null) return $object;
         $result = new $className();
-        $props = get_object_vars($object);
-        foreach($props as $key => &$value){
-            $result->$key = $value;
+        if(is_array($object)){
+            foreach($object as $key => &$value){
+                $result->$key = $value;
+            }
+        }else{
+            $props = get_object_vars($object);
+            foreach($props as $key => &$value){
+                $result->$key = $value;
+            }
         }
         return $result;
     }
