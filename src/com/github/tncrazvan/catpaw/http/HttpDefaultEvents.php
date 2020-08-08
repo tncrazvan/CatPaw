@@ -17,8 +17,8 @@ class HttpDefaultEvents{
             if(!ServerFile::exists(...$filename)){
                 $php = [ServerFile::dirname(...$filename),"index.php"];
                 if(!ServerFile::exists(...$php)){
-                    $html = [[ServerFile::dirname(...$filename),"index.php"]];
-                    if(!ServerFile::exists(...$php)){
+                    $html = [ServerFile::dirname(...$filename),"index.php"];
+                    if(!ServerFile::exists(...$html)){
                         return new HttpResponse([
                             "Status" => Status::NOT_FOUND
                         ]);
@@ -26,9 +26,9 @@ class HttpDefaultEvents{
                 }else $filename = $php;
             }else if(ServerFile::isDir(...$filename)){
                 $php = [...$filename,"index.php"];
-                if(!ServerFile::exists(...$filename)){
+                if(!ServerFile::exists(...$php)){
                     $html = [...$filename,"index.html"];
-                    if(!ServerFile::exists(...$filename)){
+                    if(!ServerFile::exists(...$html)){
                         return new HttpResponse([
                             "Status" => Status::NOT_FOUND
                         ]);
