@@ -5,9 +5,6 @@ use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\tools\Session;
 use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\http\HttpEventListener;
-use com\github\tncrazvan\catpaw\http\HttpResponse;
-use com\github\tncrazvan\catpaw\tools\Http;
-use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 class CatPaw{

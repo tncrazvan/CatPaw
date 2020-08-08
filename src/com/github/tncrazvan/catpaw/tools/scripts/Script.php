@@ -2,8 +2,6 @@
 namespace com\github\tncrazvan\catpaw\tools\scripts;
 
 use com\github\tncrazvan\catpaw\http\HttpEvent;
-use com\github\tncrazvan\catpaw\tools\Caster;
-use com\github\tncrazvan\catpaw\tools\Strings;
 
 class Script{
     public static function args():array{
@@ -28,5 +26,12 @@ class Script{
     }
     public static function &body(string $classname){
         return self::event()->getRequestParsedBody($classname);
+    }
+    public static function runOnce(\Closure $callback):void{
+        $e = self::event();
+        if(!\in_array($e->listener->path,$e->listener->so->runOnce)){
+            $e->listener->so->runOnce[] = $e->listener->path;
+            $callback();
+        }
     }
 }

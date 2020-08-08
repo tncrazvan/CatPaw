@@ -2,12 +2,8 @@
 namespace com\github\tncrazvan\catpaw\tools;
 
 use com\github\tncrazvan\catpaw\tools\Http;
-use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\asciitable\AsciiTable;
-use com\github\tncrazvan\catpaw\http\HttpEvent;
-use com\github\tncrazvan\catpaw\tools\ServerFile;
-use com\github\tncrazvan\catpaw\http\HttpResponse;
 use com\github\tncrazvan\catpaw\http\HttpDefaultEvents;
 use com\github\tncrazvan\catpaw\http\HttpSessionManager;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
@@ -15,6 +11,7 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 
 class SharedObject extends Http{
     const DIR = __DIR__;
+    public array $runOnce = [];
 
     public function __construct(string $settingsFile,bool $print=true){
         $settings = include($settingsFile);
