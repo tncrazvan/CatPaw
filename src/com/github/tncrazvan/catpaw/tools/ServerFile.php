@@ -20,7 +20,10 @@ class ServerFile{
         $_ARGS = $args;
         $_EVENT->setResponseContentType("text/html");
         \ob_start();
+        $currentDir = \getcwd();
+        \chdir(\dirname($filename));
         include($filename);
+        \chdir($currentDir);
         $_ARGS = null; //remove data after the script is done with it
         return \ob_get_clean();
     }
