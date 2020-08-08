@@ -18,6 +18,7 @@ class ServerFile{
         global $_ARGS;
         global $_EVENT;
         $_ARGS = $args;
+        $_EVENT->setResponseContentType("text/html");
         \ob_start();
         include($filename);
         $_ARGS = null; //remove data after the script is done with it
