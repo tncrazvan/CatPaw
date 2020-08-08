@@ -1,3 +1,3 @@
 <?php
-namespace com\github\tncrazvan\catpaw\http;
+namespace com\github\tncrazvan\catpaw\websocket;
 abstract class WebSocketEventHandler{}

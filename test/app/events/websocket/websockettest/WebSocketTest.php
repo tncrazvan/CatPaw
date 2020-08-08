@@ -2,13 +2,13 @@
 namespace app\events\websocket\websockettest;
 
 use com\github\tncrazvan\catpaw\tools\LinkedList;
-use com\github\tncrazvan\catpaw\websocket\WebSocketEventInterface;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
+use com\github\tncrazvan\catpaw\websocket\WebSocketEventHandler;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnClose;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnMessage;
 
-class WebSocketTest implements WebSocketEventInterface{
+class WebSocketTest extends WebSocketEventHandler{
     public function __construct(WebSocketEvent $event,?WebSocketEventOnOpen &$onOpen = null,?WebSocketEventOnMessage &$onMessage = null, ?WebSocketEventOnClose &$onClose = null){
         $onOpen = new Open();
         $onMessage = new Message($event);
