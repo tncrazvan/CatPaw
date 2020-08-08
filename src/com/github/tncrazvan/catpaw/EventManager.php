@@ -196,7 +196,7 @@ class EventManager{
                 if($objectLength > 1){
                     $this->queryString[\trim($object[0])] = $object[1];
                 }else{
-                    $this->queryString[\trim($object[0])] = "";
+                    $this->queryString[\trim($object[0])] = true;
                 }
             }
         }

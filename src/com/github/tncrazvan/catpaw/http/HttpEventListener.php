@@ -139,7 +139,7 @@ class HttpEventListener{
         if($this->resource[0] !== '/')
             $this->resource = '/'.$this->resource;
 
-        $_path_and_query = \preg_split('/\?\&/',$this->resource,2);
+        $_path_and_query = \preg_split('/\?|\&/',$this->resource,2);
 
         $this->path = $_path_and_query[0];
         if(\count($_path_and_query) > 1)
