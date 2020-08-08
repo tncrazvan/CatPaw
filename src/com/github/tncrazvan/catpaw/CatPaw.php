@@ -101,7 +101,10 @@ class CatPaw{
             foreach($this->so->httpConnections as &$e){
                 if($e->generator){
                     if($e->generator->valid()){
+                        global $_EVENT;
+                        $_EVENT = $e;
                         $e->generator->next();
+                        $_EVENT = null;
                     }else{
                         $responseObject = $e->generator->getReturn();
                         $e->generator = null;
