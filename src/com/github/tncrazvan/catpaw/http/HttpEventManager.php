@@ -29,8 +29,7 @@ abstract class HttpEventManager extends EventManager{
     public bool $defaultHeader = true;
     public static array $connections = [];
     private \SplDoublyLinkedList $commits;
-    public bool $generator = false;
-    public bool $generatorOver = false;
+    public ?\Generator $generator = null;
 
     public function run():void{
         /*if($this->listener->so->httpConnections == null){
@@ -46,44 +45,7 @@ abstract class HttpEventManager extends EventManager{
             try{
                 $this->commits = new \SplDoublyLinkedList();
                 $responseObject = \call_user_func_array($this->callback,$params);
-                while($responseObject instanceof HttpEventHandler){
-                    if(
-                        $responseObject instanceof HttpMethodGet
-                        || $responseObject instanceof HttpMethodPost
-                        || $responseObject instanceof HttpMethodPut
-                        || $responseObject instanceof HttpMethodPatch
-                        || $responseObject instanceof HttpMethodDelete
-                        || $responseObject instanceof HttpMethodCopy
-                        || $responseObject instanceof HttpMethodHead
-                        || $responseObject instanceof HttpMethodOptions
-                        || $responseObject instanceof HttpMethodLink
-                        || $responseObject instanceof HttpMethodUnlink
-                        || $responseObject instanceof HttpMethodPurge
-                        || $responseObject instanceof HttpMethodLock
-                        || $responseObject instanceof HttpMethodUnlock
-                        || $responseObject instanceof HttpMethodPropfind
-                        || $responseObject instanceof HttpMethodView
-                        || $responseObject instanceof HttpMethodUnknown
-                    ){
-                        $lowermethod = \strtolower($this->getRequestMethod());
-                        if(\method_exists($responseObject,$lowermethod)){
-                            $rfm = new \ReflectionMethod($responseObject,$lowermethod);
-                            if (!$rfm->isPublic()) {
-                                $responseObject = new HttpResponse([
-                                    "Status" => Status::METHOD_NOT_ALLOWED
-                                ]);
-                            }else 
-                                $responseObject = $responseObject->$lowermethod();
-                        }else $responseObject = new HttpResponse([
-                            "Status" => Status::METHOD_NOT_ALLOWED
-                        ]);
-                    }else{
-                        $responseObject = new HttpResponse([
-                            "Status" => Status::METHOD_NOT_ALLOWED
-                        ]);
-                    }
-                
-                }
+                $this->funcheck($responseObject);
             }catch(\TypeError $ex){
                 $responseObject = new HttpResponse([
                     "Status"=>Status::INTERNAL_SERVER_ERROR
@@ -98,8 +60,56 @@ abstract class HttpEventManager extends EventManager{
                 ],$ex->getMessage()."\n".$ex->getTraceAsString());
             }
         }
+        if(!$responseObject instanceof \Generator){
+            $this->dispatch($responseObject);
+        }else $this->generator = &$responseObject;
         
-        if(!is_a($responseObject,HttpResponse::class))
+        $this->listener->so->httpConnections[$this->requestId] = $this;
+        
+    }
+
+    public function funcheck(&$responseObject){
+        while($responseObject instanceof HttpEventHandler){
+            if(
+                $responseObject instanceof HttpMethodGet
+                || $responseObject instanceof HttpMethodPost
+                || $responseObject instanceof HttpMethodPut
+                || $responseObject instanceof HttpMethodPatch
+                || $responseObject instanceof HttpMethodDelete
+                || $responseObject instanceof HttpMethodCopy
+                || $responseObject instanceof HttpMethodHead
+                || $responseObject instanceof HttpMethodOptions
+                || $responseObject instanceof HttpMethodLink
+                || $responseObject instanceof HttpMethodUnlink
+                || $responseObject instanceof HttpMethodPurge
+                || $responseObject instanceof HttpMethodLock
+                || $responseObject instanceof HttpMethodUnlock
+                || $responseObject instanceof HttpMethodPropfind
+                || $responseObject instanceof HttpMethodView
+                || $responseObject instanceof HttpMethodUnknown
+            ){
+                $lowermethod = \strtolower($this->getRequestMethod());
+                if(\method_exists($responseObject,$lowermethod)){
+                    $rfm = new \ReflectionMethod($responseObject,$lowermethod);
+                    if (!$rfm->isPublic()) {
+                        $responseObject = new HttpResponse([
+                            "Status" => Status::METHOD_NOT_ALLOWED
+                        ]);
+                    }else 
+                        $responseObject = $responseObject->$lowermethod();
+                }else $responseObject = new HttpResponse([
+                    "Status" => Status::METHOD_NOT_ALLOWED
+                ]);
+            }else{
+                $responseObject = new HttpResponse([
+                    "Status" => Status::METHOD_NOT_ALLOWED
+                ]);
+            }
+        }
+    }
+
+    public function dispatch(&$responseObject){
+        if(!$responseObject instanceof HttpResponse)
             $responseObject = new HttpResponse($this->serverHeaders,$responseObject);
 
         $responseHeader = $responseObject->getHeaders();
@@ -116,10 +126,8 @@ abstract class HttpEventManager extends EventManager{
         for($i=0,$len=\count($chunks);$i<$len;$i++){
             $this->commit($chunks[$i]);
         }
-    
-        $this->listener->so->httpConnections[$this->requestId] = $this;
-        
     }
+
     /**
      * Checks if event is alive.
      * @return bool true if the current event is alive, otherwise false.

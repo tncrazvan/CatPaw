@@ -99,7 +99,18 @@ class CatPaw{
              * Read incoming messages and push pending commits.
             */
             foreach($this->so->httpConnections as &$e){
-                $e->push();
+                if($e->generator){
+                    if($e->generator->valid()){
+                        $e->generator->next();
+                    }else{
+                        $responseObject = $e->generator->getReturn();
+                        $e->generator = null;
+                        $e->funcheck($responseObject);
+                        $e->dispatch($responseObject);
+                    }
+                }else{
+                    $e->push();
+                }
             }
             
             
