@@ -20,7 +20,9 @@ use com\github\tncrazvan\catpaw\http\methods\HttpMethodUnknown;
 use com\github\tncrazvan\catpaw\http\methods\HttpMethodUnlink;
 use com\github\tncrazvan\catpaw\http\methods\HttpMethodUnlock;
 use com\github\tncrazvan\catpaw\http\methods\HttpMethodView;
+use com\github\tncrazvan\catpaw\tools\Caster;
 use com\github\tncrazvan\catpaw\tools\Status;
+use com\github\tncrazvan\catpaw\tools\XMLSerializer;
 
 abstract class HttpEventManager extends EventManager{
     public \Closure $callback;
@@ -108,8 +110,30 @@ abstract class HttpEventManager extends EventManager{
     }
 
     public function dispatch(&$responseObject){
-        if(!$responseObject instanceof HttpResponse)
+        if(!$responseObject instanceof HttpResponse){
+            $accepts = \explode(",",\trim($this->getRequestHeader("Accept")));
+            foreach($accepts as &$acc){
+                if($acc === 'application/json'){
+                    $responseObject = \json_encode($responseObject);
+                    if(!$this->serverHeaders->has(("Content-Type")))
+                        $this->serverHeaders->set("Content-Type",$acc);
+                }else if($acc === 'application/xml' || $acc === 'text/xml'){
+                    if(\is_array($responseObject)){
+                        $responseObject = XMLSerializer::generateValidXmlFromArray($responseObject);
+                    }else{
+                        $cast = Caster::cast($responseObject,\stdClass::class);
+                        $responseObject = XMLSerializer::generateValidXmlFromObj($cast);
+                    }
+                    if(!$this->serverHeaders->has(("Content-Type")))
+                        $this->serverHeaders->set("Content-Type",$acc);
+                }
+            }
+            if(\is_object($responseObject))
+                $responseObject = \json_encode($responseObject);
+
             $responseObject = new HttpResponse($this->serverHeaders,$responseObject);
+            
+        }
 
         $responseHeader = $responseObject->getHeaders();
         $responseHeader->initialize($this);

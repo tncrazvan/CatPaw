@@ -7,12 +7,12 @@ use com\github\tncrazvan\catpaw\http\HttpResponse;
 
 class ServerFile{
     /**
-     * Include a php script and call \ob_start().
-     * @param e an HttpEvent.
-     * @param args arguments to pass to the script.
+     * Include a php script in between \ob_start() and \ob_get_clean().
+     * @param string name of the file
+     * @param array arguments to pass to the script.
      * This data will be available inside the script through the "global $_ARGS" variable.
      * This variable can also be a ccessed through Script::args() which also provides type hinting.
-     * @return result of the script.
+     * @return string result of the script.
      */
     public static function include(string $filename,... $args){
         global $_ARGS;
@@ -29,8 +29,30 @@ class ServerFile{
     }
 
     /**
+     * Require once a php script in between \ob_start() and \ob_get_clean().
+     * @param array parts of the filename (will be joined on "/").
+     * @param array arguments to pass to the script.
+     * This data will be available inside the script through the "global $_ARGS" variable.
+     * This variable can also be a ccessed through Script::args() which also provides type hinting.
+     * @return string result of the script.
+     */
+    public static function requireOnce(string $filename,... $args){
+        global $_ARGS;
+        global $_EVENT;
+        $_ARGS = $args;
+        $_EVENT->setResponseContentType("text/html");
+        \ob_start();
+        $currentDir = \getcwd();
+        \chdir(\dirname($filename));
+        require_once($filename);
+        \chdir($currentDir);
+        $_ARGS = null; //remove data after the script is done with it
+        return \ob_get_clean();
+    }
+
+    /**
      * Get the name of the parent directory of this file
-     * @param filename an array of strings containing the name of the file. 
+     * @param array parts of the filename (will be joined on "/").
      * The elements of this array will be joined on "/" and create a filename.
      * @return bool true if the file exists, false otherwise.
      */
@@ -39,7 +61,7 @@ class ServerFile{
     }
     /**
      * Check if a file exists.
-     * @param filename an array of strings containing the name of the file. 
+     * @param array parts of the filename (will be joined on "/").
      * The elements of this array will be joined on "/" and create a filename.
      * @return bool true if the file exists, false otherwise.
      */
@@ -48,7 +70,7 @@ class ServerFile{
     }
     /**
      * Check if a file is a directory.
-     * @param filename an array of strings containing the name of the file. 
+     * @param array parts of the filename (will be joined on "/").
      * The elements of this array will be joined on "/" and create a filename.
      * @return bool true if the file is a directory, false otherwise.
      */
@@ -56,10 +78,11 @@ class ServerFile{
         return \is_dir(preg_replace('#/+#','/',\join("/",$filename)));
     }
     /**
-     * Get the contents of a file.
-     * @param event event The event calling this method.
+     * Get the contents of a file as an HttpResponse.
+     * This will deal with range requests.
+     * @param HttpEvent the event calling this method.
      * This is needed so that the method can process other metadata such as byte range fields.
-     * @param filename an array of strings containing the name of the file. 
+     * @param array parts of the filename (will be joined on "/").
      * The elements of this array will be joined on "/" and create a filename.
      * @return HttpResponse This method manages byterange requests.
      * If the request header contains byterange fields, Content-Type will be set as 
