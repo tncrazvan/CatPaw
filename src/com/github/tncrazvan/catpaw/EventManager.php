@@ -175,7 +175,10 @@ class EventManager{
 
     public function &getRequestParsedBody(string $classname=null,bool $toarray = false){
         $ctype = $this->getRequestHeader("Content-Type");
-        if($classname !== null){
+        if($ctype === null){
+            $result = null;
+            return $result;
+        }else if($classname !== null){
             if(Strings::startsWith($ctype,"application/x-www-form-urlencoded")){
                 \mb_parse_str($this->listener->requestContent,$result);
             }else if(Strings::startsWith($ctype,"application/json")){
