@@ -87,7 +87,7 @@ class EventManager{
                             $param = &$this->getRequestMethod();
                         break;
                         case 'body':
-                            $param = &$this->listener->requestContent;
+                            $param = &$this->listener->input[1];
                         break;
                         default:
                             if($this->listener->params[$name])
@@ -103,10 +103,10 @@ class EventManager{
                     static $param = null;
                     switch($name){
                         case 'body':
-                            if(\is_numeric($this->listener->requestContent))
-                                $param = \intval($this->listener->requestContent);
+                            if(\is_numeric($this->listener->input[1]))
+                                $param = \intval($this->listener->input[1]);
                             else{
-                                $message = 'Body was expected to be numeric, but non numeric value has been provided instead:'.$this->listener->requestContent;
+                                $message = 'Body was expected to be numeric, but non numeric value has been provided instead:'.$this->listener->input[1];
                                 $valid = false;
                                 return $this->dummy;
                             }
@@ -136,7 +136,7 @@ class EventManager{
                         break;
                         case 'body':
                             try{
-                                if($this->listener->requestContent === '')
+                                if($this->listener->input[1] === '')
                                     $param = [];
                                 else
                                     $param = &$this->getRequestParsedBody(null,true);
@@ -180,12 +180,12 @@ class EventManager{
             return $result;
         }else if($classname !== null){
             if(Strings::startsWith($ctype,"application/x-www-form-urlencoded")){
-                \mb_parse_str($this->listener->requestContent,$result);
+                \mb_parse_str($this->listener->input[1],$result);
             }else if(Strings::startsWith($ctype,"application/json")){
-                $result = \json_decode($this->listener->requestContent);
+                $result = \json_decode($this->listener->input[1]);
             }else if(Strings::startsWith($ctype,"multipart/")){
                 $result = null;
-                FormData::parse($this,$this->listener->requestContent,$result);
+                FormData::parse($this,$this->listener->input[1],$result);
             }else{
                 echo "No matching Content-Type ($ctype), falling back to null.\n";
                 $result = null;
@@ -195,13 +195,13 @@ class EventManager{
             return $result;
         }else if($toarray) try {
             if(Strings::startsWith($ctype,"application/x-www-form-urlencoded")){
-                \mb_parse_str($this->listener->requestContent,$result);
+                \mb_parse_str($this->listener->input[1],$result);
                 return $result;
             }else if(Strings::startsWith($ctype,"application/json")){
-                $result = \json_decode($this->listener->requestContent);
+                $result = \json_decode($this->listener->input[1]);
                 return $result;
             }else if(Strings::startsWith($ctype,"multipart/")){
-                FormData::parse($this,$this->listener->requestContent,$result);
+                FormData::parse($this,$this->listener->input[1],$result);
                 return $result;
             }else{
                 echo "No matching Content-Type ($ctype), falling back to empty array.\n";

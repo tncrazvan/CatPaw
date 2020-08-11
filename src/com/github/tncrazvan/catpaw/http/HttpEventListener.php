@@ -7,7 +7,7 @@ use com\github\tncrazvan\catpaw\tools\SharedObject;
 
 class HttpEventListener{
     //content sent (if POST method)
-    public ?string $requestContent;
+    //public ?string $requestContent;
     //requested query string
     public string $queryString;
     //requested path
@@ -124,14 +124,15 @@ class HttpEventListener{
     private function resolve():bool{
         if($this->input === '') //0 is okay, but these are not okay: false || null || ''
             return false;
-        $input = \preg_split('/\r\n\r\n/', $this->input,2);
-        $partsCounter = \count($input);
+        $this->input = \preg_split('/\r\n\r\n/', $this->input,2);
+        $partsCounter = \count($this->input);
         if($partsCounter === 0)
             return false;
         
-        $strHeaders = $input[0];
-        $this->requestContent = $partsCounter>1?$input[1]:"";
-        $this->requestHeaders = HttpHeaders::fromString(null, $strHeaders);
+        if($partsCounter === 1){
+            $this->input[1] = '';
+        }
+        $this->requestHeaders = HttpHeaders::fromString(null, $this->input[0]);
         if(!$this->requestHeaders)
             return false;
 
