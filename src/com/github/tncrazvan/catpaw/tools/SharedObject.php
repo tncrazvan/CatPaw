@@ -254,6 +254,8 @@ class SharedObject extends Http{
         $this->sessions = new HttpSessionManager();
     }
     public $dir;
+
+    public array $httpQueue = [];
     public array $httpConnections = [];
     public array $websocketConnections = [];
     public

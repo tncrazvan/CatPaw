@@ -5,6 +5,7 @@ use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\tools\Session;
 use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\http\HttpEventListener;
+use com\github\tncrazvan\catpaw\tools\LinkedList;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 class CatPaw{
@@ -109,12 +110,36 @@ class CatPaw{
         if(isset($this->so->events["http"]) && isset($this->so->events["http"]["@forward"]))
             $this->fixFordwardRecursion($this->so->events["http"]["@forward"],$this->so->events["http"]["@forward"]);
 
-        //as long as the server is supposed to listen...
+        
+        //listen for connections
         while($this->listening){
 
             /**
-             * Listen for http sockets.
-             * Read incoming messages and push pending commits.
+             * Listen for queued http sockets and read incoming data.
+            */
+            foreach($this->so->httpQueue as &$listener){
+                if(($read = \fread($listener->client, $listener->so->httpMtu))){
+                    $listener->input .= $read;
+                }else{
+                    unset($this->so->httpQueue[$listener->hash]);
+                    [$isHttp,$isWebsocket] = $listener->run();
+                    if($isHttp){
+                        $event = HttpEvent::make($listener);
+                        global $_EVENT;
+                        $_EVENT = $event;
+                        $event->run();
+                        $_EVENT = null;
+                        
+                    }else if($isWebsocket){
+                        $this->_im_a_fork = true;
+                        $event = WebSocketEvent::make($listener);
+                        $event->run();
+                    }   
+                }
+            }
+            
+            /**
+             * Listen for http sockets and ush pending commits.
             */
             foreach($this->so->httpConnections as &$e){
                 if($e->generator){
@@ -210,20 +235,7 @@ class CatPaw{
                 stream_set_blocking($client, false);
 
             $listener = new HttpEventListener($client, $this->so);
-            list($isHttp,$isWebsocket) = $listener->run();
-            if($isHttp){
-                $event = HttpEvent::make($listener);
-                
-                global $_EVENT;
-                $_EVENT = $event;
-                $event->run();
-                $_EVENT = null;
-                
-            }else if($isWebsocket){
-                $this->_im_a_fork = true;
-                $event = WebSocketEvent::make($listener);
-                $event->run();
-            }
+            $this->so->httpQueue[$listener->hash] = $listener;
             unset($copy[$key]);
             unset($this->clients[$key]);
         }

@@ -22,13 +22,17 @@ class HttpEventListener{
     public SharedObject $so;
     public array $params = [];
     public $client;
+    public $input = '';
+    public $hash;
 
     private const PATTERN_PATH_PARAM = '/(?<=^{)([A-z_][A-z0-9_]+)(?=}$)/';
 
     public function __construct(&$client,SharedObject $so) {
         $this->client = $client;
         $this->so = $so;
+        $this->hash = \spl_object_hash($this).rand();
     }
+
     public function run():array{
         if($this->resolve())
             return $this->serve();
@@ -118,11 +122,9 @@ class HttpEventListener{
     }
 
     private function resolve():bool{
-        $input = \fread($this->client, $this->so->httpMtu);
-        if($input === false || trim($input) === '') //0 is okay, but these are not okay: false || null || ''
+        if($this->input === '') //0 is okay, but these are not okay: false || null || ''
             return false;
-        
-        $input = \preg_split('/\r\n\r\n/', $input,2);
+        $input = \preg_split('/\r\n\r\n/', $this->input,2);
         $partsCounter = \count($input);
         if($partsCounter === 0)
             return false;

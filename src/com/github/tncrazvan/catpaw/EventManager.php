@@ -9,6 +9,8 @@ use com\github\tncrazvan\catpaw\http\HttpRequestBody;
 use com\github\tncrazvan\catpaw\http\HttpRequestCookies;
 use com\github\tncrazvan\catpaw\http\HttpResponseCookies;
 use com\github\tncrazvan\catpaw\tools\Caster;
+use com\github\tncrazvan\catpaw\tools\formdata\FormData;
+use com\github\tncrazvan\catpaw\tools\formdata\FormDataEntry;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnClose;
@@ -101,8 +103,8 @@ class EventManager{
                     static $param = null;
                     switch($name){
                         case 'body':
-                            if(is_numeric($this->listener->requestContent))
-                                $param = intval($this->listener->requestContent);
+                            if(\is_numeric($this->listener->requestContent))
+                                $param = \intval($this->listener->requestContent);
                             else{
                                 $message = 'Body was expected to be numeric, but non numeric value has been provided instead:'.$this->listener->requestContent;
                                 $valid = false;
@@ -111,8 +113,8 @@ class EventManager{
                         break;
                         default:
                             if($this->listener->params[$name])
-                                if(is_numeric($this->listener->params[$name]))
-                                    $param = intval($this->listener->params[$name]);
+                                if(\is_numeric($this->listener->params[$name]))
+                                    $param = \intval($this->listener->params[$name]);
                                 else{
                                     $message = 'Parameter {'.$name.'} was expected to be numeric, but non numeric value has been provided instead:'.$this->listener->params[$name];
                                     $valid = false;
@@ -137,7 +139,7 @@ class EventManager{
                                 if($this->listener->requestContent === '')
                                     $param = [];
                                 else
-                                    $param = json_decode($this->listener->requestContent);
+                                    $param = &$this->getRequestParsedBody(null,true);
                             }catch(\Exception $e){
                                 echo "Could not convert body to '$cls', injecting null value.\n";
                                 echo 
@@ -171,50 +173,43 @@ class EventManager{
         return $params;
     }
 
-    private function form(string &$input,array &$output){
-        // grab multipart boundary from content type header
-        preg_match('/boundary=(.*)$/', $this->getRequestHeader("Content-Type"), $matches);
-        $boundary = $matches[1];
-        
-        // split content by boundary and get rid of last -- element
-        $a_blocks = preg_split("/-+$boundary/", $input);
-        array_pop($a_blocks);
-        
-        // loop data blocks
-        foreach ($a_blocks as $id => $block){
-            if (empty($block))
-                continue;
-        
-            // you'll have to var_dump $block to understand this and maybe replace \n or \r with a visibile char
-        
-            // parse uploaded files
-            if (strpos($block, 'application/octet-stream') !== FALSE){
-                // match "name", then everything after "stream" (optional) except for prepending newlines 
-                preg_match("/name=\"([^\"]*)\".*stream[\n|\r]+([^\n\r].*)?$/s", $block, $matches);
-            }
-            // parse all other fields
-            else{
-                // match "name" and optional value in between newline sequences
-                preg_match('/name=\"([^\"]*)\"[\n|\r]+([^\n\r].*)?\r$/s', $block, $matches);
-            }
-            $output[$matches[1]] = $matches[2];
-        }
-    }
-    public function &getRequestParsedBody(string $classname=null){
+    public function &getRequestParsedBody(string $classname=null,bool $toarray = false){
+        $ctype = $this->getRequestHeader("Content-Type");
         if($classname !== null){
-            $ctype = $this->getRequestHeader("Content-Type");
             if(Strings::startsWith($ctype,"application/x-www-form-urlencoded")){
                 \mb_parse_str($this->listener->requestContent,$result);
             }else if(Strings::startsWith($ctype,"application/json")){
                 $result = \json_decode($this->listener->requestContent);
-            }else if(Strings::startsWith($ctype,"multipart/form-data")){
-                $result = [];
-                $this->form($this->listener->requestContent,$result);
+            }else if(Strings::startsWith($ctype,"multipart/")){
+                $result = null;
+                FormData::parse($this,$this->listener->requestContent,$result);
+            }else{
+                echo "No matching Content-Type ($ctype), falling back to null.\n";
+                $result = null;
+                return $result;
             }
             $result = &Caster::cast($result,$classname);
             return $result;
-        }else
-            return $this->listener->requestContent;
+        }else if($toarray) try {
+            if(Strings::startsWith($ctype,"application/x-www-form-urlencoded")){
+                \mb_parse_str($this->listener->requestContent,$result);
+                return $result;
+            }else if(Strings::startsWith($ctype,"application/json")){
+                $result = \json_decode($this->listener->requestContent);
+                return $result;
+            }else if(Strings::startsWith($ctype,"multipart/")){
+                FormData::parse($this,$this->listener->requestContent,$result);
+                return $result;
+            }else{
+                echo "No matching Content-Type ($ctype), falling back to empty array.\n";
+                $result = [];
+                return $result;
+            }
+        }catch(\Exception $e){
+            echo "Could not convert body to array, falling back to empty array.\n";
+            $result = [];
+            return $result;
+        }
     }
 
 

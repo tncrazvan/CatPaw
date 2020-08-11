@@ -24,8 +24,8 @@ class Script{
     public static function &query(string $key):?string{
         return self::event()->getRequestUrlQuery($key);
     }
-    public static function &body(string $classname){
-        return self::event()->getRequestParsedBody($classname);
+    public static function &body(string $classname, bool $toarray = false){
+        return self::event()->getRequestParsedBody($classname, $toarray);
     }
     public static function runOnce(\Closure $callback):void{
         $e = self::event();
