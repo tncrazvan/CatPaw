@@ -10,7 +10,7 @@ use com\github\tncrazvan\catpaw\http\HttpRequestCookies;
 use com\github\tncrazvan\catpaw\http\HttpResponseCookies;
 use com\github\tncrazvan\catpaw\tools\Caster;
 use com\github\tncrazvan\catpaw\tools\formdata\FormData;
-use com\github\tncrazvan\catpaw\tools\formdata\FormDataEntry;
+use com\github\tncrazvan\catpaw\tools\LinkedList;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnClose;
@@ -47,7 +47,7 @@ class EventManager{
                 break;
                 case WebSocketEventOnMessage::class:
                     $this->onMessage = new class() extends WebSocketEventOnMessage{
-                        public function run(\SplDoublyLinkedList &$fragments):void{
+                        public function run(LinkedList &$fragments):void{
                 
                         }
                     };

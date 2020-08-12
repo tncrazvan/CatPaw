@@ -243,44 +243,58 @@ abstract class WebSocketEventManager extends EventManager{
 
     private function unmask_payload(array &$b,int $offset = 1):int{
         $l=count($b);
-        for($j=$offset;$j<=$l;$j++){
-            //$this->payload[$this->payloadIndex] = chr(($b[$j] ^ $this->mask[($this->payloadIndex) % 4]));
-            //$this->payload->push(chr(($b[$j] ^ $this->mask[($this->payloadIndex) % 4])));
-            //$this->payload[$this->payloadIndex] = ($b[$j] ^ $this->mask[($this->payloadIndex) % 4]);
-            $this->listOfFragments->top()[$this->payloadIndex] = ($b[$j] ^ $this->mask[($this->payloadIndex) % 4]);
-
-            $this->payloadIndex++;
-            
-
-            
-            if ($this->payloadIndex === $this->payloadLength) {
+        try{
+            for($j=$offset;$j<=$l;$j++){
+                //$this->payload[$this->payloadIndex] = chr(($b[$j] ^ $this->mask[($this->payloadIndex) % 4]));
+                //$this->payload->push(chr(($b[$j] ^ $this->mask[($this->payloadIndex) % 4])));
+                //$this->payload[$this->payloadIndex] = ($b[$j] ^ $this->mask[($this->payloadIndex) % 4]);
+                $this->listOfFragments->top()[$this->payloadIndex] = ($b[$j] ^ $this->mask[($this->payloadIndex) % 4]);
+    
+                $this->payloadIndex++;
                 
-                $this->reading = self::DONE;
-
-                if(null !== $this->onMessage){
-                    //$payload = $this->payload;
-                    //$this->listOfFragments->push($payload);
-                    if($this->isFinal){
-                        $this->onMessage->run($this->listOfFragments);
-                        $this->listOfFragments = new LinkedList();
-                    }
+    
+                
+                if ($this->payloadIndex === $this->payloadLength) {
                     
+                    $this->reading = self::DONE;
+    
+                    if(null !== $this->onMessage){
+                        //$payload = $this->payload;
+                        //$this->listOfFragments->push($payload);
+                        if($this->isFinal){
+                            $this->onMessage->run($this->listOfFragments);
+                            $this->listOfFragments = new LinkedList();
+                        }
+                        
+                    }
+    
+                    $this->lengthKey = 0;
+                    $this->reading = self::FIRST_BYTE;
+                    $this->lengthIndex = 0;
+                    $this->payloadLength = 0;
+                    $this->maskIndex = 0;
+                    $this->payloadIndex = 0;
+                    //$this->payload = new LinkedList();
+                    $this->mask = null;
+                    $this->length = null;
+    
+                    if ($j+1<=$l) 
+                        return $j;
                 }
-
-                $this->lengthKey = 0;
-                $this->reading = self::FIRST_BYTE;
-                $this->lengthIndex = 0;
-                $this->payloadLength = 0;
-                $this->maskIndex = 0;
-                $this->payloadIndex = 0;
-                //$this->payload = new LinkedList();
-                $this->mask = null;
-                $this->length = null;
-
-                if ($j+1<=$l) 
-                    return $j;
+                
             }
-            
+        }catch(\Exception $e){
+            echo $e->getMessage()."\n";
+            echo $e->getTraceAsString()."\n";
+            $this->close();
+            unset($this->listener->so->websocketConnections[$this->requestId]);
+            $this->uninstall();
+        }catch(\ErrorException $e){
+            echo $e->getMessage()."\n";
+            echo $e->getTraceAsString()."\n";
+            $this->close();
+            unset($this->listener->so->websocketConnections[$this->requestId]);
+            $this->uninstall();
         }
         return -1;
     }
@@ -357,7 +371,6 @@ abstract class WebSocketEventManager extends EventManager{
                 return;
             }
         }
-        $test = str_replace('a','',$messageBytes);
         // Write the data.
         if(!stream_socket_sendto($this->listener->client,$messageBytes)){
             $this->close();
@@ -369,29 +382,58 @@ abstract class WebSocketEventManager extends EventManager{
         fflush($this->listener->client);
     }
 
-    public function commit($data):void{
+    public function commit($data,bool $binary = false):void{
         if(is_string($data)){
             $strlength = strlen($data);
             if($strlength > self::MAX_CHUNK_SIZE){
-                $pieces = str_split($data,65535);
+                $pieces = str_split($data,self::MAX_CHUNK_SIZE);
                 $max = count($pieces);
                 for($i = 0; $i < $max; $i++){
-                    $this->commit($pieces[$i]);
+                    $this->commit($pieces[$i],$binary);
                 }
                 return;
             }
+        }else if(is_array($data)){
+            $arrlength = count($data);
+            if($arrlength > self::MAX_CHUNK_SIZE){
+                $pieces = \array_chunk($data,self::MAX_CHUNK_SIZE);
+                $max = count($pieces);
+                for($i = 0; $i < $max; $i++){
+                    $this->commit($pieces[$i],$binary);
+                }
+                return;
+            }
+        }else if($data instanceof \SplFixedArray){
+            $arrlength = $data->count();
+            $pieces = [];
+            $c = 0;
+            for($i=0;$i<$arrlength;$i++){
+                $pieces[] = $data[$i];
+
+                if($i+1 === self::MAX_CHUNK_SIZE || $i+1 === $arrlength){
+                    $this->commit($pieces,$binary);
+                    $pieces = [];
+                    $c++;
+                }
+            }
+            return;
         }
-        $this->commits->push(new WebSocketCommit($data));
+
+        $this->commits->push(new WebSocketCommit($data,$binary));
     }
 
-    public function push(int $count=-1,bool $binary=false):void{
+    public function push(int $count=-1):void{
         $this->commits->setIteratorMode(\SplDoublyLinkedList::IT_MODE_DELETE);
         $i = 0;
         for ($this->commits->rewind(); $this->commits->valid(); $this->commits->next()) {
             $commit = $this->commits->current();
             $contents = &$commit->getData();
+            if(\is_array($contents) || $contents instanceof \SplFixedArray){
+                $contents = \pack("C*",...$contents);
+            }
             $length = strlen($contents);
-            $this->encodeAndPushBytes($contents,$binary);
+            
+            $this->encodeAndPushBytes($contents,$commit->isBinary());
             
             $i++;
             if($count > 0 && $i >= $count)

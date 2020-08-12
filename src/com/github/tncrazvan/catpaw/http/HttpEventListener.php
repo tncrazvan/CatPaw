@@ -24,6 +24,11 @@ class HttpEventListener{
     public $client;
     public $input = '';
     public $hash;
+    public $completeBody = true;
+    public $continuation = 0;
+    public $headerBodyLength = 0;
+    public $actualBodyLength = 0;
+    public $failedContinuations = 0;
 
     private const PATTERN_PATH_PARAM = '/(?<=^{)([A-z_][A-z0-9_]+)(?=}$)/';
 
@@ -34,7 +39,9 @@ class HttpEventListener{
     }
 
     public function run():array{
-        if($this->resolve())
+        if($this->continuation > 0)
+            return $this->serve();
+        else if($this->resolve())
             return $this->serve();
         else
             \fclose($this->client);
@@ -132,9 +139,29 @@ class HttpEventListener{
         if($partsCounter === 1){
             $this->input[1] = '';
         }
+
+
         $this->requestHeaders = HttpHeaders::fromString(null, $this->input[0]);
         if(!$this->requestHeaders)
             return false;
+
+        if($this->requestHeaders->has("Content-Length")){
+            $this->actualBodyLength += \strlen($this->input[1]);
+            try{
+                $this->headerBodyLength = intval($this->requestHeaders->get(("Content-Length")));
+            }catch(\Exception $ex){
+                $this->headerBodyLength = $this->actualBodyLength;
+            }
+            catch(\ErrorException $ex){
+                $this->headerBodyLength = $this->actualBodyLength;
+            }
+            
+            if($this->actualBodyLength < $this->headerBodyLength){
+                $this->completeBody = false;
+            }
+        }
+        
+
 
         $this->resource = \urldecode($this->requestHeaders->getResource());
         if($this->resource === '')

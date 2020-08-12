@@ -162,6 +162,9 @@ class ServerFile{
                     $startConnectionStr .= "Content-Type: $ctype\r\n";
                     $startConnectionStr .= "Content-Range: bytes $start-$end/$filesize\r\n\r\n";
 
+                    /* if($start === 0 && $end === null) 
+                        return new HttpResponse($responseHeaders,$result); */
+
                     $result .= $startConnectionStr;
                 
                     if($end-$start+1 > SharedObject::$httpMtu){
@@ -198,6 +201,8 @@ class ServerFile{
                     $responseHeaders->set("Content-Type",$ctype);
                     $responseHeaders->set("Content-Range", "bytes $start-$end/$filesize");
                     $responseHeaders->set("Content-Length", $len);
+                    /* if($start === 0 && $end === null) 
+                        return new HttpResponse($responseHeaders,$result); */
                     \fseek($raf, $start);
                     $result = \fread($raf,$end-$start+1);
                 }

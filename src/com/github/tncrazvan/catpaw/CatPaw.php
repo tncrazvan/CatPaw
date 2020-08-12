@@ -118,23 +118,39 @@ class CatPaw{
              * Listen for queued http sockets and read incoming data.
             */
             foreach($this->so->httpQueue as &$listener){
-                if(($read = \fread($listener->client, $listener->so->httpMtu))){
-                    $listener->input .= $read;
-                }else{
-                    unset($this->so->httpQueue[$listener->hash]);
+                $read = \stream_socket_recvfrom($listener->client, $listener->so->httpMtu);
+                if($read !== false){
+                    if($listener->continuation > 0){
+                        $listener->input[1] .= $read;
+                        $listener->actualBodyLength += \strlen($read);
+                        if($listener->actualBodyLength === $listener->headerBodyLength)
+                            $listener->completeBody = true;
+                        
+                    }else{
+                        $listener->input .= $read;
+                    }
+                }
+                if($read === false || ($listener->continuation > 0 && $listener->completeBody === true)){
                     [$isHttp,$isWebsocket] = $listener->run();
                     if($isHttp){
-                        $event = HttpEvent::make($listener);
-                        global $_EVENT;
-                        $_EVENT = $event;
-                        $event->run();
-                        $_EVENT = null;
-                        
+                        if($listener->completeBody){
+                            unset($this->so->httpQueue[$listener->hash]);
+                            $event = HttpEvent::make($listener);
+                            global $_EVENT;
+                            $_EVENT = $event;
+                            $event->run();
+                            $_EVENT = null;
+                        }else{
+                            $listener->continuation++;
+                        }
                     }else if($isWebsocket){
                         $this->_im_a_fork = true;
                         $event = WebSocketEvent::make($listener);
                         $event->run();
                     }   
+                }
+                if($read === false && $listener->continuation > 0){
+                    $listener->failedContinuations++;
                 }
             }
             
