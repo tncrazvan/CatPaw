@@ -25,6 +25,7 @@ class FormData {
             ];
             if(($pieces = \preg_split('/\r\n\r\n/',$block,2)) && count($pieces) > 1){
                 [$header,$body] = $pieces;
+                $body = \preg_replace('/\r?\n(?=$)/','',$body);
                 $header = \preg_replace('/(?<=^)\s*/','',$header);
                 $lines = \preg_split('/(\r?\n)+/',$header);
                 
