@@ -131,8 +131,9 @@ class CatPaw{
                     }
                 }
                 if($read === false || ($listener->continuation > 0 && $listener->completeBody === true)){
-                    [$isHttp,$isWebsocket] = $listener->run();
-                    if($isHttp){
+                    if($listener->continuation === 0)
+                        [$isHttp,$isWebsocket] = $listener->run();
+                    if($isHttp || $listener->continuation > 0){
                         if($listener->completeBody){
                             unset($this->so->httpQueue[$listener->hash]);
                             $event = HttpEvent::make($listener);
