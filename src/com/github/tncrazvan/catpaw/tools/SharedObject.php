@@ -274,7 +274,7 @@ class SharedObject extends Http{
             "size"=>1024 // 1024 MB
         ],
         $sessionTtl = 1440, // 24 minutes
-        $sleep = 1, //microseconds
+        $sleep = 0, //microseconds
         $listen=true,
         $groupsAllowed=false,
         $smtpAllowed=false,
