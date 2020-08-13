@@ -23,12 +23,12 @@ class HttpEventListener{
     public array $params = [];
     public $client;
     public $input = '';
-    public $hash;
-    public $completeBody = true;
-    public $continuation = 0;
-    public $headerBodyLength = 0;
-    public $actualBodyLength = 0;
-    public $failedContinuations = 0;
+    public string $hash;
+    public bool $completeBody = true;
+    public int $continuation = 0;
+    public int $headerBodyLength = 0;
+    public int $actualBodyLength = 0;
+    public int $failedContinuations = 0;
 
     private const PATTERN_PATH_PARAM = '/(?<=^{)([A-z_][A-z0-9_]+)(?=}$)/';
 

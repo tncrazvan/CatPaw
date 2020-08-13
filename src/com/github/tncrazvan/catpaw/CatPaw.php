@@ -110,7 +110,6 @@ class CatPaw{
         if(isset($this->so->events["http"]) && isset($this->so->events["http"]["@forward"]))
             $this->fixFordwardRecursion($this->so->events["http"]["@forward"],$this->so->events["http"]["@forward"]);
 
-        
         //listen for connections
         while($this->listening){
 
@@ -125,7 +124,6 @@ class CatPaw{
                         $listener->actualBodyLength += \strlen($read);
                         if($listener->actualBodyLength === $listener->headerBodyLength)
                             $listener->completeBody = true;
-                        
                     }else{
                         $listener->input .= $read;
                     }
@@ -136,11 +134,11 @@ class CatPaw{
                     if($isHttp || $listener->continuation > 0){
                         if($listener->completeBody){
                             unset($this->so->httpQueue[$listener->hash]);
-                            $event = HttpEvent::make($listener);
                             global $_EVENT;
-                            $_EVENT = $event;
-                            $event->run();
+                            $_EVENT = HttpEvent::make($listener);;
+                            $_EVENT->run();
                             $_EVENT = null;
+                            $listener->input[1] = null;
                         }else{
                             $listener->continuation++;
                         }
@@ -153,6 +151,7 @@ class CatPaw{
                 if($read === false && $listener->continuation > 0){
                     $listener->failedContinuations++;
                 }
+                $read = null;
             }
             
             /**
@@ -172,7 +171,9 @@ class CatPaw{
                         $e->dispatch($responseObject);
                     }
                 }else{
-                    $e->push();
+                    if($e->push()){ //if there are not more commits to push...
+                        $e = null; //set the object to null
+                    }
                 }
             }
             

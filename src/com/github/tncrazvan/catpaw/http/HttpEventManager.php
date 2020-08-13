@@ -31,6 +31,7 @@ abstract class HttpEventManager extends EventManager{
     public static array $connections = [];
     private \SplDoublyLinkedList $commits;
     public ?\Generator $generator = null;
+    public ?array $params;
 
     public function run():void{
         /*if($this->listener->so->httpConnections == null){
@@ -38,14 +39,14 @@ abstract class HttpEventManager extends EventManager{
         }*/
         $message = '';
         $valid = true;
-        $params = &$this->calculateParameters($message,$valid);
+        $this->params = &$this->calculateParameters($message,$valid);
         $responseObject = new HttpResponse([
             "Status"=>Status::BAD_REQUEST
         ],$message);
         if($valid){
             try{
                 $this->commits = new \SplDoublyLinkedList();
-                $responseObject = \call_user_func_array($this->callback,$params);
+                $responseObject = \call_user_func_array($this->callback,$this->params);
                 $this->funcheck($responseObject);
             }catch(\TypeError $ex){
                 $responseObject = new HttpResponse([
@@ -65,7 +66,7 @@ abstract class HttpEventManager extends EventManager{
             $this->dispatch($responseObject);
         }else $this->generator = &$responseObject;
         
-        $this->listener->so->httpConnections[$this->requestId] = $this;
+        $this->listener->so->httpConnections[$this->requestId] = &$this;
         
     }
 

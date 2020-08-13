@@ -12,6 +12,7 @@ class FormData {
         
         // split content by boundary and get rid of last -- element
         $a_blocks = preg_split("/-+$boundary/", $input);
+        $input = null;
         $entries = [];
         // loop data blocks
         foreach ($a_blocks as &$block){
