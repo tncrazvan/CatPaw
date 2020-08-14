@@ -5,7 +5,7 @@ use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpRequestBody;
 
 class FormData {
-    public static function parse(HttpEvent $e,string $input,?array &$entries = []){
+    public static function parse(HttpEvent $e,string &$input,?array &$entries = []){
         // grab multipart boundary from content type header
         preg_match('/boundary=(.*)$/', $e->getRequestHeader("Content-Type"), $matches);
         $boundary = $matches[1];
@@ -25,10 +25,12 @@ class FormData {
                 'body' => '',
             ];
             if(($pieces = \preg_split('/\r\n\r\n/',$block,2)) && count($pieces) > 1){
-                [$header,$body] = $pieces;
-                $body = \preg_replace('/\r?\n(?=$)/','',$body);
-                $header = \preg_replace('/(?<=^)\s*/','',$header);
+                $block = null;
+                $header = \preg_replace('/(?<=^)\s*/','',$pieces[0]);
+                $body = \preg_replace('/\r?\n(?=$)/','',$pieces[1]);
+                $pieces = null;
                 $lines = \preg_split('/(\r?\n)+/',$header);
+                $header = null;
                 
                 foreach($lines as &$line){
 
@@ -52,7 +54,9 @@ class FormData {
                 }
                 if(isset($entry['attributes']['name'])){
                     $entry['body'] = $body;
+                    $body = null;
                     $entries[$entry['attributes']['name']] = $entry;
+                    $entry = null;
                 }
             }
         }

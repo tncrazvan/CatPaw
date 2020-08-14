@@ -294,6 +294,7 @@ class SharedObject extends Http{
         $cookieTtl=60*60*24*365, //year
         $wsGroupMaxClient=10,
         $wsMtu=65535,
+        $httpMaxBodyLength=1024*1024*200, //200 MB
         $httpMtu=65535,
         $cacheMaxAge=60*60*24*365, //year
         $entryPoint="/index.html",
