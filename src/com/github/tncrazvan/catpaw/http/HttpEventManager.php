@@ -33,13 +33,16 @@ abstract class HttpEventManager extends EventManager{
     public ?\Generator $generator = null;
     public ?array $params;
 
-    public function run():void{
+    public function run(bool $stillReading=false):void{
         /*if($this->listener->so->httpConnections == null){
             $this->listener->so->httpConnections = new LinkedList();
         }*/
         $message = '';
         $valid = true;
         $this->params = &$this->calculateParameters($message,$valid);
+        if($this->listener->properties["http-consumer"] && !$this->_consumer_provided){
+            exit("HttpConsumer not provided for resource {$this->listener->resource}.\nPlease inject an HttpConsumer parameter in your callback.\n");
+        }
         $responseObject = new HttpResponse([
             "Status"=>Status::BAD_REQUEST
         ],$message);
@@ -64,10 +67,11 @@ abstract class HttpEventManager extends EventManager{
         }
         if(!$responseObject instanceof \Generator){
             $this->dispatch($responseObject);
-        }else $this->generator = &$responseObject;
+        }else 
+            $this->generator = &$responseObject;
         
-        $this->listener->so->httpConnections[$this->requestId] = &$this;
-        
+        if(!$stillReading)
+            $this->listener->so->httpConnections[$this->requestId] = &$this;
     }
 
     public function funcheck(&$responseObject){

@@ -5,7 +5,6 @@ use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\tools\Session;
 use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\http\HttpEventListener;
-use com\github\tncrazvan\catpaw\tools\LinkedList;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 class CatPaw{
@@ -127,7 +126,11 @@ class CatPaw{
                 }else{
                     $read = \stream_socket_recvfrom($listener->client, $listener->so->httpMtu);
                 }
-                
+
+                if($read === false){
+                    unset($this->so->httpQueue[$listener->hash]);
+                }
+
                 if($read !== false){
                     if($listener->continuation > 0){
                         $listener->actualBodyLength += \strlen($read);
@@ -135,29 +138,67 @@ class CatPaw{
                         if($listener->actualBodyLength === $listener->headerBodyLength || $listener->actualBodyLength === $listener->so->httpMaxBodyLength)
                             $listener->completeBody = true;
                     }else{
-                        $listener->input .= $read;
+                        if($listener->httpConsumerStarted){
+                            $listener->runHttpLiveBodyInject($read);
+                            $listener->continuation++;
+                        }
+                        else
+                            $listener->input .= $read;
                     }
-                }
-                if($read === false || ($listener->continuation > 0 && $listener->completeBody === true)){
-                    if($listener->continuation === 0)
-                        [$isHttp,$isWebsocket] = $listener->run();
-                    if($isHttp || $listener->continuation > 0){
-                        if($listener->completeBody){
-                            unset($this->so->httpQueue[$listener->hash]);
+
+                    if($listener->event === null){
+                        if($listener->findHeaders()){
+                            [$isHttp,$isWebSOcket] = $listener->run();
+                            if($isHttp){
+                                $listener->eventType = HttpEventListener::EVENT_TYPE_HTTP;
+                                $listener->event = &HttpEvent::make($listener);
+                            }else if($isWebSOcket){
+                                $listener->eventType = HttpEventListener::EVENT_TYPE_WEBSOCKET;
+                                $listener->event = &WebSocketEvent::make($listener);
+                            }
+                        }
+                    }
+                    
+                    if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP){
+                        if(!$listener->httpConsumerStarted && $listener->properties["http-consumer"]){
+                            $listener->httpConsumerStarted = true;
                             global $_EVENT;
-                            $_EVENT = HttpEvent::make($listener);;
-                            $_EVENT->run();
+                            $_EVENT = $listener->event;
+                            $_EVENT->run(true); //still reading
                             $_EVENT = null;
-                            $listener->input[1] = null;
+                        }
+                    }
+
+                    
+                }else{
+                    if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP || $listener->continuation > 0){
+                        if($listener->httpConsumerStarted){
+                            $listener->runHttpLiveBodyInject($read);
+                            $listener->continuation++;
+                        }else if($listener->completeBody){
+                            $listener->runHttpDefault();
                         }else{
                             $listener->continuation++;
                         }
-                    }else if($isWebsocket){
-                        $this->_im_a_fork = true;
-                        $event = WebSocketEvent::make($listener);
-                        $event->run();
-                    }   
+                    }else if($listener->eventType == HttpEventListener::EVENT_TYPE_WEBSOCKET){
+                        $listener->runWebSocketDefault();
+                    }
                 }
+/* 
+                if(($read === false || ($listener->continuation > 0 && $listener->completeBody === true)) && !$listener->httpConsumerStarted){
+                    if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP || $listener->continuation > 0){
+                        if($listener->completeBody){
+                            $listener->runHttpDefault();
+                        }else{
+                            $listener->continuation++;
+                        }
+                    }else if($listener->eventType == HttpEventListener::EVENT_TYPE_WEBSOCKET){
+                        $listener->runWebSocketDefault();
+                    }
+                }else if(($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP || $listener->continuation > 0) && $listener->httpConsumerStarted){
+                    $listener->runHttpLiveBodyInject($read);
+                    $listener->continuation++;
+                } */
                 if($read === false && $listener->continuation > 0){
                     $listener->failedContinuations++;
                 }

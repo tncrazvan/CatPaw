@@ -10,6 +10,7 @@ use com\github\tncrazvan\catpaw\http\HttpRequestCookies;
 use com\github\tncrazvan\catpaw\http\HttpResponseCookies;
 use com\github\tncrazvan\catpaw\tools\Caster;
 use com\github\tncrazvan\catpaw\tools\formdata\FormData;
+use com\github\tncrazvan\catpaw\tools\HttpConsumer;
 use com\github\tncrazvan\catpaw\tools\LinkedList;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
@@ -27,6 +28,7 @@ class EventManager{
     public ?string $sessionId;
     public bool $alive=true;
     private array $dummy = [];
+    protected bool $_consumer_provided = false;
     
     protected function &calculateParameters(string &$message, bool &$valid):array{
         $valid = true;
@@ -78,6 +80,12 @@ class EventManager{
                 break;
                 case HttpResponseCookies::class://inject the HttpEvent instance
                     $params[] = &HttpResponseCookies::factory($this);
+                break;
+                case HttpConsumer::class:
+                    $this->_consumer_provided = true;
+                    static $param = null;
+                    $param = new HttpConsumer();
+                    $params[] = &$param;
                 break;
                 case 'string':
                     $name = $parameter->getName();

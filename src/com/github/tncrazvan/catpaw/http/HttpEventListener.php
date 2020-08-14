@@ -3,6 +3,7 @@ namespace com\github\tncrazvan\catpaw\http;
 
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
+use com\github\tncrazvan\catpaw\tools\HttpConsumer;
 use com\github\tncrazvan\catpaw\tools\SharedObject;
 
 class HttpEventListener{
@@ -29,8 +30,18 @@ class HttpEventListener{
     public int $headerBodyLength = 0;
     public int $actualBodyLength = 0;
     public int $failedContinuations = 0;
+    public array $properties = [
+        "http-consumer" => false
+    ];
+    public const EVENT_TYPE_HTTP = 0;
+    public const EVENT_TYPE_WEBSOCKET = 1;
+    public $eventType = -1;
+    public $event = null;
+    public bool $httpConsumerStarted = false;
 
     private const PATTERN_PATH_PARAM = '/(?<=^{)([A-z_][A-z0-9_]+)(?=}$)/';
+
+    private int $_find_headers_offset = 0;
 
     public function __construct(&$client,SharedObject $so) {
         $this->client = $client;
@@ -38,16 +49,63 @@ class HttpEventListener{
         $this->hash = \spl_object_hash($this).rand();
     }
 
+    public function findHeaders():bool{
+        $headersDetected = strpos($this->input,"\r\n\r\n",$this->_find_headers_offset);
+        if($headersDetected !== false)
+            return true;
+        $this->_find_headers_offset += strlen($this->input);
+        return false;
+    }
+
     public function run():array{
-        if($this->continuation > 0)
+        /*if($this->continuation > 0){
             return $this->serve();
-        else if($this->resolve())
+        }else */
+        if($this->resolve())
             return $this->serve();
         else
             \fclose($this->client);
         return [false,false];
     }
 
+    public function runWebSocketDefault(){
+        $this->_im_a_fork = true;
+        //$this->event = &WebSocketEvent::make($listener);
+        $this->event->run();
+    }
+    public function runHttpDefault(){
+        global $_EVENT;
+        //$_EVENT = &HttpEvent::make($this);
+        $_EVENT = $this->event;
+        $_EVENT->run();
+        $_EVENT = null;
+        $this->input[1] = null;
+    }
+
+    public function runHttpLiveBodyInject(&$read){
+        
+        if($this->event->generator){
+            if($this->event->generator->valid()){
+                global $_EVENT;
+                $_EVENT = $this->event;
+                $returnObject = $this->event->generator->current();
+                if($returnObject instanceof HttpConsumer){
+                    if($read === false){
+                        $returnObject->done();
+                        unset($this->so->httpQueue[$this->hash]);
+                        $this->so->httpConnections[$this->event->requestId] = &$this->event;
+                    }else{
+                        $returnObject->produce($read);
+                    }
+                }
+                $this->event->generator->next();
+                $_EVENT = null;
+            }else{
+                unset($this->so->httpQueue[$this->hash]);
+                $this->so->httpConnections[$this->event->requestId] = &$this->event;
+            }
+        }
+    }
 
     private static function _forward(array &$paths, HttpEventListener &$listener):void{
         if(isset($paths["@forward"]))
@@ -66,21 +124,31 @@ class HttpEventListener{
             }
     }
 
-    private static function _file(string &$type, array &$paths, HttpEventListener &$listener, ?\CLosure &$callback):bool{
+    private static function _file(string &$type, array &$paths, HttpEventListener &$listener, \Closure &$callback):bool{
         if($type !== 'websocket'){
             $location = $listener->so->webRoot.$listener->path;
 
             //checking if it's a file
             if(\file_exists($location) && !\is_dir($location)){
-                $callback = $paths["@file"];
-                return true;
+                if(is_array($paths["@file"])){
+                    if(isset($paths["@file"]['run'])){
+                        $callback = $paths["@file"]['run'];
+                        foreach($paths["@file"] as $key =>&$property){
+                            if($key === 'run') continue;
+                            $listener->properties[$key] = $property;
+                        }
+                    }
+                }else{
+                    $callback = $paths["@file"];
+                    return true;
+                }                
             }
         }
         return false;
     }
 
 
-    private static function _event(array &$paths, HttpEventListener &$listener, ?\CLosure &$callback):bool{
+    private static function _event(array &$paths, HttpEventListener &$listener, \Closure &$callback):bool{
         $_event_path = \preg_replace('/(?<=^)\/+/','',$listener->path);
         foreach($paths as $route => &$cb){
             if($route === '@file' || 
@@ -105,7 +173,17 @@ class HttpEventListener{
             }
 
             if($c === $len){
-                $callback = $cb;
+                if(is_array($cb)){
+                    if(isset($cb['run'])){
+                        $callback = $cb['run'];
+                        foreach($cb as $key =>&$property){
+                            if($key === 'run') continue;
+                            $listener->properties[$key] = &$property;
+                        }
+                    }else
+                        continue;
+                }else
+                    $callback = $cb;
                 return true;
             }
         }
@@ -117,7 +195,18 @@ class HttpEventListener{
 
         self::_forward($paths,$listener);
 
-        $callback = $paths["@404"];
+
+        if(is_array($paths["@file"])){
+            if(isset($paths["@file"]['run'])){
+                $callback = $paths["@file"]['run'];
+                foreach($paths["@file"] as $key =>&$property){
+                    if($key === 'run') continue;
+                    $listener->properties[$key] = $property;
+                }
+            }
+        }else
+            $callback = $paths["@file"];
+
 
         if(self::_file($type,$paths,$listener,$callback))
             return $callback;
