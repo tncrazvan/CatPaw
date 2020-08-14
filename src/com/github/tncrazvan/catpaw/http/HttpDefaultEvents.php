@@ -11,6 +11,7 @@ class HttpDefaultEvents{
     public static \Closure $file;
     public static function init():void{
         
+        $requestsByIp = [];
 
         self::$notFound = function(HttpEvent $e){
             $filename = [$e->listener->so->webRoot,$e->listener->path];
@@ -42,7 +43,8 @@ class HttpDefaultEvents{
 
 
 
-        self::$file = function(HttpEvent $e){
+        self::$file = function(HttpEvent $e) use(&$requestsByIp){
+            
             switch($e->getRequestMethod()){
                 case "GET":
                     if(Strings::endsWith($e->listener->path,'.php'))

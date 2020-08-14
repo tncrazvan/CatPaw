@@ -3,7 +3,6 @@ namespace com\github\tncrazvan\catpaw\http;
 
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
-use com\github\tncrazvan\catpaw\tools\HttpConsumer;
 use com\github\tncrazvan\catpaw\tools\SharedObject;
 
 class HttpEventListener{
@@ -92,8 +91,6 @@ class HttpEventListener{
                 if($returnObject instanceof HttpConsumer){
                     if($read === false){
                         $returnObject->done();
-                        unset($this->so->httpQueue[$this->hash]);
-                        $this->so->httpConnections[$this->event->requestId] = &$this->event;
                     }else{
                         $returnObject->produce($read);
                     }
@@ -234,8 +231,8 @@ class HttpEventListener{
         if(!$this->requestHeaders)
             return false;
 
+        $this->actualBodyLength += \strlen($this->input[1]);
         if($this->requestHeaders->has("Content-Length")){
-            $this->actualBodyLength += \strlen($this->input[1]);
             try{
                 $this->headerBodyLength = intval($this->requestHeaders->get(("Content-Length")));
             }catch(\Exception $ex){

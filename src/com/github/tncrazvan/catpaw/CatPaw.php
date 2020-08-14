@@ -120,15 +120,11 @@ class CatPaw{
                     $delta = ($listener->actualBodyLength+$listener->so->httpMtu) - $listener->so->httpMaxBodyLength;
                     $l = $listener->so->httpMtu - $delta;
                     if($l > 0)
-                        $read = \stream_socket_recvfrom($listener->client, $l);
+                        $read = \fread($listener->client, $l);
                     else 
                         $read = '';
                 }else{
-                    $read = \stream_socket_recvfrom($listener->client, $listener->so->httpMtu);
-                }
-
-                if($read === false){
-                    unset($this->so->httpQueue[$listener->hash]);
+                    $read = \fread($listener->client, $listener->so->httpMtu);
                 }
 
                 if($read !== false){
@@ -142,21 +138,10 @@ class CatPaw{
                             $listener->runHttpLiveBodyInject($read);
                             $listener->continuation++;
                         }
-                        else
+                        else if($listener->event === null)
                             $listener->input .= $read;
-                    }
-
-                    if($listener->event === null){
-                        if($listener->findHeaders()){
-                            [$isHttp,$isWebSOcket] = $listener->run();
-                            if($isHttp){
-                                $listener->eventType = HttpEventListener::EVENT_TYPE_HTTP;
-                                $listener->event = &HttpEvent::make($listener);
-                            }else if($isWebSOcket){
-                                $listener->eventType = HttpEventListener::EVENT_TYPE_WEBSOCKET;
-                                $listener->event = &WebSocketEvent::make($listener);
-                            }
-                        }
+                        else
+                            $listener->input[1] .= $read;
                     }
                     
                     if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP){
@@ -164,45 +149,52 @@ class CatPaw{
                             $listener->httpConsumerStarted = true;
                             global $_EVENT;
                             $_EVENT = $listener->event;
-                            $_EVENT->run(true); //still reading
+                            $_EVENT->run(); //still reading
                             $_EVENT = null;
                         }
                     }
+                }
 
-                    
-                }else{
-                    if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP || $listener->continuation > 0){
+
+                if($listener->event === null){
+                    if($listener->findHeaders()){
+                        //echo time().":".($listener->actualBodyLength).":".($listener->so->httpMtu)."\n";
+                        [$isHttp,$isWebSOcket] = $listener->run();
+                        if($isHttp){
+                            $listener->eventType = HttpEventListener::EVENT_TYPE_HTTP;
+                            $listener->event = &HttpEvent::make($listener);
+                            //echo "serving HTTP $listener->path \n";
+                        }else if($isWebSOcket){
+                            $listener->eventType = HttpEventListener::EVENT_TYPE_WEBSOCKET;
+                            $listener->event = &WebSocketEvent::make($listener);
+                            //echo "serving WS $listener->path \n";
+                        }
+                    }
+                }
+
+                if(($read === false && $listener->input[1] !== '') || $listener->completeBody){
+                    unset($listener->so->httpQueue[$listener->hash]);
+                    if($listener->eventType == HttpEventListener::EVENT_TYPE_WEBSOCKET){
+                        $listener->runWebSocketDefault();
+                    }else if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP || $listener->continuation > 0){
                         if($listener->httpConsumerStarted){
                             $listener->runHttpLiveBodyInject($read);
+                            $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
                             $listener->continuation++;
                         }else if($listener->completeBody){
                             $listener->runHttpDefault();
-                        }else{
-                            $listener->continuation++;
+                            $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
                         }
-                    }else if($listener->eventType == HttpEventListener::EVENT_TYPE_WEBSOCKET){
-                        $listener->runWebSocketDefault();
+                    }else{
+                        $listener->event->close();
+                        $listener->event->uninstall();
                     }
                 }
-/* 
-                if(($read === false || ($listener->continuation > 0 && $listener->completeBody === true)) && !$listener->httpConsumerStarted){
-                    if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP || $listener->continuation > 0){
-                        if($listener->completeBody){
-                            $listener->runHttpDefault();
-                        }else{
-                            $listener->continuation++;
-                        }
-                    }else if($listener->eventType == HttpEventListener::EVENT_TYPE_WEBSOCKET){
-                        $listener->runWebSocketDefault();
-                    }
-                }else if(($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP || $listener->continuation > 0) && $listener->httpConsumerStarted){
-                    $listener->runHttpLiveBodyInject($read);
-                    $listener->continuation++;
-                } */
                 if($read === false && $listener->continuation > 0){
                     $listener->failedContinuations++;
                 }
                 $read = null;
+                $listener->continuation++;
             }
             
             /**

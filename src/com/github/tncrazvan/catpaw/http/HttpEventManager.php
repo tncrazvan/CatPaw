@@ -33,7 +33,7 @@ abstract class HttpEventManager extends EventManager{
     public ?\Generator $generator = null;
     public ?array $params;
 
-    public function run(bool $stillReading=false):void{
+    public function run():void{
         /*if($this->listener->so->httpConnections == null){
             $this->listener->so->httpConnections = new LinkedList();
         }*/
@@ -69,9 +69,6 @@ abstract class HttpEventManager extends EventManager{
             $this->dispatch($responseObject);
         }else 
             $this->generator = &$responseObject;
-        
-        if(!$stillReading)
-            $this->listener->so->httpConnections[$this->requestId] = &$this;
     }
 
     public function funcheck(&$responseObject){
