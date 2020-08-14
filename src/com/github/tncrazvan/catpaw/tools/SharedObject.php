@@ -92,6 +92,8 @@ class SharedObject extends Http{
         $this->bindAddress = $settings["bindAddress"];
         if(isset($settings["wsMtu"]))
         $this->wsMtu = $settings["wsMtu"];
+        if(isset($settings["httpMaxBodyLength"]))
+        $this->httpMaxBodyLength = $settings["httpMaxBodyLength"];
         if(isset($settings["httpMtu"]))
         $this->httpMtu = $settings["httpMtu"];
         if(isset($settings["cacheMaxAge"]))
