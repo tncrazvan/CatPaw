@@ -1,6 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw;
 
+use com\github\tncrazvan\catpaw\http\HttpConsumer;
 use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
 use com\github\tncrazvan\catpaw\http\HttpEventOnClose;
@@ -10,7 +11,6 @@ use com\github\tncrazvan\catpaw\http\HttpRequestCookies;
 use com\github\tncrazvan\catpaw\http\HttpResponseCookies;
 use com\github\tncrazvan\catpaw\tools\Caster;
 use com\github\tncrazvan\catpaw\tools\formdata\FormData;
-use com\github\tncrazvan\catpaw\tools\HttpConsumer;
 use com\github\tncrazvan\catpaw\tools\LinkedList;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;

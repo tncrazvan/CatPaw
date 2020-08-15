@@ -5,15 +5,20 @@ use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpRequestBody;
 
 class FormData {
-    public static function parse(HttpEvent $e,string &$input,?array &$entries = []){
+    public static function parse(HttpEvent $e,string &$input,?array &$entries = []):bool{
         // grab multipart boundary from content type header
-        preg_match('/boundary=(.*)$/', $e->getRequestHeader("Content-Type"), $matches);
+        if(!preg_match('/boundary=(.*)$/', $e->getRequestHeader("Content-Type"), $matches)){
+            return false;
+        }
         $boundary = $matches[1];
         
         // split content by boundary and get rid of last -- element
         $a_blocks = preg_split("/-+$boundary/", $input);
         $input = null;
         $entries = [];
+        if(\count($a_blocks) === 0){
+            return false;
+        }
         // loop data blocks
         foreach ($a_blocks as &$block){
             if (empty($block))
@@ -60,5 +65,6 @@ class FormData {
                 }
             }
         }
+        return true;
     }
 }

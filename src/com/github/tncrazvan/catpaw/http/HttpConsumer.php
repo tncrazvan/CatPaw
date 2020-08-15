@@ -9,13 +9,17 @@ class HttpConsumer{
         $this->value = $value;
     }
     public function consume(?string &$value):HttpConsumer{
-        if(!$this->hasMore()) return $this;
+        if(!$this->valid()) {
+            $value = '';
+            return $this;
+        }
+
         $this->first = false;
         $value = $this->value;
         $this->value = null;
         return $this;
     }
-    public function hasMore():bool{
+    public function valid():bool{
         return $this->hasMore;
     }
     public function done():void{

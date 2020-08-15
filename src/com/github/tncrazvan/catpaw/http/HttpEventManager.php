@@ -67,8 +67,10 @@ abstract class HttpEventManager extends EventManager{
         }
         if(!$responseObject instanceof \Generator){
             $this->dispatch($responseObject);
-        }else 
+        }else {
             $this->generator = &$responseObject;
+            $this->generator->valid();
+        }
     }
 
     public function funcheck(&$responseObject){

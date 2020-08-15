@@ -82,7 +82,7 @@ class HttpEventListener{
     }
 
     public function runHttpLiveBodyInject(&$read){
-        
+
         if($this->event->generator){
             if($this->event->generator->valid()){
                 global $_EVENT;
@@ -93,9 +93,9 @@ class HttpEventListener{
                         $returnObject->done();
                     }else{
                         $returnObject->produce($read);
+                        $this->event->generator->next();
                     }
                 }
-                $this->event->generator->next();
                 $_EVENT = null;
             }else{
                 unset($this->so->httpQueue[$this->hash]);

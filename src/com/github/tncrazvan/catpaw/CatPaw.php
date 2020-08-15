@@ -116,34 +116,56 @@ class CatPaw{
              * Listen for queued http sockets and read incoming data.
             */
             foreach($this->so->httpQueue as &$listener){
-                if($listener->actualBodyLength+$listener->so->httpMtu > $listener->so->httpMaxBodyLength){
+                /*if($listener->actualBodyLength+$listener->so->httpMtu > $listener->so->httpMaxBodyLength){
                     $delta = ($listener->actualBodyLength+$listener->so->httpMtu) - $listener->so->httpMaxBodyLength;
                     $l = $listener->so->httpMtu - $delta;
                     if($l > 0)
                         $read = \fread($listener->client, $l);
                     else 
                         $read = '';
-                }else{
+                }else{*/
                     $read = \fread($listener->client, $listener->so->httpMtu);
-                }
+                    //$read = \stream_socket_recvfrom($listener->client, $listener->so->httpMtu);
+                //}
 
                 if($read !== false){
                     if($listener->continuation > 0){
                         $listener->actualBodyLength += \strlen($read);
-                        $listener->input[1] .= $read;
+
+                        if($listener->httpConsumerStarted){
+                            $listener->runHttpLiveBodyInject($read);
+                        }else{
+                            $listener->input[1] .= $read;
+                        }
+
                         if($listener->actualBodyLength === $listener->headerBodyLength || $listener->actualBodyLength === $listener->so->httpMaxBodyLength)
                             $listener->completeBody = true;
                     }else{
                         if($listener->httpConsumerStarted){
                             $listener->runHttpLiveBodyInject($read);
-                            $listener->continuation++;
                         }
                         else if($listener->event === null)
                             $listener->input .= $read;
                         else
                             $listener->input[1] .= $read;
                     }
-                    
+
+                    if($listener->event === null){
+                        if($listener->findHeaders()){
+                            //echo time().":".($listener->actualBodyLength).":".($listener->so->httpMtu)."\n";
+                            [$isHttp,$isWebSOcket] = $listener->run();
+                            if($isHttp){
+                                $listener->eventType = HttpEventListener::EVENT_TYPE_HTTP;
+                                $listener->event = &HttpEvent::make($listener);
+                                //echo "serving HTTP $listener->path \n";
+                            }else if($isWebSOcket){
+                                $listener->eventType = HttpEventListener::EVENT_TYPE_WEBSOCKET;
+                                $listener->event = &WebSocketEvent::make($listener);
+                                //echo "serving WS $listener->path \n";
+                            }
+                        }
+                    }
+
                     if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP){
                         if(!$listener->httpConsumerStarted && $listener->properties["http-consumer"]){
                             $listener->httpConsumerStarted = true;
@@ -155,32 +177,18 @@ class CatPaw{
                     }
                 }
 
-
-                if($listener->event === null){
-                    if($listener->findHeaders()){
-                        //echo time().":".($listener->actualBodyLength).":".($listener->so->httpMtu)."\n";
-                        [$isHttp,$isWebSOcket] = $listener->run();
-                        if($isHttp){
-                            $listener->eventType = HttpEventListener::EVENT_TYPE_HTTP;
-                            $listener->event = &HttpEvent::make($listener);
-                            //echo "serving HTTP $listener->path \n";
-                        }else if($isWebSOcket){
-                            $listener->eventType = HttpEventListener::EVENT_TYPE_WEBSOCKET;
-                            $listener->event = &WebSocketEvent::make($listener);
-                            //echo "serving WS $listener->path \n";
-                        }
-                    }
-                }
-
-                if(($read === false && $listener->input[1] !== '') || $listener->completeBody){
+                if($read === false || $listener->completeBody){
                     unset($listener->so->httpQueue[$listener->hash]);
                     if($listener->eventType == HttpEventListener::EVENT_TYPE_WEBSOCKET){
                         $listener->runWebSocketDefault();
                     }else if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP || $listener->continuation > 0){
                         if($listener->httpConsumerStarted){
-                            $listener->runHttpLiveBodyInject($read);
-                            $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
-                            $listener->continuation++;
+                            if($listener->completeBody){
+                                $read = false;
+                                $listener->runHttpLiveBodyInject($read);
+                                $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                            }else
+                                $listener->runHttpLiveBodyInject($read);
                         }else if($listener->completeBody){
                             $listener->runHttpDefault();
                             $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
