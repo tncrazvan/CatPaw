@@ -37,6 +37,7 @@ class HttpEventListener{
     public $eventType = -1;
     public $event = null;
     public bool $httpConsumerStarted = false;
+    public int $emptyFails = 0;
 
     private const PATTERN_PATH_PARAM = '/(?<=^{)([A-z_][A-z0-9_]+)(?=}$)/';
 

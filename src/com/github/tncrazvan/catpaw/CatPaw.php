@@ -88,6 +88,30 @@ class CatPaw{
     }
 
 
+    private function &read(HttpEventListener $listener,int $chunkSize){
+        $fragmentSize = 8129;
+        $read = \fread($listener->client, $fragmentSize);
+        if($read !== ''){
+            $listener->emptyFails = 0;
+            $len = \strlen($read);
+            while($len < $chunkSize){
+                if($len + $fragmentSize > $chunkSize){
+                    $fragmentSize = $chunkSize - $len;
+                }
+                $extra = \fread($listener->client, $fragmentSize);
+                if($extra === false || $extra === '') break;
+                $len += \strlen($extra);
+                $read .= $extra;
+            }
+        }else
+            $listener->emptyFails++;
+        /*if($listener->emptyFails > 64 && $read === ''){
+            $read = false;
+        }*/
+        return $read;
+    }
+
+
     private $clients = [];
     /**
      * Start listening for requests.
@@ -116,17 +140,16 @@ class CatPaw{
              * Listen for queued http sockets and read incoming data.
             */
             foreach($this->so->httpQueue as &$listener){
-                /*if($listener->actualBodyLength+$listener->so->httpMtu > $listener->so->httpMaxBodyLength){
+                if($listener->actualBodyLength+$listener->so->httpMtu > $listener->so->httpMaxBodyLength){
                     $delta = ($listener->actualBodyLength+$listener->so->httpMtu) - $listener->so->httpMaxBodyLength;
                     $l = $listener->so->httpMtu - $delta;
                     if($l > 0)
-                        $read = \fread($listener->client, $l);
+                        $read = &$this->read($listener,$l);
                     else 
                         $read = '';
-                }else{*/
-                    $read = \fread($listener->client, $listener->so->httpMtu);
-                    //$read = \stream_socket_recvfrom($listener->client, $listener->so->httpMtu);
-                //}
+                }else{
+                    $read = &$this->read($listener,$listener->so->httpMtu);
+                }
 
                 if($read !== false){
                     if($listener->continuation > 0){
@@ -184,21 +207,25 @@ class CatPaw{
                     }else if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP || $listener->continuation > 0){
                         if($listener->httpConsumerStarted){
                             if($listener->completeBody){
-                                $read = false;
-                                $listener->runHttpLiveBodyInject($read);
+                                //$read = false;
+                                $tmp = false;
+                                $listener->runHttpLiveBodyInject($tmp);
                                 $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
                             }else
                                 $listener->runHttpLiveBodyInject($read);
                         }else if($listener->completeBody){
                             $listener->runHttpDefault();
                             $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                        }else if($listener->continuation === 0){
+                            $listener->event->close();
+                            $listener->event->uninstall();
                         }
                     }else{
                         $listener->event->close();
                         $listener->event->uninstall();
                     }
                 }
-                if($read === false && $listener->continuation > 0){
+                if(($read === false) && $listener->continuation > 0){
                     $listener->failedContinuations++;
                 }
                 $read = null;
