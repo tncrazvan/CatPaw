@@ -216,11 +216,11 @@ class CatPaw{
                         }else if($listener->completeBody){
                             $listener->runHttpDefault();
                             $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
-                        }else if($listener->continuation === 0){
+                        }else if($listener->continuation === 0 && $listener->event !== null){
                             $listener->event->close();
                             $listener->event->uninstall();
                         }
-                    }else{
+                    }else if($listener->event !== null){
                         $listener->event->close();
                         $listener->event->uninstall();
                     }

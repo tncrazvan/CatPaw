@@ -17,7 +17,15 @@ abstract class WebSocketEventManager extends EventManager{
     private \SplDoublyLinkedList $commits;
     
     private const MAX_CHUNK_SIZE = 65535;
-
+    public function __construct(){
+        $scope = &$this;
+        $this->_commit_fn = function($data,&$dataByReference = null) use(&$scope){
+            if($data === false)
+                $scope->commit($dataByReference);
+            else
+                $scope->commit($data);
+        };
+    }
     public function run():void{
         $acceptKey = \base64_encode(sha1($this->listener->requestHeaders->get("Sec-WebSocket-Key").$this->listener->so->wsAcceptKey,true));
         $this->serverHeaders->setStatus(Status::SWITCHING_PROTOCOLS);
@@ -385,8 +393,8 @@ abstract class WebSocketEventManager extends EventManager{
     public function commit($data,bool $binary = false):void{
         if(is_string($data)){
             $strlength = strlen($data);
-            if($strlength > self::MAX_CHUNK_SIZE){
-                $pieces = str_split($data,self::MAX_CHUNK_SIZE);
+            if($strlength > $this->listener->so->wsMtu){
+                $pieces = str_split($data,$this->listener->so->wsMtu);
                 $max = count($pieces);
                 for($i = 0; $i < $max; $i++){
                     $this->commit($pieces[$i],$binary);
@@ -395,8 +403,8 @@ abstract class WebSocketEventManager extends EventManager{
             }
         }else if(is_array($data)){
             $arrlength = count($data);
-            if($arrlength > self::MAX_CHUNK_SIZE){
-                $pieces = \array_chunk($data,self::MAX_CHUNK_SIZE);
+            if($arrlength > $this->listener->so->wsMtu){
+                $pieces = \array_chunk($data,$this->listener->so->wsMtu);
                 $max = count($pieces);
                 for($i = 0; $i < $max; $i++){
                     $this->commit($pieces[$i],$binary);
@@ -410,7 +418,7 @@ abstract class WebSocketEventManager extends EventManager{
             for($i=0;$i<$arrlength;$i++){
                 $pieces[] = $data[$i];
 
-                if($i+1 === self::MAX_CHUNK_SIZE || $i+1 === $arrlength){
+                if($i+1 === $this->listener->so->wsMtu || $i+1 === $arrlength){
                     $this->commit($pieces,$binary);
                     $pieces = [];
                     $c++;

@@ -32,6 +32,40 @@ abstract class HttpEventManager extends EventManager{
     private \SplDoublyLinkedList $commits;
     public ?\Generator $generator = null;
     public ?array $params;
+    private $_first_commit = true;
+
+    public function __construct(){
+        $_first_commit = &$this->_first_commit;
+        $this->_commit_fn = function($data,&$dataByReference = null) use(&$scope,&$_first_commit){
+            
+            if($data === false)
+                if($_first_commit){
+                    $this->funcheck($dataByReference);
+                    if(!$dataByReference instanceof \Generator){
+                        $this->dispatch($dataByReference);
+                    }else {
+                        $this->generator = &$dataByReference;
+                        $this->generator->valid();
+                    }
+                }else{
+                    $scope->commit($dataByReference);
+                }
+            else
+                if($_first_commit){
+                    $this->funcheck($data);
+                    if(!$data instanceof \Generator){
+                        $this->dispatch($data);
+                    }else {
+                        $this->generator = &$data;
+                        $this->generator->valid();
+                    }  
+                }else{
+                    $scope->commit($data);
+                }
+            
+            $_first_commit = false;
+        };
+    }
 
     public function run():void{
         /*if($this->listener->so->httpConnections == null){
@@ -50,7 +84,8 @@ abstract class HttpEventManager extends EventManager{
             try{
                 $this->commits = new \SplDoublyLinkedList();
                 $responseObject = \call_user_func_array($this->callback,$this->params);
-                $this->funcheck($responseObject);
+                if($this->autocommit)
+                    $this->funcheck($responseObject);
             }catch(\TypeError $ex){
                 $responseObject = new HttpResponse([
                     "Status"=>Status::INTERNAL_SERVER_ERROR
@@ -65,12 +100,13 @@ abstract class HttpEventManager extends EventManager{
                 ],$ex->getMessage()."\n".$ex->getTraceAsString());
             }
         }
-        if(!$responseObject instanceof \Generator){
-            $this->dispatch($responseObject);
-        }else {
-            $this->generator = &$responseObject;
-            $this->generator->valid();
-        }
+        if($this->autocommit)
+            if(!$responseObject instanceof \Generator){
+                $this->dispatch($responseObject);
+            }else {
+                $this->generator = &$responseObject;
+                $this->generator->valid();
+            }
     }
 
     public function funcheck(&$responseObject){

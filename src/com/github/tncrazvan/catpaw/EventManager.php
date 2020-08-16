@@ -19,7 +19,7 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnMessage;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 
-class EventManager{
+abstract class EventManager{
     public ?array $queryString=[];
     public ?array $session = null;
     public HttpHeaders $serverHeaders;
@@ -30,6 +30,9 @@ class EventManager{
     private array $dummy = [];
     protected bool $_consumer_provided = false;
     
+    public ?\Closure $_commit_fn = null;
+    protected bool $autocommit = true;
+
     protected function &calculateParameters(string &$message, bool &$valid):array{
         $valid = true;
         $meta = new \ReflectionFunction($this->callback);
@@ -86,6 +89,9 @@ class EventManager{
                     static $param = null;
                     $param = new HttpConsumer();
                     $params[] = &$param;
+                break;
+                case \Closure::class:
+                    $params[] = $this->_commit_fn;
                 break;
                 case 'string':
                     $name = $parameter->getName();

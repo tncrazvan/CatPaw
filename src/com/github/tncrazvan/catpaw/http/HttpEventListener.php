@@ -122,8 +122,8 @@ class HttpEventListener{
             }
     }
 
-    private static function _file(string &$type, array &$paths, HttpEventListener &$listener, \Closure &$callback):bool{
-        if($type !== 'websocket'){
+    private static function _file(string &$type, array &$paths, HttpEventListener &$listener, ?\Closure &$callback):bool{
+        if($type === 'http'){
             $location = $listener->so->webRoot.$listener->path;
 
             //checking if it's a file
@@ -146,7 +146,7 @@ class HttpEventListener{
     }
 
 
-    private static function _event(array &$paths, HttpEventListener &$listener, \Closure &$callback):bool{
+    private static function _event(array &$paths, HttpEventListener &$listener, ?\Closure &$callback):bool{
         $_event_path = \preg_replace('/(?<=^)\/+/','',$listener->path);
         foreach($paths as $route => &$cb){
             if($route === '@file' || 
@@ -193,17 +193,17 @@ class HttpEventListener{
 
         self::_forward($paths,$listener);
 
-
-        if(is_array($paths["@file"])){
-            if(isset($paths["@file"]['run'])){
-                $callback = $paths["@file"]['run'];
-                foreach($paths["@file"] as $key =>&$property){
-                    if($key === 'run') continue;
-                    $listener->properties[$key] = $property;
+        if($type === 'http')
+            if(is_array($paths["@file"])){
+                if(isset($paths["@file"]['run'])){
+                    $callback = $paths["@file"]['run'];
+                    foreach($paths["@file"] as $key =>&$property){
+                        if($key === 'run') continue;
+                        $listener->properties[$key] = $property;
+                    }
                 }
-            }
-        }else
-            $callback = $paths["@file"];
+            }else
+                $callback = $paths["@file"];
 
 
         if(self::_file($type,$paths,$listener,$callback))
