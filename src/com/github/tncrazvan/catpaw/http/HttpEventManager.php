@@ -33,6 +33,7 @@ abstract class HttpEventManager extends EventManager{
     public ?\Generator $generator = null;
     public ?array $params;
     public bool $cbinit = false;
+    public bool $paramsinit = false;
     private $_first_commit = true;
 
     public function __construct(){
@@ -69,8 +70,9 @@ abstract class HttpEventManager extends EventManager{
     }
 
     public $responseObject = null;
-    public function initCallback(){
-        $this->cbinit = true;
+
+    public function initParams():bool{
+        $this->paramsinit = true;
         $message = '';
         $valid = true;
         $this->params = &$this->calculateParameters($message,$valid);
@@ -80,24 +82,27 @@ abstract class HttpEventManager extends EventManager{
         $this->responseObject = new HttpResponse([
             "Status"=>Status::BAD_REQUEST
         ],$message);
-        if($valid){
-            try{
-                $this->commits = new \SplDoublyLinkedList();
-                $this->responseObject = \call_user_func_array($this->callback,$this->params);
-                return true;
-            }catch(\TypeError $ex){
-                $this->responseObject = new HttpResponse([
-                    "Status"=>Status::INTERNAL_SERVER_ERROR
-                ],$ex->getMessage()."\n".$ex->getTraceAsString());
-            }catch(HttpEventException $ex){
-                $this->responseObject = new HttpResponse([
-                    "Status"=>$ex->getStatus()
-                ],$ex->getMessage()."\n".$ex->getTraceAsString());
-            }catch(\Exception $ex){
-                $this->responseObject = new HttpResponse([
-                    "Status"=>Status::INTERNAL_SERVER_ERROR
-                ],$ex->getMessage()."\n".$ex->getTraceAsString());
-            }
+        return $valid;
+    }
+
+    public function initCallback():bool{
+        $this->cbinit = true;
+        try{
+            $this->commits = new \SplDoublyLinkedList();
+            $this->responseObject = \call_user_func_array($this->callback,$this->params);
+            return true;
+        }catch(\TypeError $ex){
+            $this->responseObject = new HttpResponse([
+                "Status"=>Status::INTERNAL_SERVER_ERROR
+            ],$ex->getMessage()."\n".$ex->getTraceAsString());
+        }catch(HttpEventException $ex){
+            $this->responseObject = new HttpResponse([
+                "Status"=>$ex->getStatus()
+            ],$ex->getMessage()."\n".$ex->getTraceAsString());
+        }catch(\Exception $ex){
+            $this->responseObject = new HttpResponse([
+                "Status"=>Status::INTERNAL_SERVER_ERROR
+            ],$ex->getMessage()."\n".$ex->getTraceAsString());
         }
         $this->funcheck($this->responseObject);
         $this->dispatch($this->responseObject);

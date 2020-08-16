@@ -76,12 +76,14 @@ class HttpEventListener{
     }
     public function runHttpDefault(){
         global $_EVENT;
-        //$_EVENT = &HttpEvent::make($this);
         $_EVENT = $this->event;
-        //$_EVENT->initCallback();
+
+        //no need to check for exceptions, they will be automatically handled since this is a default http event
+        $this->event->initCallback(); 
         $_EVENT->run();
         $_EVENT = null;
         $this->input[1] = null;
+        return true;
     }
 
     public function runHttpLiveBodyInject(&$read):bool{
@@ -219,7 +221,7 @@ class HttpEventListener{
 
         self::_forward($paths,$listener);
 
-        if($type === 'http')
+        /*if($type === 'http')
             if(is_array($paths["@file"])){
                 if(isset($paths["@file"]['run'])){
                     $callback = $paths["@file"]['run'];
@@ -230,7 +232,19 @@ class HttpEventListener{
                 }
             }else
                 $callback = $paths["@file"];
+                */
 
+        if($type === 'http')
+            if(is_array($paths["@404"])){
+                if(isset($paths["@404"]['run'])){
+                    $callback = $paths["@404"]['run'];
+                    foreach($paths["@404"] as $key =>&$property){
+                        if($key === 'run') continue;
+                        $listener->properties[$key] = $property;
+                    }
+                }
+            }else
+                $callback = $paths["@404"];
 
         if(self::_file($type,$paths,$listener,$callback))
             return $callback;

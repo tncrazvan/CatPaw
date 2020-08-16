@@ -191,23 +191,36 @@ class CatPaw{
                         }
                     }
 
-                    if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP && !$listener->event->cbinit){
-                        if(!$listener->event->initCallback()){
-                            unset($listener->so->httpQueue[$listener->hash]);
-                            $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
-                            continue;
-                        }
-                        if(!$listener->httpConsumerStarted && $listener->properties["http-consumer"]){
-                            $listener->httpConsumerStarted = true;
-                            global $_EVENT;
-                            $_EVENT = $listener->event;
-                            if(!$_EVENT->run()){
+                    if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP){
+                        if(!$listener->event->paramsinit){
+                            if(!$listener->event->initParams()){
                                 unset($listener->so->httpQueue[$listener->hash]);
-                                $_EVENT = null;
                                 $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
                                 continue;
                             }
-                            $_EVENT = null;
+                        }
+                        
+                        if($listener->properties["http-consumer"]){
+                            if(!$listener->event->cbinit){
+                                if(!$listener->event->initCallback()){
+                                    unset($listener->so->httpQueue[$listener->hash]);
+                                    $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                                    continue;
+                                }
+                            }
+
+                            if(!$listener->httpConsumerStarted){
+                                $listener->httpConsumerStarted = true;
+                                global $_EVENT;
+                                $_EVENT = $listener->event;
+                                if(!$_EVENT->run()){
+                                    unset($listener->so->httpQueue[$listener->hash]);
+                                    $_EVENT = null;
+                                    $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                                    continue;
+                                }
+                                $_EVENT = null;
+                            }
                         }
                     }
                 }
