@@ -140,7 +140,6 @@ class CatPaw{
              * Listen for queued http sockets and read incoming data.
             */
             foreach($this->so->httpQueue as &$listener){
-                echo "reading...\n";
                 if($listener->actualBodyLength+$listener->so->httpMtu > $listener->so->httpMaxBodyLength){
                     $delta = ($listener->actualBodyLength+$listener->so->httpMtu) - $listener->so->httpMaxBodyLength;
                     $l = $listener->so->httpMtu - $delta;
@@ -249,7 +248,6 @@ class CatPaw{
              * Listen for http sockets and ush pending commits.
             */
             foreach($this->so->httpConnections as &$e){
-                echo "writing...\n";
                 if($e->generator){
                     if($e->generator->valid()){
                         global $_EVENT;
