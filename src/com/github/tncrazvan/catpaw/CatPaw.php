@@ -185,6 +185,8 @@ class CatPaw{
                                 $listener->eventType = HttpEventListener::EVENT_TYPE_WEBSOCKET;
                                 $listener->event = &WebSocketEvent::make($listener);
                                 //echo "serving WS $listener->path \n";
+                            }else{
+                                unset($listener->so->httpQueue[$listener->hash]);
                             }
                         }
                     }
