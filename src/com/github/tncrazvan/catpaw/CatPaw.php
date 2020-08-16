@@ -180,6 +180,7 @@ class CatPaw{
                             if($isHttp){
                                 $listener->eventType = HttpEventListener::EVENT_TYPE_HTTP;
                                 $listener->event = &HttpEvent::make($listener);
+                                $listener->event->checkHttpConsumer();
                                 //echo "serving HTTP $listener->path \n";
                             }else if($isWebSOcket){
                                 $listener->eventType = HttpEventListener::EVENT_TYPE_WEBSOCKET;
@@ -192,15 +193,15 @@ class CatPaw{
                     }
 
                     if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP){
-                        if(!$listener->event->paramsinit){
-                            if(!$listener->event->initParams()){
-                                unset($listener->so->httpQueue[$listener->hash]);
-                                $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
-                                continue;
-                            }
-                        }
-                        
                         if($listener->properties["http-consumer"]){
+                            if(!$listener->event->paramsinit){
+                                if(!$listener->event->initParams()){
+                                    unset($listener->so->httpQueue[$listener->hash]);
+                                    $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                                    continue;
+                                }
+                            }
+
                             if(!$listener->event->cbinit){
                                 if(!$listener->event->initCallback()){
                                     unset($listener->so->httpQueue[$listener->hash]);
@@ -241,6 +242,10 @@ class CatPaw{
                                     $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
                                 }
                         }else if($listener->completeBody){
+                            if(!$listener->event->initParams()){
+                                $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                                continue;
+                            }
                             $listener->runHttpDefault();
                             $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
                         }else if($listener->continuation === 0 && $listener->event !== null){

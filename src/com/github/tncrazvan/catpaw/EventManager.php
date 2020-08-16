@@ -33,6 +33,23 @@ abstract class EventManager{
     public ?\Closure $_commit_fn = null;
     protected bool $autocommit = true;
 
+    public function checkHttpConsumer(){
+        $valid = true;
+        $meta = new \ReflectionFunction($this->callback);
+        $parameters = $meta->getParameters();
+        $params = [];
+        foreach($parameters as &$parameter){
+            $type = $parameter->getType();
+            $cls = $type->getName();
+            if($cls === HttpConsumer::class){
+                if($this instanceof HttpEvent)
+                    $this->listener->properties["http-consumer"] = true;
+                else
+                    $this->listener->properties["http-consumer"] = false;
+            }
+        }
+    }
+
     protected function &calculateParameters(string &$message, bool &$valid):array{
         $valid = true;
         $meta = new \ReflectionFunction($this->callback);
@@ -87,6 +104,9 @@ abstract class EventManager{
                 case HttpConsumer::class:
                     if($this instanceof HttpEvent)
                         $this->listener->properties["http-consumer"] = true;
+                    else
+                        $this->listener->properties["http-consumer"] = false;
+                        
                     $this->_consumer_provided = true;
                     static $param = null;
                     $param = new HttpConsumer();
