@@ -140,6 +140,7 @@ class CatPaw{
              * Listen for queued http sockets and read incoming data.
             */
             foreach($this->so->httpQueue as &$listener){
+                echo "reading...\n";
                 if($listener->actualBodyLength+$listener->so->httpMtu > $listener->so->httpMaxBodyLength){
                     $delta = ($listener->actualBodyLength+$listener->so->httpMtu) - $listener->so->httpMaxBodyLength;
                     $l = $listener->so->httpMtu - $delta;
@@ -189,12 +190,22 @@ class CatPaw{
                         }
                     }
 
-                    if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP){
+                    if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP && !$listener->event->cbinit){
+                        if(!$listener->event->initCallback()){
+                            unset($listener->so->httpQueue[$listener->hash]);
+                            $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                            continue;
+                        }
                         if(!$listener->httpConsumerStarted && $listener->properties["http-consumer"]){
                             $listener->httpConsumerStarted = true;
                             global $_EVENT;
                             $_EVENT = $listener->event;
-                            $_EVENT->run(); //still reading
+                            if(!$_EVENT->run()){
+                                unset($listener->so->httpQueue[$listener->hash]);
+                                $_EVENT = null;
+                                $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                                continue;
+                            }
                             $_EVENT = null;
                         }
                     }
@@ -212,7 +223,9 @@ class CatPaw{
                                 $listener->runHttpLiveBodyInject($tmp);
                                 $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
                             }else
-                                $listener->runHttpLiveBodyInject($read);
+                                if(!$listener->runHttpLiveBodyInject($read)){
+                                    $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                                }
                         }else if($listener->completeBody){
                             $listener->runHttpDefault();
                             $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
@@ -236,6 +249,7 @@ class CatPaw{
              * Listen for http sockets and ush pending commits.
             */
             foreach($this->so->httpConnections as &$e){
+                echo "writing...\n";
                 if($e->generator){
                     if($e->generator->valid()){
                         global $_EVENT;
@@ -243,10 +257,17 @@ class CatPaw{
                         $e->generator->next();
                         $_EVENT = null;
                     }else{
-                        $responseObject = $e->generator->getReturn();
-                        $e->generator = null;
-                        $e->funcheck($responseObject);
-                        $e->dispatch($responseObject);
+                        try{
+                            $responseObject = $e->generator->getReturn();
+                            $e->generator = null;
+                            $e->funcheck($responseObject);
+                            $e->dispatch($responseObject);
+                        }catch(\Exception $ex){
+                            $e->generator = null;
+                            if($e->push()){ //if there are not more commits to push...
+                                $e = null; //set the object to null
+                            }
+                        }
                     }
                 }else{
                     if($e->push()){ //if there are not more commits to push...

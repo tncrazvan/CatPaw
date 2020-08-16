@@ -85,6 +85,8 @@ abstract class EventManager{
                     $params[] = &HttpResponseCookies::factory($this);
                 break;
                 case HttpConsumer::class:
+                    if($this instanceof HttpEvent)
+                        $this->listener->properties["http-consumer"] = true;
                     $this->_consumer_provided = true;
                     static $param = null;
                     $param = new HttpConsumer();
@@ -267,7 +269,7 @@ abstract class EventManager{
      public function close():void{
         if(!$this->alive) return;
         $this->alive = false;
-        \fclose($this->listener->client);
+        $outcome = \fclose($this->listener->client);
         if($this->onClose !== null)
             $this->onClose->run();
         //@socket_set_option($this->clistener->lient, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));

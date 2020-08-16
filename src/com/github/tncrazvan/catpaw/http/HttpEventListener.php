@@ -4,6 +4,7 @@ namespace com\github\tncrazvan\catpaw\http;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
 use com\github\tncrazvan\catpaw\tools\SharedObject;
+use com\github\tncrazvan\catpaw\tools\Status;
 
 class HttpEventListener{
     //content sent (if POST method)
@@ -77,32 +78,57 @@ class HttpEventListener{
         global $_EVENT;
         //$_EVENT = &HttpEvent::make($this);
         $_EVENT = $this->event;
+        //$_EVENT->initCallback();
         $_EVENT->run();
         $_EVENT = null;
         $this->input[1] = null;
     }
 
-    public function runHttpLiveBodyInject(&$read){
+    public function runHttpLiveBodyInject(&$read):bool{
 
         if($this->event->generator){
-            if($this->event->generator->valid()){
-                global $_EVENT;
-                $_EVENT = $this->event;
-                $returnObject = $this->event->generator->current();
-                if($returnObject instanceof HttpConsumer){
-                    if($read === false){
-                        $returnObject->done();
-                    }else{
-                        $returnObject->produce($read);
-                        $this->event->generator->next();
+
+            $error = true;
+            try{
+                if($this->event->generator->valid()){
+                    global $_EVENT;
+                    $_EVENT = $this->event;
+                    $returnObject = $this->event->generator->current();
+                    if($returnObject instanceof HttpConsumer){
+                        if($read === false){
+                            $returnObject->done();
+                        }else{
+                            $returnObject->produce($read);
+                            $this->event->generator->next();
+                        }
                     }
+                    $_EVENT = null;
+                }else{
+                    unset($this->so->httpQueue[$this->hash]);
+                    $this->so->httpConnections[$this->event->requestId] = &$this->event;
                 }
-                $_EVENT = null;
-            }else{
-                unset($this->so->httpQueue[$this->hash]);
-                $this->so->httpConnections[$this->event->requestId] = &$this->event;
+                $error = false;
+            }catch(\TypeError $ex){
+                $this->responseObject = new HttpResponse([
+                    "Status"=>Status::INTERNAL_SERVER_ERROR
+                ],$ex->getMessage()."\n".$ex->getTraceAsString());
+            }catch(HttpEventException $ex){
+                $this->responseObject = new HttpResponse([
+                    "Status"=>$ex->getStatus()
+                ],$ex->getMessage()."\n".$ex->getTraceAsString());
+            }catch(\Exception $ex){
+                $this->responseObject = new HttpResponse([
+                    "Status"=>Status::INTERNAL_SERVER_ERROR
+                ],$ex->getMessage()."\n".$ex->getTraceAsString());
             }
-        }
+            if($error){
+                $this->event->funcheck($this->event->responseObject);
+                $this->event->dispatch($this->event->responseObject);
+                return false;
+            }else 
+                return true;
+        }else 
+            return false;
     }
 
     private static function _forward(array &$paths, HttpEventListener &$listener):void{

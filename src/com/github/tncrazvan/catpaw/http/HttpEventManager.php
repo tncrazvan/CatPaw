@@ -32,6 +32,7 @@ abstract class HttpEventManager extends EventManager{
     private \SplDoublyLinkedList $commits;
     public ?\Generator $generator = null;
     public ?array $params;
+    public bool $cbinit = false;
     private $_first_commit = true;
 
     public function __construct(){
@@ -67,46 +68,76 @@ abstract class HttpEventManager extends EventManager{
         };
     }
 
-    public function run():void{
-        /*if($this->listener->so->httpConnections == null){
-            $this->listener->so->httpConnections = new LinkedList();
-        }*/
+    public $responseObject = null;
+    public function initCallback(){
+        $this->cbinit = true;
         $message = '';
         $valid = true;
         $this->params = &$this->calculateParameters($message,$valid);
         if($this->listener->properties["http-consumer"] && !$this->_consumer_provided){
             exit("HttpConsumer not provided for resource {$this->listener->resource}.\nPlease inject an HttpConsumer parameter in your callback.\n");
         }
-        $responseObject = new HttpResponse([
+        $this->responseObject = new HttpResponse([
             "Status"=>Status::BAD_REQUEST
         ],$message);
         if($valid){
             try{
                 $this->commits = new \SplDoublyLinkedList();
-                $responseObject = \call_user_func_array($this->callback,$this->params);
-                if($this->autocommit)
-                    $this->funcheck($responseObject);
+                $this->responseObject = \call_user_func_array($this->callback,$this->params);
+                return true;
             }catch(\TypeError $ex){
-                $responseObject = new HttpResponse([
+                $this->responseObject = new HttpResponse([
                     "Status"=>Status::INTERNAL_SERVER_ERROR
                 ],$ex->getMessage()."\n".$ex->getTraceAsString());
             }catch(HttpEventException $ex){
-                $responseObject = new HttpResponse([
+                $this->responseObject = new HttpResponse([
                     "Status"=>$ex->getStatus()
                 ],$ex->getMessage()."\n".$ex->getTraceAsString());
             }catch(\Exception $ex){
-                $responseObject = new HttpResponse([
+                $this->responseObject = new HttpResponse([
                     "Status"=>Status::INTERNAL_SERVER_ERROR
                 ],$ex->getMessage()."\n".$ex->getTraceAsString());
             }
         }
-        if($this->autocommit)
-            if(!$responseObject instanceof \Generator){
-                $this->dispatch($responseObject);
+        $this->funcheck($this->responseObject);
+        $this->dispatch($this->responseObject);
+        return false;
+    }
+
+    public function run():bool{
+        if($this->autocommit){
+            $this->funcheck($this->responseObject);
+            if(!$this->responseObject instanceof \Generator){
+                $this->dispatch($this->responseObject);
             }else {
-                $this->generator = &$responseObject;
-                $this->generator->valid();
+                $this->generator = &$this->responseObject;
+                $error = true;
+                try{
+                    $this->generator->valid();
+                    $error = false;
+                }catch(\TypeError $ex){
+                    $response = new HttpResponse([
+                        "Status"=>Status::INTERNAL_SERVER_ERROR
+                    ],$ex->getMessage()."\n".$ex->getTraceAsString());
+                    $this->responseObject = &$response;
+                }catch(HttpEventException $ex){
+                    $response = new HttpResponse([
+                        "Status"=>$ex->getStatus()
+                    ],$ex->getMessage()."\n".$ex->getTraceAsString());
+                    $this->responseObject = &$response;
+                }catch(\Exception $ex){
+                    $response = new HttpResponse([
+                        "Status"=>Status::INTERNAL_SERVER_ERROR
+                    ],$ex->getMessage()."\n".$ex->getTraceAsString());
+                    $this->responseObject = &$response;
+                }
+                if($error){
+                    $this->dispatch($this->responseObject);
+                    return false;
+                }
             }
+        }
+        return true;
     }
 
     public function funcheck(&$responseObject){
@@ -136,11 +167,14 @@ abstract class HttpEventManager extends EventManager{
                         $responseObject = new HttpResponse([
                             "Status" => Status::METHOD_NOT_ALLOWED
                         ]);
-                    }else 
+                    }else {
                         $responseObject = $responseObject->$lowermethod();
-                }else $responseObject = new HttpResponse([
-                    "Status" => Status::METHOD_NOT_ALLOWED
-                ]);
+                    }
+                }else {
+                    $responseObject = new HttpResponse([
+                        "Status" => Status::METHOD_NOT_ALLOWED
+                    ]);
+                }
             }else{
                 $responseObject = new HttpResponse([
                     "Status" => Status::METHOD_NOT_ALLOWED
@@ -169,9 +203,11 @@ abstract class HttpEventManager extends EventManager{
                 }
             }
             if(\is_object($responseObject))
-                $responseObject = \json_encode($responseObject);
+            $responseObject = \json_encode($responseObject);
 
-            $responseObject = new HttpResponse($this->serverHeaders,$responseObject);
+            $response = new HttpResponse($this->serverHeaders,$responseObject);
+            $responseObject = null;
+            $responseObject = &$response;
             
         }
 
@@ -180,7 +216,7 @@ abstract class HttpEventManager extends EventManager{
         $responseHeader->mix($this->serverHeaders);
 
         if(!$responseHeader->has("Content-Length")){
-            $length = strlen($responseObject->getBody());
+            $length = \strlen($responseObject->getBody());
             $responseHeader->set("Content-Length",''.$length);
         }
 
@@ -210,10 +246,8 @@ abstract class HttpEventManager extends EventManager{
             $httpCommit = $this->commits->current();
             $contents = &$httpCommit->getData();
             $length = \strlen($contents);
-            $result = @\fwrite($this->listener->client, $contents, $length);
+            $result = \fwrite($this->listener->client, $contents, $length);
             if(!$result){
-                if($this->onClose !== null)
-                    $this->onClose->run();
                 $this->close();
                 unset($this->listener->so->httpConnections[$this->requestId]);
                 $this->uninstall();
@@ -228,10 +262,7 @@ abstract class HttpEventManager extends EventManager{
         //No more commits to send, end connection.
         $isEmpty = $this->commits->isEmpty();
         if($isEmpty){
-            if($this->onClose !== null)
-                $this->onClose->run();
             $this->close();
-            //$this->listener->so->httpConnections->deleteNode($this);
             unset($this->listener->so->httpConnections[$this->requestId]);
             $this->uninstall();
         }
