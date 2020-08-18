@@ -151,8 +151,8 @@ class SharedObject extends Http{
                 ."This is the charset your server will be using to decode/encode data."
                     =>$this->charset,
                 "timeout\n\n"
-                ."Your server will timeout after this many seconds for each incoming request."
-                    =>$this->timeout." seconds",
+                ."Your server will read incoming requests and timeout after this many nanoseconds for each payload reading attempt."
+                    =>$this->timeout." nanoseconds",
                 "sessionName\n\n"
                 ."Your server will save all sessions on a ramdisk.\n"
                 ."This is your session ramdisk name.\n"
@@ -282,7 +282,7 @@ class SharedObject extends Http{
         $smtpAllowed=false,
         $backlog=50,
         $port=80,
-        $timeout=3000,
+        $timeout=100,
         $webRoot="/www/",
         $charset="UTF-8",
         $bindAddress="127.0.0.1",
@@ -293,9 +293,9 @@ class SharedObject extends Http{
         ],
 
         //$wsEvents,
-        $cookieTtl=60*60*24*365, //year
+        $cookieTtl=60*60*24*365, //1 year
         $wsGroupMaxClient=10,
-        $wsMtu=65535,
+        $wsMtu=1024*128, //128 KB
         $httpMaxBodyLength=1024*1024*200, //200 MB
         $httpMtu=65535,
         $cacheMaxAge=60*60*24*365, //year

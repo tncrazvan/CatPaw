@@ -368,7 +368,7 @@ class CatPaw{
             //check if certificate is specified, assume the socket has been blocked and then unblock it
             if($this->so->certificateName !== "")
                 stream_set_blocking($client, false);
-
+            \stream_set_timeout($client,0,$this->so->timeout);
             $listener = new HttpEventListener($client, $this->so);
             $this->so->httpQueue[$listener->hash] = $listener;
             unset($copy[$key]);
