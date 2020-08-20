@@ -89,7 +89,7 @@ class CatPaw{
 
 
     private function &read(HttpEventListener $listener,int $chunkSize){
-        $fragmentSize = 8129;
+        $fragmentSize = $chunkSize;
         $read = \fread($listener->client, $fragmentSize);
         if($read !== ''){
             $listener->emptyFails = 0;

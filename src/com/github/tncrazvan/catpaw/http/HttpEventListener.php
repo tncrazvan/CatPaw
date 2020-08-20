@@ -134,6 +134,50 @@ class HttpEventListener{
     }
 
     private static function _forward(array &$paths, HttpEventListener &$listener):void{
+        if(!isset($paths["@forward"]))
+            return;
+            
+        $_event_path = \preg_replace('/(?<=^)\/+/','',$listener->path);
+        foreach($paths["@forward"] as $route => $to){
+            if($route === '@file' || 
+                    $route === '@404' || 
+                        ($route === '/' && $route !== $listener->path)) continue;
+
+            if($route[0] === '/')
+                $route = \substr($route,1);
+            
+            $pieces = \explode('/',$route);
+            
+            $len=\count($pieces);
+            $c = 0;
+            $parts = \preg_split('/\//',$_event_path);
+            for($i=0,$lenR = \count($parts);$i<$len && $i<$lenR;$i++){
+                $matches = null;
+                if(\preg_match(self::PATTERN_PATH_PARAM,$pieces[$i],$matches)) {
+                    $listener->params[$matches[1]] = $parts[$i];
+                    $c++;
+                }
+                else if($pieces[$i] === $parts[$i])  $c++;
+            }
+
+            if($c === $len){
+                $pieces = \preg_split('/\//',$to);
+
+                for($i=0,$len = \count($pieces);$i<$len;$i++){
+                    $matches = null;
+                    if(\preg_match(self::PATTERN_PATH_PARAM,$pieces[$i],$matches)) {
+                        $pieces[$i] = $listener->params[$matches[1]];
+                    }
+                }
+                $listener->path = \join('/',$pieces);
+            }
+        }
+        return;
+
+
+
+
+
         if(isset($paths["@forward"]))
             foreach($paths["@forward"] as $from => &$to){
                 $fromStar = $from[-1] === '*';
