@@ -140,11 +140,10 @@ class CatPaw{
              * Listen for queued http sockets and read incoming data.
             */
             foreach($this->so->httpQueue as &$listener){
-                if($listener->actualBodyLength+$listener->so->httpMtu > $listener->so->httpMaxBodyLength){
-                    $delta = ($listener->actualBodyLength+$listener->so->httpMtu) - $listener->so->httpMaxBodyLength;
-                    $l = $listener->so->httpMtu - $delta;
-                    if($l > 0)
-                        $read = &$this->read($listener,$l);
+                if(!$listener->httpConsumerStarted && $listener->actualBodyLength+$listener->so->httpMtu > $listener->so->httpMaxBodyLength){
+                    $delta = $listener->so->httpMaxBodyLength - $listener->actualBodyLength;
+                    if($delta > 0)
+                        $read = &$this->read($listener,$delta);
                     else 
                         $read = '';
                 }else{
