@@ -16,6 +16,9 @@ class SharedObject extends Http{
     public function __construct(string $settingsFile,bool $print=true){
         $settings = include($settingsFile);
 
+        if(isset($settings['asciiTable']))
+            $print = $settings["asciiTable"];
+
         if(isset($settings['webRoot'])){
             $settings['webRoot'] = \preg_replace('/\/+(?=$)/','',$settings['webRoot']);
         }
