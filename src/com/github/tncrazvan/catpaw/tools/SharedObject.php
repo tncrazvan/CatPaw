@@ -138,18 +138,19 @@ class SharedObject extends Http{
         if($print) {
             $data = [
                 "port\n\n"
-                ."This is the port the server will belistening to."
+                ."This is the port number your server will belistening to."
                     =>$this->port,
                 "bindAddress\n\n"
-                ."This is the address the server should bind to.\nThe address 0.0.0.0 means the server will bind to all available interfaces."
+                ."This is the address your server will bind to.\n"
+                ."The address 0.0.0.0 means your server will bind to all available IPv4 interfaces."
                     =>$this->bindAddress,
                 "webRoot\n\n"
-                ."This is the public directory your clients will be able to access."
+                ."This is the public directory your clients will be able to access directly."
                     =>$this->webRoot,
-                "editor\n\n"
-                ."This is the script that launches your chosen code editor.\n"
-                ."This script is used by the controller generator script (./controller) to open your controller in edit more automatically."
-                    =>$this->editor,
+                "entryPoint\n\n"
+                ."This is your server's entry point, usually \"index.html\".\n"
+                ."Your entry point is relative to your [webRoot]"
+                    =>$this->entryPoint,
                 "charset\n\n"
                 ."This is the charset your server will be using to decode/encode data."
                     =>$this->charset,
@@ -159,7 +160,7 @@ class SharedObject extends Http{
                 "sessionName\n\n"
                 ."Your server will save all sessions on a ramdisk.\n"
                 ."This is your session ramdisk name.\n"
-                ."The ramdisk is always located in the same directory as the configuration file (which is by default \"/config/http.php\")."
+                ."The ramdisk's location is relative to the main.php file."
                     =>$this->sessionName,
                 "ramSession\n\n"
                 ."This is your server's session details."
@@ -168,14 +169,22 @@ class SharedObject extends Http{
                 ."This is the lifespan of each session (in seconds).\n"
                 ."NOTE: Sessions are stored on a ramdisk, normally your "
                 ."OS should not let you delete the ramdisk as long as it's "
-                ."being used by the server, however, it can be forceully "
+                ."being used by your server, however, it can be forcefully "
                 ."unmounted and deleted."
                     =>$this->sessionTtl." seconds",
                 "wsMtu\n\n"
-                ."This is the maximum payload length your server will send over WebSockets."
+                ."This is the maximum number of bytes your server will __SEND__ or __RECIEVE__ over WebSockets at one time."
                     =>$this->wsMtu." bytes",
                 "httpMtu\n\n"
-                ."This is the maximum payload length your server will send over Http."
+                ."This is the maximum number of bytes your server will __SEND__ or __RECIEVE__ over Http at one time.\n"
+                ."Http consumers will also follow this rule."
+                    =>$this->httpMtu." bytes",
+                "httpMaxBodyLength\n\n"
+                ."Given an http request, this is the maximum number of bytes that your server will __READ__ from the connection as the http body.\n"
+                ."This rule exists to prevend memory overflows for large requests, such as file uploads or large database result sets.\n"
+                ."This rule only applies to the reading process, it does __NOT__ apply to the __WRITING__ process in any way.\n"
+                ."Http consumers will __NOT__ follow this rule because they throw away old data as it's being read and that "
+                ."alone will take care of the memory oferflow issue."
                     =>$this->httpMtu." bytes",
                 "cookieTtl\n\n"
                 ."Cookies Time To Live."
@@ -183,18 +192,17 @@ class SharedObject extends Http{
                 "cacheMaxAge\n\n"
                 ."Cache Time To Live."
                     =>$this->cacheMaxAge." seconds",
-                "entryPoint\n\n"
-                ."This is your server's entry point, usually \"index.html\"."
-                    =>"[webRoot] ".$this->entryPoint,
                 "sleep\n\n"
-                ."This idicates how long the server should sleep before checking if there are any new requests (in microseconds)."
+                ."This idicates how long your server should sleep before checking if there are any new requests (in microseconds)."
                     =>$this->sleep." microseconds",
                 "backlog\n\n"
                 ."A maximum of backlog incoming connections will be queued for processing. If a connection request arrives with the queue full the client may receive an error with an indication of ECONNREFUSED, or, if the underlying protocol supports retransmission, the request may be ignored so that retries may succeed."
                     =>$this->backlog." connections",
                 "compress\n\n"
-                ."Type of compression.\n\n"
-                ."There's no fallback compression, is if no compression is specified, the server will not compress the data"
+                ."Type of compression.\n"
+                ."Your server will compress the data before sending it over http.\n\n"
+                ."There's no fallback mechanism. If no compression is specified, your server "
+                ."will simply not compress the data before sending it."
                     =>$this->compress !== null?implode(" > ",$this->compress):"DISABLED",
                 "certificate\n\n"
                 ."PEM certificate details.\n"
@@ -208,7 +216,7 @@ class SharedObject extends Http{
                 ],
                 "headers\n\n"
                 ."Extra headers to add to your HttpResponse objects.\n"
-                ."[NOTE]: These can be overwritten at runtime."
+                ."[NOTE]: These can be modified at runtime."
                     =>$this->headers,
                 "events\n\n"
                 ."There are the exposed Http and WebSocket events this server offers."
