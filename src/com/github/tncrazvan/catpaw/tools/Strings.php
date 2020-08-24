@@ -13,11 +13,11 @@ abstract class Strings{
     const PATTERN_JS_ESCAPE_RIGHT_END = "(?<=&lt;\\/script)>";
 
     /**
-     * @param string $data The data to encode.
-     * @param int $level The level of compression. Can be given as 0 for no compression 
+     * @param data The data to encode.
+     * @param level The level of compression. Can be given as 0 for no compression 
      * up to 9 for maximum compression. If not given, the default compression level will 
      * be the default compression level of the zlib library.
-     * @param int $encodingMode The encoding mode. Can be FORCE_GZIP (the default) or FORCE_DEFLATE.
+     * @param encodingMode The encoding mode. Can be FORCE_GZIP (the default) or FORCE_DEFLATE.
      * Prior to PHP 5.4.0, using FORCE_DEFLATE results in a standard zlib deflated string 
      * (inclusive zlib headers) after a gzip file header but without the trailing crc32 checksum.
      * In PHP 5.4.0 and later, FORCE_DEFLATE generates RFC 1950 compliant output, consisting of 
@@ -52,6 +52,11 @@ abstract class Strings{
         }
     }
 
+    /**
+     * Escape javascript tags from an HTML string.
+     * @param content the input string.
+     * @return string the escaped string.
+     */
     public static function escapeJs(string &$content):string{
         return 
         preg_replace(self::PATTERN_JS_ESCAPE_LEFT_START, "&lt;", 
@@ -66,9 +71,9 @@ abstract class Strings{
     }
     
     /**
-    * Check if string starts with substring
-    * @param string $haystack string to look into
-    * @param string $needle substring to look for
+    * Check if string starts with a substring
+    * @param haystack string to look into
+    * @param needle substring to look for
     * @return bool true if string starts with $needle, otherwise false
     */
    public static function startsWith(string &$haystack, string $needle):bool{
@@ -76,9 +81,9 @@ abstract class Strings{
    }
 
    /**
-    * Check if string ends with substring
-    * @param string $haystack string to look into
-    * @param string $needle substring to look for
+    * Check if string ends with a substring
+    * @param haystack string to look into
+    * @param needle substring to look for
     * @return bool true if string ends with $needle, otherwise false
     */
    public static function endsWith(string &$haystack, string $needle):bool{
@@ -89,7 +94,16 @@ abstract class Strings{
        return (substr($haystack, -$length) === $needle);
    }
 
-    public static function tableFromArray(array &$input,bool $lineCounter=false,Callable $intercept=null,int $lvl = 0):string{
+    /**
+     * Print an array as an ascii table (recursively).
+     * @param input the input array.
+     * @param lineCounter if true a number will be visible for each line inside the ascii table.
+     * @param intercept intercept the main table and each subtable.<br />
+     * This closure will be passed 2 parameters: the AsciiTable and the current depth level.
+     * @param lvl the depth level will start counting from this value on.
+     * @return string the resulting ascii table.
+     */
+    public static function tableFromArray(array &$input,bool $lineCounter=false,\Closure $intercept=null,int $lvl = 0):string{
         $table = new AsciiTable();
         if($intercept !== null) $intercept($table,$lvl);
         $table->add("Key","Value");
@@ -107,6 +121,10 @@ abstract class Strings{
         return $table->toString($lineCounter);
     }
 
+    /**
+     * Generate a universally unique identifier
+     * @return string the uuid.
+     */
     public static function uuid():string{
         return sprintf( '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
         // 32 bits for "time_low"

@@ -8,8 +8,8 @@ use com\github\tncrazvan\catpaw\http\HttpEventListener;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 /**
- * @param array &$argv[1] This is the name of the config json file, for example "http.json".
- * @param Closure $beforeStart This is a closure that will be executed right before the server starts.
+ * @param argv This is the name of the config json file, for example "http.json".
+ * @param beforeStart This is a closure that will be executed right before the server starts.
  * This Closure will be passed the context of the socket stream as a parameter.
  */
 class CatPaw{
@@ -96,6 +96,7 @@ class CatPaw{
     private $clients = [];
     /**
      * Start listening for requests.
+     * @param action callback action that will be called every N milliseconds, where N is the return value of the callback itself.
      * @return void
      */
     public function listen(?\Closure $action=null):void{

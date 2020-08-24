@@ -5,7 +5,12 @@ class Stdin{
     public static ?array $headers = [];
     public static ?string $body = '';
     private static bool $started = false;
-    public static function resolve(){
+
+    /**
+     * Reslve all the data passed in by the main process.
+     * @return void
+     */
+    public static function resolve():void{
         if(self::$started) return;
         self::$started = true;
         $input = fopen('php://stdin','r');

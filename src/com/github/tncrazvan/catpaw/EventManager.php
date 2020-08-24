@@ -41,8 +41,11 @@ abstract class EventManager{
     //public function isAutocommit():bool{return $this->autocommit;}
 
     protected $client;
-
-    public function checkHttpConsumer(){
+    /**
+     * Check if http consumer is available for this event.
+     * @return void
+     */
+    public function checkHttpConsumer():void{
         $valid = true;
         $meta = new \ReflectionFunction($this->callback);
         $parameters = $meta->getParameters();
@@ -218,7 +221,13 @@ abstract class EventManager{
         return $params;
     }
 
-    public function &getRequestParsedBody(string $classname=null,bool $toarray = false){
+    /**
+     * Get the parsed body of the request.
+     * @param classname classname the function will attempt to convert the body to.
+     * @param toarray if true and classname is null, the function will attempt to convert the body to an array.
+     * @return mixed request body parsed as an object or array.
+     */
+    public function &getRequestParsedBody(?string $classname=null,bool $toarray = false){
         $ctype = $this->getRequestHeader("Content-Type");
         if($ctype === null){
             $result = null;
@@ -260,16 +269,19 @@ abstract class EventManager{
         }
     }
 
-
-    public function delegate(string $key,... $params){
-        $fun = $this->listener->getSharedObject()->getHttpEventsEntry($key);
-        return \call_user_func_array($fun,$params);
-    }
-
+    /**
+     * Uninstall this EventManager, removing its request url queries.
+     * @return void
+     */
     public function uninstall():void{
         $this->requestUrlQueries = [];
     }
 
+    /**
+     * Install this EventManager, assigning it a request id, an HttpEventListener, 
+     * a client resource, response headers and initializing its url queries.
+     * @return void
+     */
     public function install(HttpEventListener &$listener):void{
         $this->requestId = \spl_object_hash($this).rand();
         $this->listener = $listener;
@@ -294,53 +306,61 @@ abstract class EventManager{
     
     /**
      * Closes the client connection.
-     * @return void This method WILL invoke the "onClose" method.
+     * @return void This method WILL invoke the "onClose" callback.
      */
      public function close():void{
         if(!$this->alive) return;
         $this->alive = false;
-        $outcome = \fclose($this->listener->getClient());
+        $outcome = \fclose($this->client);
         if($this->onClose !== null)
             $this->onClose->run();
         //@socket_set_option($this->clistener->lient, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));
         //@socket_close($this->listener->client);
         if($this->session !== null) 
-            $this->listener->getSharedObject()->getSessions()->saveSession($this,$this->listener->getSharedObject()->getSessions()->getSession($this->sessionId));
+            $this->listener
+                    ->getSharedObject()
+                        ->getSessions()
+                            ->saveSession($this,$this->listener
+                                                        ->getSharedObject()
+                                                            ->getSessions()
+                                                                ->getSession($this->sessionId));
     }
 
     /**
-     * Get client ip address
-     * @return string the ip address of the client
+     * Get client ip address.
+     * @return string the ip address of the client.
      */
     public function &getAddress():string{
-        $host = \stream_socket_get_name($this->listener->getClient(),true);
+        $host = \stream_socket_get_name($this->client,true);
         $hostname = \preg_replace("/:[0-9]*/","",$host);
         return $hostname;
     }
     
     /**
      * Get client port number.
-     * @return string the port number of the client
+     * @return int the port number of the client
      */
     public function getPort():int{
-        $host = \stream_socket_get_name($this->listener->getClient(),true);
+        $host = \stream_socket_get_name($this->client,true);
         $port = \preg_replace("/.*:/","",$host);
         return \intval($port);
     }
     
 
     /**
-     * Check if your response headers contain a specific field
-     * @param string $key name of the field
+     * Check if your response headers contain a specific field.
+     * @param key the name of the header field you want to check for.
+     * @param bool true if the header field is set,  otherwise false.
      */
     public function issetResponseHeader(string $key):bool{
         return $this->serverHeaders->has($key);
     }
 
     /**
-     * Set a field to your response header.
-     * @param string $key name of the field
-     * @param string $content content of the field
+     * Set a field to your response headers.
+     * @param key name of the field
+     * @param content content of the field
+     * @return void
      */
     public function setResponseHeader(string $key, string $content):void{
         $this->serverHeaders->set($key,$content);
@@ -348,77 +368,85 @@ abstract class EventManager{
 
 
     /**
-     * Set the header of the event.
+     * Set the headers of the event.
+     * @param header replacement headers object.
      * @return void
      */
-    public function setResponseHttpHeaders(HttpHeaders &$header):void{
-        $this->serverHeaders = $header;
+    public function setResponseHttpHeaders(HttpHeaders &$headers):void{
+        $this->serverHeaders = $headers;
     }
         
     /**
      * Set the status of your response.
-     * @param string $status a status code. Multiple status codes can be found in the Cat class, suche as Server::STATUS_SUCCESS.
+     * @param status a status string (a repository of status strings can be found in the Status class)..
+     * @return void
      */
     public function setResponseStatus(string $status):void{
         $this->serverHeaders->setStatus($status);
     }
     
     /**
-     * Set the Content-Type field to the response header.
-     * @param string $type content type string, such as "text/plain", "text/html" ecc...
+     * Set the Content-Type field to the response headers object.
+     * @param type content type string, such as "text/plain", "text/html" ecc...
+     * @return void
      */
     public function setResponseContentType(string $type):void{
         $this->setResponseHeader("Content-Type", $type);
     }
 
     /**
-     * Get response header.
-     * @return \com\github\tncrazvan\catpaw\http\httpHeaders header of the your response message.
+     * Get your response headers object.
+     * @return HttpHeaders header of the your response message.
      */
     public function &getResponseHttpHeaders():HttpHeaders{
         return $this->serverHeaders;
     }
 
     /**
-     * Get header field.
-     * @param string $key name of the header field.
-     * @return string value of the header field.
+     * Get a header field from your response headers.
+     * @param key name of the header field.
+     * @return string headers of your response.
      */
     public function &getResponseHeader(string $key):string{
         return $this->serverHeaders->get($key);
     }
     
     /**
-     * Get client socket
-     * @return \resource This is the socket of the client.
+     * Get the client socket resource.
+     * @return resource the socket of the client.
      */
     public function getClient(){
         return $this->client;
     }
     
     /**
-     * Get request header.
-     * @return \com\github\tncrazvan\catpaw\http\httpHeaders header of the client request.
+     * Get the request headers object.
+     * @return HttpHeaders headers of the client request.
      */
     public function &getRequestHttpHeaders():HttpHeaders{
         return $this->listener->getRequestHeaders();
     }
 
-    public function &getRequestHeader(string $key){
+    /**
+     * Get a specific request header field by key.
+     * @param key name of the header field.
+     * @return null|string the value of the header field if it exists, otherwise null.
+     */
+    public function &getRequestHeader(string $key):?string{
         return $this->listener->getRequestHeaders()->get($key);
     }
     
     /**
-     * Get request method.
-     * @return string method of the client request.
+     * Get the request method name.
+     * @return string name of the method (always uppercase).
      */
-    public function &getRequestMethod(){
+    public function &getRequestMethod():string{
         return $this->listener->getRequestHeaders()->getMethod();
     }
     
     /**
      * Get the user agent of the client.
-     * @return &string
+     * @return string user agent string.
      */
     public function &getRequestUserAgent():string{
         return $this->getRequestHeader("User-Agent");
@@ -426,7 +454,11 @@ abstract class EventManager{
     
     /**
      * Starts a client http session.
-     * @return &array This method returns an array pointer, so any changes made to the array will be saved across all http requests relative to this session, untill the server kills the session due to inactivity. The default session ttl is 24 minutes.
+     * @return array This method returns an array pointer of the session.
+     * Any changes made to the array will be saved across all http requests relative to this session, 
+     * untill the server kills the session due to inactivity. 
+     * The default session ttl is 24 minutes.
+     * NOTE: changes to the session array won't be saved unless you request the pointer of the array.
      */
     public function &startSession():array{
         $this->session = &$this->listener->getSharedObject()->getSessions()->startSession($this, $this->sessionId);
@@ -448,7 +480,7 @@ abstract class EventManager{
     
     /**
      * Checks if the current client can find a session.
-     * @return bool true if the client has "sessionId" cookie and its value exists in the server sessions list, otherwise false.
+     * @return bool true if the client has a "sessionId" cookie and its value exists in the server sessions list, otherwise false.
      */
     public function issetSession():bool{
         if($this->session === null) return false;
@@ -457,25 +489,26 @@ abstract class EventManager{
     }
     
     /**
-     * Checks if the requested URL contains the given key as a query.
+     * Checks if the request contains the given url query key.
      * @param key name of the query.
-     * @return 
+     * @return bool true if
      */
     public function issetRequestUrlQuery(string $key):bool{
         return isset($this->requestUrlQueries[$key]);
     }
     
     /**
-     * 
+     * Get the request url query by key.
      * @param key name of the query.
-     * @return the value of the query.
+     * @return string the value of the query if it exists.
      */
-    public function &getRequestUrlQuery(string $key):?string{
+    public function &getRequestUrlQuery(string $key):string{
         return $this->requestUrlQueries[$key];
     }
 
     /**
-     * @return the array queries pointer
+     * Get all the url queries of the request.
+     * @return array the request url queries array.
      */
     public function &getRequestUrlQueries():array{
         return $this->requestUrlQueries;
@@ -529,7 +562,7 @@ abstract class EventManager{
     }
     
     /**
-     * Checks if the cookie is set.
+     * Checks if a specific request cookie is set.
      * @param key name of the cookie.
      */
     public function issetRequestCookie(string $key):bool{

@@ -7,7 +7,7 @@ abstract class Mime{
      * Returns the mime type of the given resource.
      * For example, given the filename "/index.html", the mime type returned will be "text/html".
      * This can be useful when sending data to your clients.
-     * @param $location resource name.
+     * @param location resource name.
      * @return the mime type of the given resource as a String.
      */
     public static function resolveContentType(string $location):string{
@@ -18,7 +18,7 @@ abstract class Mime{
      * Returns the mime type of the given resource.
      * For example, given the filename "/index.html", the mime type returned will be "text/html".
      * This can be useful when sending data to your clients.
-     * @param $location resource name.
+     * @param location resource name.
      * @return the mime type of the given resource as a String.
      */
     public static function getContentType(string $location):string{

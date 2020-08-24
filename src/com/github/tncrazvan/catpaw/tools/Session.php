@@ -8,6 +8,7 @@ abstract class Session{
      * Check for a session directory, if it exists, try to umount 
      * it (to make sure it's not) to make sure it's not mounted as a ramdisk,
      * then remove session directory.
+     * @param so an SharedObject instance containing the required information to umount the session.
      * @return void
      */
     public static function umount(SharedObject $so):void{
@@ -26,6 +27,7 @@ abstract class Session{
      * After the directory is removed, a new one will be made and mounted as a ramdisk.
      * This new directory will act as a ram space, which means it's faster, however
      * it's limited to the specified size.
+     * @param so an SharedObject instance containing the required information to mount the session.
      * @return void
      */
     public static function mount(SharedObject $so):void{
@@ -45,7 +47,8 @@ abstract class Session{
 
     /**
      * Try to umount session.
-     * After the session is removed, a new one will be made.
+     * After the session is removed, a new one will be created.
+     * @param so an SharedObject instance containing the required information to make the session directory.
      * @return void
      */
     public static function init(SharedObject $so):void{

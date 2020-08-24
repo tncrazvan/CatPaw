@@ -4,10 +4,13 @@ namespace com\github\tncrazvan\catpaw\tools;
 class Process{
     /**
      * Spawn a new process and send headers through the stdin stream.
-     * @param string $cmd process cmd to execute
-     * @param resource stdin stream. Use this to send data to the process.
+     * @param cmd cmd to execute.
+     * @param headers an array of headers to pass to the new process standard input.
+     * @param call a callback \Closure that will be invoked once the process is ready to start.<br />
+     * This callback will be passed the standard input stream of the process which you can use to write data to the process.
+     * @param void
      */
-    public static function spawn(string $cmd,array $headers = [],?\Closure $callback = null){
+    public static function spawn(string $cmd,array $headers = [],?\Closure $call = null){
         $descriptorspec = array(
             0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
             1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
@@ -26,8 +29,8 @@ class Process{
         /*\fwrite($streams[0],$length_str,$length_str_length);
         \fwrite($streams[0],',',1);
         \fwrite($streams[0],$headers,$length);*/
-        if($callback !== null){
-            $callback($streams[0]);
+        if($call !== null){
+            $call($streams[0]);
         }
     }
 }

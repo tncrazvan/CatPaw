@@ -2,11 +2,16 @@
 namespace com\github\tncrazvan\catpaw\tools;
 
 class LinkedList extends \SplDoublyLinkedList{
-    public function iterate($mode,\Closure $callback):void{
+    /**
+     * Iterate the linked list.
+     * @param mode iteration mode (lookup constants).
+     * @param call iteration callback.
+     */
+    public function iterate(int $mode,\Closure $call):void{
         $this->setIteratorMode($mode);
         for($this->rewind();$this->valid();$this->next()){
             $obj = $this->current();
-            $callback($obj);
+            $call($obj);
         }
     }
 }

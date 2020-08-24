@@ -6,20 +6,20 @@ abstract class OpenSSL{
     private static string $emailRegex = "/(?<=^)[A-z0-9!#$%&'*+-\\/=?^_`{|}~]*\\.?[A-z0-9!#$%&'*+-\\/=?^_`{|}~]*\\@[A-z0-9][A-z0-9]*[A-z0-9](\\.[A-z]+)?(?=$)/";
     /**
      * Creates the contents of a PEM certificate. Save this to a file.pem and load it lader for your socket.
-     * @param array $subject an array containing fields required for the certificate.
-     * Here's an example of a valid array: 
+     * @param subject an array containing fields required for the certificate.
+     * Here's a template: 
      * [
-     *  "countryName" => "US",
-     *   "stateOrProvinceName" => "Texas",
-     *   "localityName" => "Houston",
-     *   "organizationName" => "DevDungeon.com",
-     *   "organizationalUnitName" => "Development",
-     *   "commonName" => "DevDungeon",
-     *   "emailAddress" => "nanodano@devdungeon.com"
+     *   "countryName" => "__", //your organization country (2 letters, for example "US")
+     *   "stateOrProvinceName" => "_____", //your organization province or state
+     *   "localityName" => "_____", //your organization city or town
+     *   "organizationName" => "__________", //your organization name
+     *   "organizationalUnitName" => "_____", //name of your organization unit, for example "Web Development"
+     *   "commonName" => "__________.___", //your organization website address
+     *   "emailAddress" => "__________@__________.___" //your organization email address
      * ]
-     * @param string $filename this will be the filename of the certificate.
-     * @param int $days number of days the certificate will be valid for.
-     * @param string $passphrase passphrase to be used to generate the certificate.
+     * @param filename this will be the filename of the certificate.
+     * @param days number of days the certificate will be valid for.
+     * @param passphrase passphrase to be used to generate the certificate.
      * @return void
      */
     public static function mkcert(array $subject,string $filename,string $passphrase="",int $days=365):bool {
