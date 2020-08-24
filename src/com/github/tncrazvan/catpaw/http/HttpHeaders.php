@@ -8,7 +8,9 @@ class HttpHeaders{
     private array $headers = [];
     private array $cookies = [];
     private string $status = Status::SUCCESS;
-    private ?string $resource = null;
+    private string $resource = '';
+    private string $method = '';
+    private string $version = "HTTP/1.1";
     public bool $initialized = false;
     const DATE_FORMAT = "D j M Y G:i:s T";
     public function __construct(EventManager $em=null, bool $createSuccessHeader = true) {
@@ -69,7 +71,7 @@ class HttpHeaders{
 
         if($this->status !== null)  //this should trigger only if it's a response
             $result .= self::$VERSION.' '.$this->status."\r\n";
-        if($this->resource !== null) //this should trigger only if it's a request
+        if($this->resource !== '' && $this->resource !== null) //this should trigger only if it's a request
             $result .= $this->resource."\r\n";
 
         foreach(array_keys($this->headers) as &$key){
@@ -97,6 +99,23 @@ class HttpHeaders{
         $this->resource = $resource;
     }
 
+    public function setMethod(string $method):void{
+        $this->method = $method;
+    }
+
+    public function &getVersion():string{
+        return $this->version;
+    }
+
+
+    public function &getMethod():string{
+        return $this->method;
+    }
+
+    public function setVersion(string $version):void{
+        $this->version = $version;
+    }
+
     public function setContentType($content):void{
         $this->set("Content-Type",$content);
     }
@@ -109,11 +128,11 @@ class HttpHeaders{
         return $result;
     }
 
-    public function &getStatus(){
+    public function &getStatus():string{
         return $this->status;
     }
 
-    public function &getResource(){
+    public function &getResource():string{
         return $this->resource;
     }
     
@@ -176,9 +195,9 @@ class HttpHeaders{
             }else{
                 if(\preg_match("/^.+(?=\\s\\/).*HTTP\\/.*\$/", $line) > 0){
                     $parts = \preg_split("/\\s+/", $line);
-                    $httpHeaders->set("Method", $parts[0]);
+                    $httpHeaders->setMethod($parts[0]);
                     $httpHeaders->setResource($parts[1]);
-                    $httpHeaders->set("Version", $parts[2]);
+                    $httpHeaders->setVersion($parts[2]);
                 }else{
                     $httpHeaders->set($line, null);
                 }

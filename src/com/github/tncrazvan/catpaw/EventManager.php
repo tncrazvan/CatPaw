@@ -413,7 +413,7 @@ abstract class EventManager{
      * @return string method of the client request.
      */
     public function &getRequestMethod(){
-        return $this->getRequestHeader("Method");
+        return $this->listener->getRequestHeaders()->getMethod();
     }
     
     /**
