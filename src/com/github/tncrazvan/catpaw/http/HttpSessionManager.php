@@ -11,7 +11,7 @@ class HttpSessionManager{
             //load the session
             $this->loadSession($e,$sessionId);
             //if session is expired
-            if($this->list[$sessionId]->getTime() + $e->listener->so->sessionTtl < time()){
+            if($this->list[$sessionId]->getTime() + $e->getHttpEventListener()->getSharedObject()->getSessionTtl() < time()){
                 //delete the expired session
                 $this->stopSession($e,$this->list[$sessionId]);
             }else{ //if session is alive
@@ -36,7 +36,7 @@ class HttpSessionManager{
     public function issetSession(EventManager $e,&$sessionId):bool{
         if($e->issetRequestCookie("sessionId")){
             $sessionId = $e->getRequestCookie("sessionId");
-            if(file_exists($e->listener->so->sessionDir."/$sessionId")){
+            if(file_exists($e->getHttpEventListener()->getSharedObject()->getSessionDIrectory()."/$sessionId")){
                 return true;
             }
         }
@@ -44,16 +44,16 @@ class HttpSessionManager{
     }
     
     public function loadSession(EventManager $e,string $sessionId):void{
-        $data = json_decode(file_get_contents($e->listener->so->sessionDir."/$sessionId"),true);
+        $data = json_decode(file_get_contents($e->getHttpEventListener()->getSharedObject()->getSessionDIrectory()."/$sessionId"),true);
         $session = new HttpSession();
         $session->setStorage($data["STORAGE"]);
         $session->setTime($data["TIME"]);
         $session->setId($sessionId);
-        self::setSession($session);
+        $this->setSession($session);
     }
     
     public function saveSession(EventManager $e,HttpSession $session):void{
-        file_put_contents($e->listener->so->sessionDir."/".$session->id(), json_encode([
+        file_put_contents($e->getHttpEventListener()->getSharedObject()->getSessionDIrectory()."/".$session->id(), json_encode([
             "STORAGE"=>$session->storage(),
             "TIME"=>$session->getTime()
         ]));
@@ -65,7 +65,7 @@ class HttpSessionManager{
     
     public function stopSession(EventManager $e,HttpSession $session):void{
         unset($this->list[$session->id()]);
-        unlink($e->listener->so->sessionDir."/".$session->id());
+        unlink($e->getHttpEventListener()->getSharedObject()->getSessionDIrectory()."/".$session->id());
     }
     
     public function &getSession(string $sessionId):HttpSession{

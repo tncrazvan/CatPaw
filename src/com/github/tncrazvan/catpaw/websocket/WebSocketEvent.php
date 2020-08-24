@@ -8,7 +8,7 @@ class WebSocketEvent extends WebSocketEventManager{
     public static function &make(HttpEventListener &$listener):WebSocketEvent{
         $callback = HttpEventListener::callback("websocket", $listener);
         
-        $listener->properties["http-consumer"] = false; //make sure it's not a live body injection
+        $listener->setProperty("http-consumer", false); //make sure it's not a live body injection
         $event = new WebSocketEvent();
         $event->install($listener);
         $event->callback = &$callback;

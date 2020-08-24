@@ -29,8 +29,8 @@ class Script{
     }
     public static function runOnce(\Closure $callback):void{
         $e = self::event();
-        if(!\in_array($e->listener->path,$e->listener->so->runOnce)){
-            $e->listener->so->runOnce[] = $e->listener->path;
+        if(!\in_array($e->getHttpEventListener()->getPath(),$e->getHttpEventListener()->getSharedObject()->runOnce)){
+            $e->getHttpEventListener()->getSharedObject()->runOnce[] = $e->getHttpEventListener()->getPath();
             $callback();
         }
     }

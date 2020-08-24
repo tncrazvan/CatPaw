@@ -31,7 +31,7 @@ class HttpHeaders{
 
     public function initialize(EventManager $em):void{
         if(!$this->initialized){
-            foreach($em->listener->so->headers as $key => &$value){
+            foreach($em->getHttpEventListener()->getSharedObject()->getHeaders() as $key => &$value){
                 if(!$this->has($key))
                     $this->set($key, $value);
             }

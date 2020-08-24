@@ -167,15 +167,15 @@ class ServerFile{
 
                     $result .= $startConnectionStr;
                 
-                    if($end-$start+1 > SharedObject::$httpMtu){
+                    if($end-$start+1 > $event->getHttpEventListener()->getSharedObject()->getHttpMtu()){
                         $remainingBytes = $end-$start+1;
-                        $readLength = SharedObject::$httpMtu;
+                        $readLength = $event->getHttpEventListener()->getSharedObject()->getHttpMtu();
                         \fseek($raf, $start);
                         while($remainingBytes > 0){
                             $result = \fread($raf, $readLength);
-                            $remainingBytes -= SharedObject::$httpMtu;
+                            $remainingBytes -= $event->getHttpEventListener()->getSharedObject()->getHttpMtu();
                             if($remainingBytes < 0){
-                                $readLength = $remainingBytes+SharedObject::$httpMtu;
+                                $readLength = $remainingBytes+$event->getHttpEventListener()->getSharedObject()->getHttpMtu();
                                 $remainingBytes = 0;
                             }
                         }

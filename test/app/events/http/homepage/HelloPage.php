@@ -20,7 +20,7 @@ class HelloPage extends HttpEventHandler
             $onClose = new Close();
     }
     public function get(){
-        return ServerFile::response($this->e,$this->e->listener->so->webRoot,"index.html");
+        return ServerFile::response($this->e,$this->e->listener->getSharedObject()->getWebRoot(),"index.html");
     }
     public function post(){
         yield;

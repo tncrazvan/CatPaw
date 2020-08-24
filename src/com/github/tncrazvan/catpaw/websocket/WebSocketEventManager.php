@@ -27,13 +27,13 @@ abstract class WebSocketEventManager extends EventManager{
         };
     }
     public function run():void{
-        $acceptKey = \base64_encode(sha1($this->listener->requestHeaders->get("Sec-WebSocket-Key").$this->listener->so->wsAcceptKey,true));
+        $acceptKey = \base64_encode(sha1($this->listener->getRequestHeaders()->get("Sec-WebSocket-Key").$this->listener->getSharedObject()->getWsAcceptKey(),true));
         $this->serverHeaders->setStatus(Status::SWITCHING_PROTOCOLS);
         $this->serverHeaders->set("Connection","Upgrade");
         $this->serverHeaders->set("Upgrade","websocket");
         $this->serverHeaders->set("Sec-WebSocket-Accept",$acceptKey);
         $handshake = $this->serverHeaders->toString()."\r\n";
-        @\stream_socket_sendto($this->listener->client, $handshake);
+        @\stream_socket_sendto($this->client, $handshake);
 
         $message = '';
         $valid = false;
@@ -42,8 +42,7 @@ abstract class WebSocketEventManager extends EventManager{
             $this->commits = new \SplDoublyLinkedList();
             $this->listOfFragments = new LinkedList();
             //$this->payload = new LinkedList();
-            //$this->listener->so->websocketConnections->insertLast($this);
-            $this->listener->so->websocketConnections[$this->requestId] = $this;
+            $this->listener->getSharedObject()->setWebsocketConnectionsEntry($this->requestId,$this);
             \call_user_func_array($this->callback,$params);
             if($this->onOpen !== null)
                 $this->onOpen->run();
@@ -51,8 +50,7 @@ abstract class WebSocketEventManager extends EventManager{
         } catch (\Exception $ex) {
             echo $ex->getMessage()."\n".$ex->getTraceAsString()."\n";
             $this->close();
-            //$this->listener->so->websocketConnections->deleteNode($this);
-            unset($this->listener->so->websocketConnections[$this->requestId]);
+            $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
             $this->uninstall();
         } else
             echo "Error while calculating WebSocket parameters: $message\n";
@@ -68,23 +66,21 @@ abstract class WebSocketEventManager extends EventManager{
         if(!$this->alive) {
             if($this->unnecessary > 10){ //allow 10 attempts before closing completely
                 $this->close();
-                //$this->listener->so->websocketConnections->deleteNode($this);
-                unset($this->listener->so->websocketConnections[$this->requestId]);
+                $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
                 $this->uninstall();
             }
             $this->unnecessary++;
             return;
         }
         $this->unnecessary = 0;
-        if($this->listener->so->wsMtu > 65535)
-            $this->listener->so->wsMtu = 65535;
-        $mtu = $this->listener->so->wsMtu;
+        if($this->listener->getSharedObject()->getWsMtu() > 65535)
+            $this->listener->getSharedObject()->setWsMtu(65535);
+        $mtu = $this->listener->getSharedObject()->getWsMtu();
         
-        $masked = \stream_get_contents($this->listener->client, -1);
+        $masked = \stream_get_contents($this->client, -1);
         if ($masked === false) {
             $this->close();
-            //$this->listener->so->websocketConnections->deleteNode($this);
-            unset($this->listener->so->websocketConnections[$this->requestId]);
+            $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
             $this->uninstall();
         } else {
             if($masked === '') return;
@@ -168,8 +164,7 @@ abstract class WebSocketEventManager extends EventManager{
         $this->isContinuation = $this->opcode === 0;
         if ($this->opcode == 0x8) { // fin
             $this->close();
-            //$this->listener->so->websocketConnections->deleteNode($this);
-            unset($this->listener->so->websocketConnections[$this->requestId]);
+            $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
             $this->uninstall();
         }
         $this->mask = [null,null,null,null];
@@ -295,13 +290,13 @@ abstract class WebSocketEventManager extends EventManager{
             echo $e->getMessage()."\n";
             echo $e->getTraceAsString()."\n";
             $this->close();
-            unset($this->listener->so->websocketConnections[$this->requestId]);
+            $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
             $this->uninstall();
         }catch(\ErrorException $e){
             echo $e->getMessage()."\n";
             echo $e->getTraceAsString()."\n";
             $this->close();
-            unset($this->listener->so->websocketConnections[$this->requestId]);
+            $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
             $this->uninstall();
         }
         return -1;
@@ -332,13 +327,12 @@ abstract class WebSocketEventManager extends EventManager{
         */
 
     private function encodeAndPushBytes(string $messageBytes, bool $binary):void {
-        fflush($this->listener->client);
+        fflush($this->client);
         // We need to set only FIN and Opcode.
         
-        if(!@\stream_socket_sendto($this->listener->client, $binary?chr(0b10000010):chr(0b10000001))){
+        if(!@\stream_socket_sendto($this->client, $binary?chr(0b10000010):chr(0b10000001))){
             $this->close();
-            //$this->listener->so->websocketConnections->deleteNode($this);
-            unset($this->listener->so->websocketConnections[$this->requestId]);
+            $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
             $this->uninstall();
             return;
         }
@@ -346,55 +340,50 @@ abstract class WebSocketEventManager extends EventManager{
         $message_length = strlen($messageBytes);
         // Prepare the payload length.
         if ($message_length <= 125) {
-            if(!@\stream_socket_sendto($this->listener->client, chr($message_length))){
+            if(!@\stream_socket_sendto($this->client, chr($message_length))){
                 $this->close();
-                //$this->listener->so->websocketConnections->deleteNode($this);
-                unset($this->listener->so->websocketConnections[$this->requestId]);
+                $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
                 $this->uninstall();
                 return;
             }
         } else { // We assume it is 16 bit length. Not more than that.
-            if(!@\stream_socket_sendto($this->listener->client, chr(0b01111110))){
+            if(!@\stream_socket_sendto($this->client, chr(0b01111110))){
                 $this->close();
-                //$this->listener->so->websocketConnections->deleteNode($this);
-                unset($this->listener->so->websocketConnections[$this->requestId]);
+                $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
                 $this->uninstall();
                 return;
             }
 
             $b1 = ($message_length >> 8) & 0xff;
             $b2 = $message_length & 0xff;
-            if(!@\stream_socket_sendto($this->listener->client, chr($b1))){
+            if(!@\stream_socket_sendto($this->client, chr($b1))){
                 $this->close();
-                //$this->listener->so->websocketConnections->deleteNode($this);
-                unset($this->listener->so->websocketConnections[$this->requestId]);
+                $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
                 $this->uninstall();
                 return;
             }
-            if(!stream_socket_sendto($this->listener->client,chr($b2))){
+            if(!stream_socket_sendto($this->client,chr($b2))){
                 $this->close();
-                //$this->listener->so->websocketConnections->deleteNode($this);
-                unset($this->listener->so->websocketConnections[$this->requestId]);
+                $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
                 $this->uninstall();
                 return;
             }
         }
         // Write the data.
-        if(!stream_socket_sendto($this->listener->client,$messageBytes)){
+        if(!stream_socket_sendto($this->client,$messageBytes)){
             $this->close();
-            //$this->listener->so->websocketConnections->deleteNode($this);
-            unset($this->listener->so->websocketConnections[$this->requestId]);
+            $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
             $this->uninstall();
             return;
         }
-        fflush($this->listener->client);
+        fflush($this->client);
     }
 
     public function commit($data,bool $binary = false):void{
         if(is_string($data)){
             $strlength = strlen($data);
-            if($strlength > $this->listener->so->wsMtu){
-                $pieces = str_split($data,$this->listener->so->wsMtu);
+            if($strlength > $this->listener->getSharedObject()->getWsMtu()){
+                $pieces = str_split($data,$this->listener->getSharedObject()->getWsMtu());
                 $max = count($pieces);
                 for($i = 0; $i < $max; $i++){
                     $this->commit($pieces[$i],$binary);
@@ -403,8 +392,8 @@ abstract class WebSocketEventManager extends EventManager{
             }
         }else if(is_array($data)){
             $arrlength = count($data);
-            if($arrlength > $this->listener->so->wsMtu){
-                $pieces = \array_chunk($data,$this->listener->so->wsMtu);
+            if($arrlength > $this->listener->getSharedObject()->getWsMtu()){
+                $pieces = \array_chunk($data,$this->listener->getSharedObject()->getWsMtu());
                 $max = count($pieces);
                 for($i = 0; $i < $max; $i++){
                     $this->commit($pieces[$i],$binary);
@@ -418,7 +407,7 @@ abstract class WebSocketEventManager extends EventManager{
             for($i=0;$i<$arrlength;$i++){
                 $pieces[] = $data[$i];
 
-                if($i+1 === $this->listener->so->wsMtu || $i+1 === $arrlength){
+                if($i+1 === $this->listener->getSharedObject()->getWsMtu() || $i+1 === $arrlength){
                     $this->commit($pieces,$binary);
                     $pieces = [];
                     $c++;

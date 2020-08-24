@@ -14,7 +14,7 @@ class HttpDefaultEvents{
         $requestsByIp = [];
 
         self::$notFound = function(HttpEvent $e){
-            $filename = [$e->listener->so->webRoot,$e->listener->path];
+            $filename = [$e->getHttpEventListener()->getSharedObject()->getWebRoot(),$e->getHttpEventListener()->getPath()];
             if(!ServerFile::exists(...$filename)){
                 $php = [ServerFile::dirname(...$filename),"index.php"];
                 if(!ServerFile::exists(...$php)){
@@ -47,9 +47,9 @@ class HttpDefaultEvents{
             
             switch($e->getRequestMethod()){
                 case "GET":
-                    if(Strings::endsWith($e->listener->path,'.php'))
-                        return ServerFile::include(join('/',[$e->listener->so->webRoot,$e->listener->path]));
-                    return ServerFile::response($e,$e->listener->so->webRoot,$e->listener->path);
+                    if(Strings::endsWith($e->getHttpEventListener()->getPath(),'.php'))
+                        return ServerFile::include(join('/',[$e->getHttpEventListener()->getSharedObject()->getWebRoot(),$e->getHttpEventListener()->getPath()]));
+                    return ServerFile::response($e,$e->getHttpEventListener()->getSharedObject()->getWebRoot(),$e->getHttpEventListener()->getPath());
                 break;
                 default:
                     return new HttpResponse([

@@ -7,48 +7,78 @@ use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\tools\Status;
 
 class HttpEventListener{
-    //content sent (if POST method)
-    //public ?string $requestContent;
-    //requested query string
-    public string $queryString;
-    //requested path
-    public string $path;
-    //requested resource (path + query)
-    public string $resource;
-    //request headers
-    public HttpHeaders $requestHeaders;
-    //length of the location array
-    /*public int $locationLen;
-    public int $resourceLen;*/
-    public SharedObject $so;
-    public array $params = [];
-    public $client;
-    public $input = '';
-    public string $hash;
-    public bool $completeBody = true;
-    public int $continuation = 0;
-    public int $headerBodyLength = 0;
-    public int $actualBodyLength = 0;
-    public int $failedContinuations = 0;
-    public array $properties = [
-        "http-consumer" => false
-    ];
+
     public const EVENT_TYPE_HTTP = 0;
     public const EVENT_TYPE_WEBSOCKET = 1;
-    public $eventType = -1;
-    public $event = null;
-    public bool $httpConsumerStarted = false;
-    public int $emptyFails = 0;
+    public const PATTERN_PATH_PARAM = '/(?<=^{)([A-z_][A-z0-9_]+)(?=}$)/';
 
-    private const PATTERN_PATH_PARAM = '/(?<=^{)([A-z_][A-z0-9_]+)(?=}$)/';
+    //requested query string
+    private string $queryString;
+    //requested path
+    private string $path;
+    //requested resource (path + query)
+    private string $resource;
+    //request headers
+    private HttpHeaders $requestHeaders;
+    private SharedObject $so;
+    private $client;
+    private string $hash;
+    private bool $completeBody = true;
+    private int $continuation = 0;
+    private int $requestHeaderBodyLength = 0;
+    private int $actualBodyLength = 0;
+    private int $failedContinuations = 0;
+    private array $properties = [
+        "http-consumer" => false
+    ];
+    private $eventType = -1;
+    private bool $httpConsumerStarted = false;
+    private int $emptyFails = 0;
+
 
     private int $_find_headers_offset = 0;
+
+    public array $params = [];
+    public $input = '';
+    public $event = null;
 
     public function __construct(&$client,SharedObject $so) {
         $this->client = $client;
         $this->so = $so;
         $this->hash = \spl_object_hash($this).rand();
     }
+
+    
+    public function &getQueryString():string{return $this->queryString;}
+    public function issetQueryString():bool{return $this->queryString === '';}
+    public function &getPath():string{return $this->path;}
+    public function &getResource():string{return $this->resource;}
+    public function &getRequestHeaders():HttpHeaders{return $this->requestHeaders;}
+    public function &getSharedObject():SharedObject{return $this->so;}
+    public function &getHash():string{return $this->hash;}
+    public function &getClient(){return $this->client;}
+    public function isCompleteBody():bool{return $this->completeBody;}
+    public function setCompleteBody(bool $value):void{$this->completeBody = $value;}
+    public function setContinuation(int $value):void{$this->continuation = $value;}
+    public function getContinuation():int{return $this->continuation;}
+    public function increaseContinuation():void{$this->continuation++;}
+    public function getRequestHeaderBodyLength():int{return $this->requestHeaderBodyLength;}
+    public function getActualBodyLength():int{return $this->actualBodyLength;}
+    public function bodyLengthsMatch():bool{return $this->requestHeaderBodyLength === $this->actualBodyLength;}
+    public function actualBodyLengthIsMaxed():bool{return $this->actualBodyLength === $this->so->getHttpMaxBodyLength();}
+    public function increaseActualBodyLengthByValue(int $value):void{$this->actualBodyLength += $value;}
+    public function increaseFailedContinuations():void{$this->failedContinuations++;}
+    public function &getProperties():array{return $this->properties;}
+    public function issetProperty(string $key):bool{return isset($this->properties[$key]);}
+    public function setProperty(string $key,$value):void{$this->properties[$key] = $value;}
+    public function &getProperty(string $key){return $this->properties[$key];}
+    public function unsetProperty(string $key):void{unset($this->properties[$key]);}
+    public function getEventType():int{return $this->eventType;}
+    public function setEventType(int $type):void{$this->eventType = $type;}
+    public function httpConsumerStarted():bool{return $this->httpConsumerStarted;}
+    public function getEmptyFails():int{return $this->emptyFails;}
+    public function setEmptyFails(int $value):void{$this->emptyFails = $value;}
+    public function increaseEmptyFails():void{$this->emptyFails++;}
 
     public function findHeaders():bool{
         $headersDetected = strpos($this->input,"\r\n\r\n",$this->_find_headers_offset);
@@ -74,6 +104,7 @@ class HttpEventListener{
         //$this->event = &WebSocketEvent::make($listener);
         $this->event->run();
     }
+
     public function runHttpDefault(){
         global $_EVENT;
         $_EVENT = $this->event;
@@ -106,8 +137,8 @@ class HttpEventListener{
                     }
                     $_EVENT = null;
                 }else{
-                    unset($this->so->httpQueue[$this->hash]);
-                    $this->so->httpConnections[$this->event->requestId] = &$this->event;
+                    $this->getSharedObject()->unsetHttpQueueEntry($this->hash);
+                    $this->getSharedObject()->setHttpConnectionsEntry($this->event->getRequestId(),$this->event);
                 }
                 $error = false;
             }catch(\TypeError $ex){
@@ -196,7 +227,7 @@ class HttpEventListener{
 
     private static function _file(string &$type, array &$paths, HttpEventListener &$listener, ?\Closure &$callback):bool{
         if($type === 'http'){
-            $location = $listener->so->webRoot.$listener->path;
+            $location = $listener->getSharedObject()->getWebRoot().$listener->path;
 
             //checking if it's a file
             if(\file_exists($location) && !\is_dir($location)){
@@ -261,41 +292,27 @@ class HttpEventListener{
     }
 
     public static function callback(string $type,HttpEventListener $listener):\Closure{
-        $paths = &$listener->so->events[$type];
+        $paths = &$listener->getSharedObject()->getEvents()[$type];
+
+        $callback = $paths["@404"];
 
         self::_forward($paths,$listener);
 
-        /*if($type === 'http')
-            if(is_array($paths["@file"])){
-                if(isset($paths["@file"]['run'])){
-                    $callback = $paths["@file"]['run'];
-                    foreach($paths["@file"] as $key =>&$property){
-                        if($key === 'run') continue;
-                        $listener->properties[$key] = $property;
-                    }
-                }
-            }else
-                $callback = $paths["@file"];
-                */
-
-        if($type === 'http')
-            if(is_array($paths["@404"])){
-                if(isset($paths["@404"]['run'])){
-                    $callback = $paths["@404"]['run'];
-                    foreach($paths["@404"] as $key =>&$property){
-                        if($key === 'run') continue;
-                        $listener->properties[$key] = $property;
-                    }
-                }
-            }else
-                $callback = $paths["@404"];
+        if($type === 'http' && is_array($paths["@404"]) && isset($paths["@404"]['run'])){
+            $callback = $paths["@404"]['run'];
+            foreach($paths["@404"] as $key =>&$property){
+                if($key === 'run') continue;
+                $listener->properties[$key] = $property;
+            }
+        }
+            
 
         if(self::_file($type,$paths,$listener,$callback))
             return $callback;
 
         if(self::_event($paths,$listener,$callback))
             return $callback;
-
+        
         return $callback;
     }
 
@@ -319,15 +336,15 @@ class HttpEventListener{
         $this->actualBodyLength += \strlen($this->input[1]);
         if($this->requestHeaders->has("Content-Length")){
             try{
-                $this->headerBodyLength = intval($this->requestHeaders->get(("Content-Length")));
+                $this->requestHeaderBodyLength = intval($this->requestHeaders->get(("Content-Length")));
             }catch(\Exception $ex){
-                $this->headerBodyLength = $this->actualBodyLength;
+                $this->requestHeaderBodyLength = $this->actualBodyLength;
             }
             catch(\ErrorException $ex){
-                $this->headerBodyLength = $this->actualBodyLength;
+                $this->requestHeaderBodyLength = $this->actualBodyLength;
             }
             
-            if($this->actualBodyLength < $this->headerBodyLength){
+            if($this->actualBodyLength < $this->requestHeaderBodyLength){
                 $this->completeBody = false;
             }
         }

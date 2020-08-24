@@ -5,13 +5,14 @@ use com\github\tncrazvan\catpaw\tools\Http;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\asciitable\AsciiTable;
 use com\github\tncrazvan\catpaw\http\HttpDefaultEvents;
+use com\github\tncrazvan\catpaw\http\HttpEvent;
+use com\github\tncrazvan\catpaw\http\HttpEventListener;
 use com\github\tncrazvan\catpaw\http\HttpSessionManager;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 
 class SharedObject extends Http{
     const DIR = __DIR__;
-    public array $runOnce = [];
 
     public function __construct(string $settingsFile,bool $print=true){
         $settings = include($settingsFile);
@@ -105,8 +106,6 @@ class SharedObject extends Http{
         $this->entryPoint = $settings["entryPoint"];
         if(isset($settings["sessionName"]))
         $this->sessionName = $settings["sessionName"];
-        if(isset($settings["editor"]))
-        $this->editor = $settings["editor"];
         
         if(isset($settings["events"])){
             if(isset($settings["events"]["http"]))
@@ -132,7 +131,7 @@ class SharedObject extends Http{
         if(isset($settings["headers"])){
             $this->headers = $settings["headers"];
         }
-        $this->sessionDir = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$this->dir."/".$this->sessionName);
+        $this->sessionDirectory = preg_replace(Strings::PATTERN_DOUBLE_SLASH,"/",$this->dir."/".$this->sessionName);
         
         
         if($print) {
@@ -266,52 +265,126 @@ class SharedObject extends Http{
         }
         $this->sessions = new HttpSessionManager();
     }
-    public $dir;
 
-    public array $httpQueue = [];
-    public array $httpConnections = [];
-    public array $websocketConnections = [];
-    public
-        $sessions,
-        $headers = [],
-        $compress = null,
-        $sessionDir = "",
-        $sessionName = "/_SESSION",
-        $editor = "",
-        $certificateName = "",
-        $certificateType = "",
-        $certificatePrivateKey = "",
-        $certificatePassphrase = "",
-        $ramSession = [
-            "allow"=>true,
-            "size"=>1024 // 1024 MB
-        ],
-        $sessionTtl = 1440, // 24 minutes
-        $sleep = 0, //microseconds
-        $listen=true,
-        $groupsAllowed=false,
-        $smtpAllowed=false,
-        $backlog=50,
-        $port=80,
-        $timeout=100,
-        $webRoot="/www/",
-        $charset="UTF-8",
-        $bindAddress="127.0.0.1",
-        
-        $events = [
-            "http"=>[],
-            "websocket"=>[]
-        ],
+    private $dir;
 
-        //$wsEvents,
-        $cookieTtl=60*60*24*365, //1 year
-        $wsGroupMaxClient=10,
-        $wsMtu=1024*128, //128 KB
-        $httpMaxBodyLength=1024*1024*200, //200 MB
-        $httpMtu=65535,
-        $cacheMaxAge=60*60*24*365, //year
-        $entryPoint="/index.html",
-        $wsAcceptKey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11",
-        $mainSettings,
-        $running=true;
+    
+    public function getSessions():HttpSessionManager{return $this->sessions;}
+    public function getHeaders():array{return $this->headers;}
+
+    public function getHttpQueue():array{return $this->httpQueue;}
+    public function setHttpQueueEntry(string $key, HttpEventListener $listener):void{$this->httpQueue[$key] = $listener;}
+    public function unsetHttpQueueEntry(string $key):void{unset($this->httpQueue[$key]);}
+
+
+    public function getHttpConnections():array{return $this->httpConnections;}
+    public function setHttpConnectionsEntry(string $key, HttpEvent $event):void{$this->httpConnections[$key] = $event;}
+    public function unsetHttpConnectionsEntry(string $key):void{unset($this->httpConnections[$key]);}
+
+    
+    public function getWebsocketConnections():array{return $this->websocketConnections;}
+    public function setWebsocketConnectionsEntry(string $key, WebSocketEvent $event):void{$this->websocketConnections[$key] = $event;}
+    public function unsetWebsocketConnectionsEntry(string $key):void{unset($this->websocketConnections[$key]);}
+
+
+    public function getSessionDirectory():string{return $this->sessionDirectory;}
+    public function getSessionName():string{return $this->sessionName;}
+    public function getCertificateName():string{return $this->certificateName;}
+    public function getCertificateType():string{return $this->certificateType;}
+    public function getCertificatePrivateKey():string{return $this->certificateName;}
+    public function getCertificatePrivatePassphrase():string{return $this->certificatePassphrase;}
+    public function getRamSession():array{return $this->ramSession;}
+    public function getSessionTtl():int{return $this->sessionTtl;}
+    public function getSleep():int{return $this->sleep;}
+    public function getPort():int{return $this->port;}
+    public function getBacklog():int{return $this->backlog;}
+    public function getTimeout():int{return $this->timeout;}
+    public function getWebRoot():string{return $this->webRoot;}
+    public function getCharset():string{return $this->charset;}
+    public function getBindAddress():string{return $this->bindAddress;}
+
+
+    public function getEvents():array{return $this->events;}
+    public function getEventsByType(string $type):array{return $this->events[$type];}
+    public function getHttpEvents():array{return isset($this->events['http'])?$this->events['http']:[];}
+    public function getWebsocketEvents():array{return isset($this->events['websocket'])?$this->events['websocket']:[];}
+    public function getHttpEventsEntry(string $key){return $this->issetHttpEventEntry($key)?$this->events['http'][$key]:null;}
+    public function getWebsocketEventsEntry(string $key){return $this->issetWebsocketEventsEntry($key)?$this->events['websocket'][$key]:null;}
+    public function issetEventsByType(string $type):bool{return isset($this->events[$type]);}
+    public function issetHttpEvents():bool{return isset($this->events['http']);}
+    public function issetWebsocketEvents():bool{return isset($this->events['websocket']);}
+    public function issetHttpEventEntry(string $key):bool{return isset($this->events['http'][$key]);}
+    public function issetWebsocketEventsEntry(string $key):bool{return isset($this->events['websocket'][$key]);}
+    
+    public function fixFordwardRecursion(array $copy):void{
+        if($this->issetHttpEvents() && $this->issetHttpEventEntry("@forward")){
+            $original = &$this->events["http"]["@forward"];
+            $keys = \array_keys($copy);
+            foreach($keys as &$key){
+                if(isset($original[$key]) && isset($original[$original[$key]])){
+                    if($key === $original[$original[$key]]){
+                        echo "@forward '{$copy[$key]}' => '{$copy[$copy[$key]]}' removed because it is recursive.\n";
+                        unset($original[$copy[$key]]);
+                        continue;
+                    }
+                    $copy[$key] = $original[$original[$key]];
+                }
+            }
+        }
+    }
+
+    public function getCookieTtl():int{return $this->cookieTtl;}
+    public function getWsMtu():int{return $this->wsMtu;}
+    public function setWsMtu(int $value):void{$this->wsMtu=$value;}
+    public function getHttpMaxBodyLength():int{return $this->httpMaxBodyLength;}
+    public function getHttpMtu():int{return $this->httpMtu;}
+    public function getCacheMaxAge():int{return $this->cacheMaxAge;}
+    public function getEntryPoint():string{return $this->entryPoint;}
+    public function getWsAcceptKey():string{return $this->wsAcceptKey;}
+    public function getRunning():bool{return $this->running;}
+
+
+
+    private HttpSessionManager $sessions;
+    private array $headers = [];
+    private array $httpQueue = [];
+    private array $httpConnections = [];
+    private array $websocketConnections = [];
+    private array $compress = [];
+    private string $sessionDirectory = "";
+    private string $sessionName = "/_SESSION";
+    private string $certificateName = "";
+    private string $certificateType = "";
+    private string $certificatePrivateKey = "";
+    private string $certificatePassphrase = "";
+    private array $ramSession = [
+        "allow"=>true,
+        "size"=>1024 // 1024 MB
+    ];
+    private int $sessionTtl = 1440; // 24 minutes
+    private int $sleep = 0; //microseconds
+    private bool $listen=true;
+    private bool $groupsAllowed=false;
+    private bool $smtpAllowed=false;
+    private int $backlog=50;
+    private int $port=80;
+    private int $timeout=100;
+    private string $webRoot="/www/";
+    private string $charset="UTF-8";
+    private string $bindAddress="127.0.0.1";
+    
+    private array $events = [
+        "http"=>[],
+        "websocket"=>[]
+    ];
+
+    private int $cookieTtl=60*60*24*365; //1 year
+    private int $wsGroupMaxClient=10;
+    private int $wsMtu=1024*128; //128 KB
+    private int $httpMaxBodyLength=1024*1024*200; //200 MB
+    private int $httpMtu=65535;
+    private int $cacheMaxAge=60*60*24*365; //year
+    private string $entryPoint="/index.html";
+    private string $wsAcceptKey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+    private bool $running=true;
 }

@@ -13,11 +13,11 @@ abstract class Session{
     public static function umount(SharedObject $so):void{
         //check if directory already exists
         //if it does there's a chance it's mounted as a ram disk
-        if(file_exists($so->sessionDir)){
+        if(file_exists($so->getSessionDirectory())){
             //try to umount the ramdisk
-            echo exec("umount ".$so->sessionDir);
+            echo exec("umount ".$so->getSessionDirectory());
             //remove the session directory recursively
-            Dir::remove($so->sessionDir,true);
+            Dir::remove($so->getSessionDirectory(),true);
         }
     }
     
@@ -33,13 +33,13 @@ abstract class Session{
         self::umount($so);
         try{
             //make the session directory again
-            mkdir($so->sessionDir);
+            mkdir($so->getSessionDirectory());
             //mount the directory as a new ramdisk
-            echo exec("mount -t tmpfs tmpfs ".$so->sessionDir." -o size=".$so->ramSession["size"]);
+            echo exec("mount -t tmpfs tmpfs ".$so->getSessionDirectory()." -o size=".$so->getRamSession()["size"]);
             //some feedback
             echo "\nRam disk mounted.\n";
         }catch(\Exception $e){
-            mkdir($so->sessionDir);
+            mkdir($so->getSessionDirectory());
         }
     }
 
@@ -51,6 +51,6 @@ abstract class Session{
     public static function init(SharedObject $so):void{
         //try to umount session
         self::umount($so);
-        mkdir($so->sessionDir);
+        mkdir($so->getSessionDirectory());
     }
 }

@@ -76,8 +76,8 @@ abstract class HttpEventManager extends EventManager{
         $message = '';
         $valid = true;
         $this->params = &$this->calculateParameters($message,$valid);
-        if($this->listener->properties["http-consumer"] && !$this->_consumer_provided){
-            exit("HttpConsumer not provided for resource {$this->listener->resource}.\nPlease inject an HttpConsumer parameter in your callback.\n");
+        if(($this->listener->issetProperty('http-consumer') && $this->listener->getProperty('http-consumer')) && !$this->_consumer_provided){
+            exit("HttpConsumer not provided for resource {$this->listener->getResource()}.\nPlease inject an HttpConsumer parameter in your callback.\n");
         }
         $this->responseObject = new HttpResponse([
             "Status"=>Status::BAD_REQUEST
@@ -225,7 +225,7 @@ abstract class HttpEventManager extends EventManager{
             $responseHeader->set("Content-Length",''.$length);
         }
 
-        $chunks = \str_split($responseObject->toString(),$this->listener->so->httpMtu);
+        $chunks = \str_split($responseObject->toString(),$this->listener->getSharedObject()->getHttpMtu());
 
         for($i=0,$len=\count($chunks);$i<$len;$i++){
             $this->commit($chunks[$i]);
@@ -251,10 +251,10 @@ abstract class HttpEventManager extends EventManager{
             $httpCommit = $this->commits->current();
             $contents = &$httpCommit->getData();
             $length = \strlen($contents);
-            $result = \fwrite($this->listener->client, $contents, $length);
+            $result = \fwrite($this->client, $contents, $length);
             if(!$result){
                 $this->close();
-                unset($this->listener->so->httpConnections[$this->requestId]);
+                $this->listener->getSharedObject()->unsetHttpConnectionsEntry($this->requestId);
                 $this->uninstall();
                 break;
             }
@@ -268,7 +268,7 @@ abstract class HttpEventManager extends EventManager{
         $isEmpty = $this->commits->isEmpty();
         if($isEmpty){
             $this->close();
-            unset($this->listener->so->httpConnections[$this->requestId]);
+            $this->listener->getSharedObject()->unsetHttpConnectionsEntry($this->requestId);
             $this->uninstall();
         }
         return $isEmpty;

@@ -7,21 +7,18 @@ use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\http\HttpEventListener;
 use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
+/**
+ * @param array &$argv[1] This is the name of the config json file, for example "http.json".
+ * @param Closure $beforeStart This is a closure that will be executed right before the server starts.
+ * This Closure will be passed the context of the socket stream as a parameter.
+ */
 class CatPaw{
     private $socket;
     private bool $listening;
     private array $argv;
-    public SharedObject $so;
-    
-    /**
-     * @param &$argv[1] This is the name of the config json file, for example "http.json".
-     * @param $intercept This is an anonymus function that will be called before the server socket is created and after the socket context is created.
-     * This function will be fed one parameters: <b>$context</b>, this is the stream context of the server socket (which, by the way, is not created yet at this point).
-     * Modify this context to suit your needs.
-     * @param $certificate This is the certificate filename. Note that the path is relative to the settings (http.json) file.
-     * @param $password This is the passphrase of your certificate.
-     */
-    public function __construct(&$argv,?\Closure $beforeStart=null) {
+    private SharedObject $so;
+    private $client;
+    public function __construct(array &$argv,?\Closure $beforeStart=null) {
         $this->argv = $argv;
         $protocol="tcp";
         if(file_exists($argv[1])){
@@ -31,36 +28,35 @@ class CatPaw{
             //creating context
             $context = stream_context_create();
             //check if SSL certificate file is specified
-            if($so->certificateName !== ""){
+            if($so->getCertificateName() !== ""){
                 //use the SSL certificate
-                stream_context_set_option($context, 'ssl', 'local_cert', $so->certificateName);
+                stream_context_set_option($context, 'ssl', 'local_cert', $so->getCertificateName());
                 if(isset($so["certificate"]["privateKey"]))
-                    stream_context_set_option($context, 'ssl', 'local_pk', $so->certificatePrivateKey);
-                stream_context_set_option($context, 'ssl', 'passphrase', $so->certificatePassphrase);
+                    stream_context_set_option($context, 'ssl', 'local_pk', $so->getCertificatePrivateKey());
+                stream_context_set_option($context, 'ssl', 'passphrase', $so->getCertificatePrivatePassphrase());
                 stream_context_set_option($context, 'ssl', 'cyphers', 2);
                 stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
                 stream_context_set_option($context, 'ssl', 'verify_peer', false);
             }
-            //let the developer intercept the stream context
+            //intercept the stream context
             if($beforeStart !== null) $beforeStart($context);
             // Create the server socket
             $this->socket = stream_socket_server(
-                $protocol.'://'.$so->bindAddress.':'.$so->port,
+                $protocol.'://'.$so->getBindAddress().':'.$so->getPort(),
                 $errno,
                 $errstr,
                 STREAM_SERVER_BIND|STREAM_SERVER_LISTEN,
                 $context
             );
-            if($so->certificateName !== "")
+            if($so->getCertificateName() !== "")
                 stream_socket_enable_crypto($this->socket, false);
             if ($this->socket === false) throw new \Exception("$errstr ($errno)\n");
             $this->listening=true;
 
-            //check if developer allows ramdisk for session storage
-            if($so->ramSession["allow"]){
-                //if ramdisk is allowed, mount a new one
+            //check if ramdisk is allowed for session storage
+            if($so->getRamSession()["allow"]){
+                //if ramdisk is allowed, try mount a new one
                 Session::mount($so);
-                
                 //WARNING: ramdisk will remain mounted untill the next session is started
                 //which means the ramdisk could be alive after the server shuts down.
                 //you can run ./sessionMount.php to umount the current session
@@ -70,42 +66,27 @@ class CatPaw{
         }else{
             throw new \Exception ("\nConfig file \"{$this->argv[1]}\" doesn't exist\n");
         }
-        
-    }
-
-    public function fixFordwardRecursion(array $copy, array &$original):void{
-        $keys = \array_keys($copy);
-        foreach($keys as &$key){
-            if(isset($original[$key]) && isset($original[$original[$key]])){
-                if($key === $original[$original[$key]]){
-                    echo "@forward '{$copy[$key]}' => '{$copy[$copy[$key]]}' removed because it is recursive.\n";
-                    unset($original[$copy[$key]]);
-                    continue;
-                }
-                $copy[$key] = $original[$original[$key]];
-            }
-        }
     }
 
 
     private function &read(HttpEventListener $listener,int $chunkSize){
         $fragmentSize = $chunkSize;
-        $read = \fread($listener->client, $fragmentSize);
+        $read = \fread($this->client, $fragmentSize);
         if($read !== ''){
-            $listener->emptyFails = 0;
+            $listener->setEmptyFails(0);
             $len = \strlen($read);
             while($len < $chunkSize){
                 if($len + $fragmentSize > $chunkSize){
                     $fragmentSize = $chunkSize - $len;
                 }
-                $extra = \fread($listener->client, $fragmentSize);
+                $extra = \fread($this->client, $fragmentSize);
                 if($extra === false || $extra === '') break;
                 $len += \strlen($extra);
                 $read .= $extra;
             }
         }else
-            $listener->emptyFails++;
-        /*if($listener->emptyFails > 64 && $read === ''){
+            $listener->increaseEmptyFails();
+        /*if($listener->getEmptyFails() > 64 && $read === ''){
             $read = false;
         }*/
         return $read;
@@ -130,8 +111,7 @@ class CatPaw{
         echo "\nServer started.\n";
 
         
-        if(isset($this->so->events["http"]) && isset($this->so->events["http"]["@forward"]))
-            $this->fixFordwardRecursion($this->so->events["http"]["@forward"],$this->so->events["http"]["@forward"]);
+        $this->so->fixFordwardRecursion($this->so->getHttpEventsEntry("@forward"));
 
         //listen for connections
         while($this->listening){
@@ -139,31 +119,32 @@ class CatPaw{
             /**
              * Listen for queued http sockets and read incoming data.
             */
-            foreach($this->so->httpQueue as &$listener){
-                if(!$listener->httpConsumerStarted && $listener->actualBodyLength+$listener->so->httpMtu > $listener->so->httpMaxBodyLength){
-                    $delta = $listener->so->httpMaxBodyLength - $listener->actualBodyLength;
+            foreach($this->so->getHttpQueue() as &$listener){
+                $this->client = $listener->getClient();
+                if(!$listener->httpConsumerStarted() && $listener->getActualBodyLength()+$listener->getSharedObject()->getHttpMtu() > $listener->getSharedObject()->getHttpMaxBodyLength()){
+                    $delta = $listener->getSharedObject()->getHttpMaxBodyLength() - $listener->getActualBodyLength();
                     if($delta > 0)
                         $read = &$this->read($listener,$delta);
                     else 
                         $read = '';
                 }else{
-                    $read = &$this->read($listener,$listener->so->httpMtu);
+                    $read = &$this->read($listener,$listener->getSharedObject()->getHttpMtu());
                 }
 
                 if($read !== false){
-                    if($listener->continuation > 0){
-                        $listener->actualBodyLength += \strlen($read);
+                    if($listener->getContinuation() > 0){
+                        $listener->increaseActualBodyLengthByValue(\strlen($read));
 
-                        if($listener->httpConsumerStarted){
+                        if($listener->httpConsumerStarted()){
                             $listener->runHttpLiveBodyInject($read);
                         }else{
                             $listener->input[1] .= $read;
                         }
 
-                        if($listener->actualBodyLength === $listener->headerBodyLength || $listener->actualBodyLength === $listener->so->httpMaxBodyLength)
-                            $listener->completeBody = true;
+                        if($listener->bodyLengthsMatch() || $listener->actualBodyLengthIsMaxed())
+                            $listener->setCompleteBody(true);
                     }else{
-                        if($listener->httpConsumerStarted){
+                        if($listener->httpConsumerStarted()){
                             $listener->runHttpLiveBodyInject($read);
                         }
                         else if($listener->event === null)
@@ -174,37 +155,36 @@ class CatPaw{
 
                     if($listener->event === null){
                         if($listener->findHeaders()){
-                            //echo time().":".($listener->actualBodyLength).":".($listener->so->httpMtu)."\n";
                             [$isHttp,$isWebSOcket] = $listener->run();
                             if($isHttp){
-                                $listener->eventType = HttpEventListener::EVENT_TYPE_HTTP;
+                                $listener->setEventType(HttpEventListener::EVENT_TYPE_HTTP);
                                 $listener->event = &HttpEvent::make($listener);
                                 $listener->event->checkHttpConsumer();
                                 //echo "serving HTTP $listener->path \n";
                             }else if($isWebSOcket){
-                                $listener->eventType = HttpEventListener::EVENT_TYPE_WEBSOCKET;
+                                $listener->setEventType(HttpEventListener::EVENT_TYPE_WEBSOCKET);
                                 $listener->event = &WebSocketEvent::make($listener);
                                 //echo "serving WS $listener->path \n";
                             }else{
-                                unset($listener->so->httpQueue[$listener->hash]);
+                                $listener->getSharedObject()->unsetHttpQueueEntry($listener->getHash());
                             }
                         }
                     }
 
-                    if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP){
-                        if($listener->properties["http-consumer"]){
+                    if($listener->getEventType() == HttpEventListener::EVENT_TYPE_HTTP){
+                        if($listener->getProperty("http-consumer")){
                             if(!$listener->event->paramsinit){
                                 if(!$listener->event->initParams()){
-                                    unset($listener->so->httpQueue[$listener->hash]);
-                                    $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                                    $listener->getSharedObject()->unsetHttpQueueEntry($listener->getHash());
+                                    $listener->getSharedObject()->getHttpConnections()[$listener->event->getRequestId()] = &$listener->event;
                                     continue;
                                 }
                             }
 
                             if(!$listener->event->cbinit){
                                 if(!$listener->event->initCallback()){
-                                    unset($listener->so->httpQueue[$listener->hash]);
-                                    $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                                    $listener->getSharedObject()->unsetHttpQueueEntry($listener->getHash());
+                                    $listener->getSharedObject()->getHttpConnections()[$listener->event->getRequestId()] = &$listener->event;
                                     continue;
                                 }
                             }
@@ -214,9 +194,9 @@ class CatPaw{
                                 global $_EVENT;
                                 $_EVENT = $listener->event;
                                 if(!$_EVENT->run()){
-                                    unset($listener->so->httpQueue[$listener->hash]);
+                                    $listener->getSharedObject()->unsetHttpQueueEntry($listener->getHash());
                                     $_EVENT = null;
-                                    $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                                    $listener->getSharedObject()->getHttpConnections()[$listener->event->getRequestId()] = &$listener->event;
                                     continue;
                                 }
                                 $_EVENT = null;
@@ -225,29 +205,33 @@ class CatPaw{
                     }
                 }
 
-                if($read === false || $listener->completeBody){
-                    unset($listener->so->httpQueue[$listener->hash]);
-                    if($listener->eventType == HttpEventListener::EVENT_TYPE_WEBSOCKET){
+                if($read === false || $listener->isCompleteBody()){
+                    $listener->getSharedObject()->unsetHttpQueueEntry($listener->getHash());
+                    if($listener->getEventType() == HttpEventListener::EVENT_TYPE_WEBSOCKET){
                         $listener->runWebSocketDefault();
-                    }else if($listener->eventType == HttpEventListener::EVENT_TYPE_HTTP || $listener->continuation > 0){
-                        if($listener->httpConsumerStarted){
-                            if($listener->completeBody){
+                    }else if($listener->getEventType() == HttpEventListener::EVENT_TYPE_HTTP || $listener->getContinuation() > 0){
+                        if($listener->httpConsumerStarted()){
+                            if($listener->isCompleteBody()){
                                 //$read = false;
                                 $tmp = false;
                                 $listener->runHttpLiveBodyInject($tmp);
-                                $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                                //$listener->getSharedObject()->getHttpConnections()[$listener->event->getRequestId()] = &$listener->event;
+                                $listener->getSharedObject()->setHttpConnectionsEntry($listener->event->getRequestId(),$listener->event);
                             }else
                                 if(!$listener->runHttpLiveBodyInject($read)){
-                                    $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                                    //$listener->getSharedObject()->getHttpConnections()[$listener->event->getRequestId()] = &$listener->event;
+                                    $listener->getSharedObject()->setHttpConnectionsEntry($listener->event->getRequestId(),$listener->event);
                                 }
-                        }else if($listener->completeBody){
+                        }else if($listener->isCompleteBody()){
                             if(!$listener->event->initParams()){
-                                $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
+                                //$listener->getSharedObject()->getHttpConnections()[$listener->event->getRequestId()] = &$listener->event;
+                                $listener->getSharedObject()->setHttpConnectionsEntry($listener->event->getRequestId(),$listener->event);
                                 continue;
                             }
                             $listener->runHttpDefault();
-                            $listener->so->httpConnections[$listener->event->requestId] = &$listener->event;
-                        }else if($listener->continuation === 0 && $listener->event !== null){
+                            //$listener->getSharedObject()->getHttpConnections()[$listener->event->getRequestId()] = &$listener->event;
+                            $listener->getSharedObject()->setHttpConnectionsEntry($listener->event->getRequestId(),$listener->event);
+                        }else if($listener->getContinuation() === 0 && $listener->event !== null){
                             $listener->event->close();
                             $listener->event->uninstall();
                         }
@@ -256,17 +240,17 @@ class CatPaw{
                         $listener->event->uninstall();
                     }
                 }
-                if(($read === false) && $listener->continuation > 0){
-                    $listener->failedContinuations++;
+                if(($read === false) && $listener->getContinuation() > 0){
+                    $listener->increaseFailedContinuations();
                 }
                 $read = null;
-                $listener->continuation++;
+                $listener->increaseContinuation();
             }
             
             /**
              * Listen for http sockets and ush pending commits.
             */
-            foreach($this->so->httpConnections as &$e){
+            foreach($this->so->getHttpConnections() as &$e){
                 if($e->generator){
                     if($e->generator->valid()){
                         global $_EVENT;
@@ -298,7 +282,7 @@ class CatPaw{
              * Listen for web sockets.
              * Read incoming messages and push pending commits.
             */
-            foreach($this->so->websocketConnections as &$e){
+            foreach($this->so->getWebsocketConnections() as &$e){
                 $e->push();
                 $e->read();
             }
@@ -321,7 +305,7 @@ class CatPaw{
             $except = NULL;
             $tv_sec = 0;
             //check if something interesting is going on with clients array ($copy)
-            if (@stream_select($copy, $write, $except, $tv_sec, $this->so->sleep) < 1){
+            if (@stream_select($copy, $write, $except, $tv_sec, $this->so->getSleep()) < 1){
                 /*
                     stream_select returns the number of connections acquired,
                     so skip if it returns < 1
@@ -357,7 +341,7 @@ class CatPaw{
             //get the array key of the client
             $key = array_search($client, $copy);
             //check for certificate
-            if($this->so->certificateName !== ""){
+            if($this->so->getCertificateName() !== ""){
                 //block the connection until SSL is done.
                 stream_set_blocking($client, true);
                 //enable socket crypto method
@@ -365,11 +349,11 @@ class CatPaw{
             }
 
             //check if certificate is specified, assume the socket has been blocked and then unblock it
-            if($this->so->certificateName !== "")
+            if($this->so->getCertificateName() !== "")
                 stream_set_blocking($client, false);
-            \stream_set_timeout($client,0,$this->so->timeout);
+            \stream_set_timeout($client,0,$this->so->getTimeout());
             $listener = new HttpEventListener($client, $this->so);
-            $this->so->httpQueue[$listener->hash] = $listener;
+            $this->so->setHttpQueueEntry($listener->getHash(),$listener);
             unset($copy[$key]);
             unset($this->clients[$key]);
         }
@@ -408,7 +392,7 @@ class CatPaw{
                 @fclose($client);
             } else {
                 //check if certificate is specified
-                if($this->so->certificateName !== ""){
+                if($this->so->getCertificateName() !== ""){
                     //block the connection until SSL is done.
                     stream_set_blocking ($client, true);
                     //enable socket crypto method
@@ -426,7 +410,7 @@ class CatPaw{
                 $listener->run();
                 
                 //check if certificate is specified and unblock the socket
-                if($this->so->certificateName !== "")
+                if($this->so->getCertificateName() !== "")
                     stream_set_blocking ($client, false);
                 exit;
             }

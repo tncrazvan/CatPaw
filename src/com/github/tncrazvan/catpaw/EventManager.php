@@ -20,18 +20,27 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 
 abstract class EventManager{
-    public ?array $queryString=[];
-    public ?array $session = null;
-    public HttpHeaders $serverHeaders;
-    public HttpEventListener $listener;
-    public string $requestId;
-    public ?string $sessionId;
-    public bool $alive=true;
+    protected ?array $requestUrlQueries=[];
+    protected ?array $session = null;
+    protected HttpHeaders $serverHeaders;
+    protected HttpEventListener $listener;
+    protected string $requestId;
+    protected ?string $sessionId;
+    protected bool $alive=true;
     private array $dummy = [];
     protected bool $_consumer_provided = false;
     
-    public ?\Closure $_commit_fn = null;
+    protected ?\Closure $_commit_fn = null;
     protected bool $autocommit = true;
+
+    public function getHttpEventListener():HttpEventListener{return $this->listener;}
+    public function getRequestId():string{return $this->requestId;}
+    //public function getSessionId():string{return $this->sessionId;}
+    //public function consumerIsProvided():bool{return $this->_consumer_provided;}
+    //public function getCommitFunction():\Closure{return $this->_commit_fn;}
+    //public function isAutocommit():bool{return $this->autocommit;}
+
+    protected $client;
 
     public function checkHttpConsumer(){
         $valid = true;
@@ -43,9 +52,9 @@ abstract class EventManager{
             $cls = $type->getName();
             if($cls === HttpConsumer::class){
                 if($this instanceof HttpEvent)
-                    $this->listener->properties["http-consumer"] = true;
+                    $this->listener->setProperty("http-consumer", true);
                 else
-                    $this->listener->properties["http-consumer"] = false;
+                    $this->listener->setProperty("http-consumer", false);
             }
         }
     }
@@ -103,9 +112,9 @@ abstract class EventManager{
                 break;
                 case HttpConsumer::class:
                     if($this instanceof HttpEvent)
-                        $this->listener->properties["http-consumer"] = true;
+                        $this->listener->setProperty("http-consumer", true);
                     else
-                        $this->listener->properties["http-consumer"] = false;
+                        $this->listener->setProperty("http-consumer", false);
                         
                     $this->_consumer_provided = true;
                     static $param = null;
@@ -126,7 +135,7 @@ abstract class EventManager{
                             $param = &$this->listener->input[1];
                         break;
                         default:
-                            if($this->listener->params[$name])
+                            if(isset($this->listener->params[$name]))
                                 $param = &$this->listener->params[$name];
                             else
                                 $param = null;
@@ -148,7 +157,7 @@ abstract class EventManager{
                             }
                         break;
                         default:
-                            if($this->listener->params[$name])
+                            if(isset($this->listener->params[$name]))
                                 if(\is_numeric($this->listener->params[$name]))
                                     $param = \intval($this->listener->params[$name]);
                                 else{
@@ -253,30 +262,31 @@ abstract class EventManager{
 
 
     public function delegate(string $key,... $params){
-        $fun = $this->listener->so->events["http"][$key];
+        $fun = $this->listener->getSharedObject()->getHttpEventsEntry($key);
         return \call_user_func_array($fun,$params);
     }
 
     public function uninstall():void{
-        $this->queryString = [];
+        $this->requestUrlQueries = [];
     }
 
     public function install(HttpEventListener &$listener):void{
         $this->requestId = \spl_object_hash($this).rand();
         $this->listener = $listener;
+        $this->client = $listener->getClient();
         $this->serverHeaders = new HttpHeaders($this);
         $queries=[];
         $object=[];
         
-        if($listener->queryString !== ''){
-            $queries = \preg_split("/\\&/",$listener->queryString);
+        if($listener->issetQueryString()){
+            $queries = \preg_split("/\\&/",$listener->getQueryString());
             foreach ($queries as &$query){
                 $object = \preg_split("/=/m",$query);
                 $objectLength = \count($object);
                 if($objectLength > 1){
-                    $this->queryString[\trim($object[0])] = $object[1];
+                    $this->requestUrlQueries[\trim($object[0])] = $object[1];
                 }else{
-                    $this->queryString[\trim($object[0])] = true;
+                    $this->requestUrlQueries[\trim($object[0])] = true;
                 }
             }
         }
@@ -289,13 +299,13 @@ abstract class EventManager{
      public function close():void{
         if(!$this->alive) return;
         $this->alive = false;
-        $outcome = \fclose($this->listener->client);
+        $outcome = \fclose($this->listener->getClient());
         if($this->onClose !== null)
             $this->onClose->run();
         //@socket_set_option($this->clistener->lient, SOL_SOCKET, SO_LINGER, array('l_onoff' => 1, 'l_linger' => 1));
         //@socket_close($this->listener->client);
         if($this->session !== null) 
-            $this->listener->so->sessions->saveSession($this,$this->listener->so->sessions->getSession($this->sessionId));
+            $this->listener->getSharedObject()->getSessions()->saveSession($this,$this->listener->getSharedObject()->getSessions()->getSession($this->sessionId));
     }
 
     /**
@@ -303,7 +313,7 @@ abstract class EventManager{
      * @return string the ip address of the client
      */
     public function &getAddress():string{
-        $host = \stream_socket_get_name($this->listener->client,true);
+        $host = \stream_socket_get_name($this->listener->getClient(),true);
         $hostname = \preg_replace("/:[0-9]*/","",$host);
         return $hostname;
     }
@@ -313,7 +323,7 @@ abstract class EventManager{
      * @return string the port number of the client
      */
     public function getPort():int{
-        $host = \stream_socket_get_name($this->listener->client,true);
+        $host = \stream_socket_get_name($this->listener->getClient(),true);
         $port = \preg_replace("/.*:/","",$host);
         return \intval($port);
     }
@@ -335,6 +345,7 @@ abstract class EventManager{
     public function setResponseHeader(string $key, string $content):void{
         $this->serverHeaders->set($key,$content);
     }
+
 
     /**
      * Set the header of the event.
@@ -381,8 +392,8 @@ abstract class EventManager{
      * Get client socket
      * @return \resource This is the socket of the client.
      */
-    public function &getClient(){
-        return $this->listener->client;
+    public function getClient(){
+        return $this->client;
     }
     
     /**
@@ -390,11 +401,11 @@ abstract class EventManager{
      * @return \com\github\tncrazvan\catpaw\http\httpHeaders header of the client request.
      */
     public function &getRequestHttpHeaders():HttpHeaders{
-        return $this->listener->requestHeaders;
+        return $this->listener->getRequestHeaders();
     }
 
     public function &getRequestHeader(string $key){
-        return $this->listener->requestHeaders->get($key);
+        return $this->listener->getRequestHeaders()->get($key);
     }
     
     /**
@@ -418,7 +429,7 @@ abstract class EventManager{
      * @return &array This method returns an array pointer, so any changes made to the array will be saved across all http requests relative to this session, untill the server kills the session due to inactivity. The default session ttl is 24 minutes.
      */
     public function &startSession():array{
-        $this->session = &$this->listener->so->sessions->startSession($this, $this->sessionId);
+        $this->session = &$this->listener->getSharedObject()->getSessions()->startSession($this, $this->sessionId);
         return $this->session;
     }
     
@@ -432,7 +443,7 @@ abstract class EventManager{
             $this->startSession();
         }
         $this->session = null;
-        $this->listener->so->sessions->stopSession($this,$this->listener->so->sessions->getSession($this->sessionId));
+        $this->listener->getSharedObject()->getSessions()->stopSession($this,$this->listener->getSharedObject()->getSessions()->getSession($this->sessionId));
     }
     
     /**
@@ -442,7 +453,7 @@ abstract class EventManager{
     public function issetSession():bool{
         if($this->session === null) return false;
         $sessionID = null;
-        return $this->listener->so->sessions->issetSession($this,$sessionID);
+        return $this->listener->getSharedObject()->getSessions()->issetSession($this,$sessionID);
     }
     
     /**
@@ -451,7 +462,7 @@ abstract class EventManager{
      * @return 
      */
     public function issetRequestUrlQuery(string $key):bool{
-        return isset($this->queryString[$key]);
+        return isset($this->requestUrlQueries[$key]);
     }
     
     /**
@@ -460,14 +471,14 @@ abstract class EventManager{
      * @return the value of the query.
      */
     public function &getRequestUrlQuery(string $key):?string{
-        return $this->queryString[$key];
+        return $this->requestUrlQueries[$key];
     }
 
     /**
      * @return the array queries pointer
      */
     public function &getRequestUrlQueries():array{
-        return $this->queryString;
+        return $this->requestUrlQueries;
     }
     
     /**
@@ -498,7 +509,7 @@ abstract class EventManager{
      * @return value of the cookie.
      */
     public function getRequestCookie(string $key):string{
-        return $this->listener->requestHeaders->getCookie($key);
+        return $this->listener->getRequestHeaders()->getCookie($key);
     }
 
     /**
@@ -506,7 +517,7 @@ abstract class EventManager{
      * @return array of cookies
      */
     public function &getRequestCookies():array{
-        return $this->listener->requestHeaders->getCookies();
+        return $this->listener->getRequestHeaders()->getCookies();
     }
 
     /**
@@ -514,7 +525,7 @@ abstract class EventManager{
      * @return array of cookies
      */
     public function &getResponseCookies():array{
-        return $this->listener->serverHeaders->getCookies();
+        return $this->serverHeaders->getCookies();
     }
     
     /**
@@ -522,6 +533,6 @@ abstract class EventManager{
      * @param key name of the cookie.
      */
     public function issetRequestCookie(string $key):bool{
-        return $this->listener->requestHeaders->issetCookie($key);
+        return $this->listener->getRequestHeaders()->issetCookie($key);
     }
 }
