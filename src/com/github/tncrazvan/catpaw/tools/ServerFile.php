@@ -8,8 +8,8 @@ use com\github\tncrazvan\catpaw\http\HttpResponse;
 class ServerFile{
     /**
      * Include a php script in between \ob_start() and \ob_get_clean().
-     * @param string name of the file
-     * @param array arguments to pass to the script.
+     * @param name of the file
+     * @param arguments to pass to the script.
      * This data will be available inside the script through the "global $_ARGS" variable.
      * This variable can also be a ccessed through Script::args() which also provides type hinting.
      * @return string result of the script.
@@ -30,8 +30,8 @@ class ServerFile{
 
     /**
      * Require once a php script in between \ob_start() and \ob_get_clean().
-     * @param array parts of the filename (will be joined on "/").
-     * @param array arguments to pass to the script.
+     * @param parts of the filename (will be joined on "/").
+     * @param arguments to pass to the script.
      * This data will be available inside the script through the "global $_ARGS" variable.
      * This variable can also be a ccessed through Script::args() which also provides type hinting.
      * @return string result of the script.
@@ -52,7 +52,7 @@ class ServerFile{
 
     /**
      * Get the name of the parent directory of this file
-     * @param array parts of the filename (will be joined on "/").
+     * @param parts of the filename (will be joined on "/").
      * The elements of this array will be joined on "/" and create a filename.
      * @return bool true if the file exists, false otherwise.
      */
@@ -61,7 +61,7 @@ class ServerFile{
     }
     /**
      * Check if a file exists.
-     * @param array parts of the filename (will be joined on "/").
+     * @param parts of the filename (will be joined on "/").
      * The elements of this array will be joined on "/" and create a filename.
      * @return bool true if the file exists, false otherwise.
      */
@@ -70,7 +70,7 @@ class ServerFile{
     }
     /**
      * Check if a file is a directory.
-     * @param array parts of the filename (will be joined on "/").
+     * @param parts of the filename (will be joined on "/").
      * The elements of this array will be joined on "/" and create a filename.
      * @return bool true if the file is a directory, false otherwise.
      */
@@ -82,7 +82,7 @@ class ServerFile{
      * This will deal with range requests.
      * @param HttpEvent the event calling this method.
      * This is needed so that the method can process other metadata such as byte range fields.
-     * @param array parts of the filename (will be joined on "/").
+     * @param parts of the filename (will be joined on "/").
      * The elements of this array will be joined on "/" and create a filename.
      * @return HttpResponse This method manages byterange requests.
      * If the request header contains byterange fields, Content-Type will be set as 
