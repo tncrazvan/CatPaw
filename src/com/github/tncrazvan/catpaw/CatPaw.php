@@ -15,56 +15,50 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 class CatPaw{
     private $socket;
     private bool $listening;
-    private array $argv;
     private SharedObject $so;
     private $client;
-    public function __construct(array &$argv,?\Closure $beforeStart=null) {
-        $this->argv = $argv;
+    public function __construct(array $settings,?\Closure $beforeStart=null) {
         $protocol="tcp";
-        if(file_exists($argv[1])){
-            //creating SharedObject
-            $so = new SharedObject($argv[1]);
-            $this->so = $so;
-            //creating context
-            $context = stream_context_create();
-            //check if SSL certificate file is specified
-            if($so->getCertificateName() !== ""){
-                //use the SSL certificate
-                stream_context_set_option($context, 'ssl', 'local_cert', $so->getCertificateName());
-                if(isset($so["certificate"]["privateKey"]))
-                    stream_context_set_option($context, 'ssl', 'local_pk', $so->getCertificatePrivateKey());
-                stream_context_set_option($context, 'ssl', 'passphrase', $so->getCertificatePrivatePassphrase());
-                stream_context_set_option($context, 'ssl', 'cyphers', 2);
-                stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
-                stream_context_set_option($context, 'ssl', 'verify_peer', false);
-            }
-            //intercept the stream context
-            if($beforeStart !== null) $beforeStart($context);
-            // Create the server socket
-            $this->socket = stream_socket_server(
-                $protocol.'://'.$so->getBindAddress().':'.$so->getPort(),
-                $errno,
-                $errstr,
-                STREAM_SERVER_BIND|STREAM_SERVER_LISTEN,
-                $context
-            );
-            if($so->getCertificateName() !== "")
-                stream_socket_enable_crypto($this->socket, false);
-            if ($this->socket === false) throw new \Exception("$errstr ($errno)\n");
-            $this->listening=true;
+        //creating SharedObject
+        $so = new SharedObject($settings);
+        $this->so = $so;
+        //creating context
+        $context = stream_context_create();
+        //check if SSL certificate file is specified
+        if($so->getCertificateName() !== ""){
+            //use the SSL certificate
+            stream_context_set_option($context, 'ssl', 'local_cert', $so->getCertificateName());
+            if(isset($so["certificate"]["privateKey"]))
+                stream_context_set_option($context, 'ssl', 'local_pk', $so->getCertificatePrivateKey());
+            stream_context_set_option($context, 'ssl', 'passphrase', $so->getCertificatePrivatePassphrase());
+            stream_context_set_option($context, 'ssl', 'cyphers', 2);
+            stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
+            stream_context_set_option($context, 'ssl', 'verify_peer', false);
+        }
+        //intercept the stream context
+        if($beforeStart !== null) $beforeStart($context);
+        // Create the server socket
+        $this->socket = stream_socket_server(
+            $protocol.'://'.$so->getBindAddress().':'.$so->getPort(),
+            $errno,
+            $errstr,
+            STREAM_SERVER_BIND|STREAM_SERVER_LISTEN,
+            $context
+        );
+        if($so->getCertificateName() !== "")
+            stream_socket_enable_crypto($this->socket, false);
+        if ($this->socket === false) throw new \Exception("$errstr ($errno)\n");
+        $this->listening=true;
 
-            //check if ramdisk is allowed for session storage
-            if($so->getRamSession()["allow"]){
-                //if ramdisk is allowed, try mount a new one
-                Session::mount($so);
-                //WARNING: ramdisk will remain mounted untill the next session is started
-                //which means the ramdisk could be alive after the server shuts down.
-                //you can run ./sessionMount.php to umount the current session
-            }else{
-                Session::init($so);
-            }
+        //check if ramdisk is allowed for session storage
+        if($so->getRamSession()["allow"]){
+            //if ramdisk is allowed, try mount a new one
+            Session::mount($so);
+            //WARNING: ramdisk will remain mounted untill the next session is started
+            //which means the ramdisk could be alive after the server shuts down.
+            //you can run ./sessionMount.php to umount the current session
         }else{
-            throw new \Exception ("\nConfig file \"{$this->argv[1]}\" doesn't exist\n");
+            Session::init($so);
         }
     }
 

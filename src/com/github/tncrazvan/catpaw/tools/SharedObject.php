@@ -14,8 +14,7 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 class SharedObject extends Http{
     const DIR = __DIR__;
 
-    public function __construct(string $settingsFile,bool $print=true){
-        $settings = include($settingsFile);
+    public function __construct(array &$settings,bool $print=true){
 
         if(isset($settings['asciiTable']))
             $print = $settings["asciiTable"];
@@ -65,7 +64,7 @@ class SharedObject extends Http{
         };
 
 
-        $this->dir = dirname($settingsFile);
+        $this->dir = \getcwd();
         if(isset($settings["compress"]))
         $this->compress = $settings["compress"];
         if(isset($settings["sleep"]))

@@ -56,7 +56,7 @@ class ServerFile{
      * The elements of this array will be joined on "/" and create a filename.
      * @return bool true if the file exists, false otherwise.
      */
-    public static function dirname(string... $filename):bool{
+    public static function dirname(string... $filename):string{
         return \dirname(\preg_replace('#/+#','/',\join("/",$filename)));
     }
     /**
