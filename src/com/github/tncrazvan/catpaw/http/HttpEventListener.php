@@ -76,6 +76,7 @@ class HttpEventListener{
     public function getEventType():int{return $this->eventType;}
     public function setEventType(int $type):void{$this->eventType = $type;}
     public function httpConsumerStarted():bool{return $this->httpConsumerStarted;}
+    public function httpConsumerStart():void{$this->httpConsumerStarted = true;}
     public function getEmptyFails():int{return $this->emptyFails;}
     public function setEmptyFails(int $value):void{$this->emptyFails = $value;}
     public function increaseEmptyFails():void{$this->emptyFails++;}

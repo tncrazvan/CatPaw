@@ -189,8 +189,8 @@ class CatPaw{
                                 }
                             }
 
-                            if(!$listener->httpConsumerStarted){
-                                $listener->httpConsumerStarted = true;
+                            if(!$listener->httpConsumerStarted()){
+                                $listener->httpConsumerStart();
                                 global $_EVENT;
                                 $_EVENT = $listener->event;
                                 if(!$_EVENT->run()){
