@@ -9,10 +9,9 @@
 		"email": "tangent.jotey@gmail.com"
 	}
 	],
-	"minimum-stability": "dev",
 	"require": {
 		"php": ">=7.4.8",
-		"tncrazvan/asciitable": "dev-master"
+		"tncrazvan/asciitable": ">=1.0.0"
 	},
 	"config": {
 		"preferred-install": "source"
