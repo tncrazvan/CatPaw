@@ -257,6 +257,9 @@ abstract class HttpEventManager extends EventManager{
                 $this->listener->getSharedObject()->unsetHttpConnectionsEntry($this->requestId);
                 $this->uninstall();
                 break;
+            }else if($result < $length){
+                $extra = substr($contents,$result);
+                $this->commit($extra);
             }
 
             $i++;

@@ -315,7 +315,8 @@ class SharedObject extends Http{
     public function issetHttpEventEntry(string $key):bool{return isset($this->events['http'][$key]);}
     public function issetWebsocketEventsEntry(string $key):bool{return isset($this->events['websocket'][$key]);}
     
-    public function fixFordwardRecursion(array $copy):void{
+    public function fixFordwardRecursion(?array $copy):void{
+        if($copy === null) return;
         if($this->issetHttpEvents() && $this->issetHttpEventEntry("@forward")){
             $original = &$this->events["http"]["@forward"];
             $keys = \array_keys($copy);
@@ -373,8 +374,12 @@ class SharedObject extends Http{
     private string $bindAddress="127.0.0.1";
     
     private array $events = [
-        "http"=>[],
-        "websocket"=>[]
+        "http"=>[
+            "@forwards" => []
+        ],
+        "websocket"=>[
+            "@forwards" => []
+        ]
     ];
 
     private int $cookieTtl=60*60*24*365; //1 year
