@@ -329,8 +329,8 @@ abstract class WebSocketEventManager extends EventManager{
     private function encodeAndPushBytes(string $messageBytes, bool $binary):void {
         fflush($this->client);
         // We need to set only FIN and Opcode.
-        
-        if(!@\stream_socket_sendto($this->client, $binary?chr(0b10000010):chr(0b10000001))){
+        $cbin = $binary?chr(0b10000010):chr(0b10000001);
+        if(!$this->fwrite_stream($cbin)){
             $this->close();
             $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
             $this->uninstall();
@@ -340,14 +340,16 @@ abstract class WebSocketEventManager extends EventManager{
         $message_length = strlen($messageBytes);
         // Prepare the payload length.
         if ($message_length <= 125) {
-            if(!@\stream_socket_sendto($this->client, chr($message_length))){
+            $cl = chr($message_length);
+            if(!$this->fwrite_stream($cl)){
                 $this->close();
                 $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
                 $this->uninstall();
                 return;
             }
         } else { // We assume it is 16 bit length. Not more than that.
-            if(!@\stream_socket_sendto($this->client, chr(0b01111110))){
+            $c16 = chr(0b01111110);
+            if(!$this->fwrite_stream($c16)){
                 $this->close();
                 $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
                 $this->uninstall();
@@ -356,13 +358,15 @@ abstract class WebSocketEventManager extends EventManager{
 
             $b1 = ($message_length >> 8) & 0xff;
             $b2 = $message_length & 0xff;
-            if(!@\stream_socket_sendto($this->client, chr($b1))){
+            $cb1 = chr($b1);
+            if(!$this->fwrite_stream($cb1)){
                 $this->close();
                 $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
                 $this->uninstall();
                 return;
             }
-            if(!stream_socket_sendto($this->client,chr($b2))){
+            $cb2 = chr($b2);
+            if(!$this->fwrite_stream($cb2)){
                 $this->close();
                 $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
                 $this->uninstall();
@@ -370,7 +374,7 @@ abstract class WebSocketEventManager extends EventManager{
             }
         }
         // Write the data.
-        if(!stream_socket_sendto($this->client,$messageBytes)){
+        if(!$this->fwrite_stream($messageBytes)){
             $this->close();
             $this->listener->getSharedObject()->unsetWebsocketConnectionsEntry($this->requestId);
             $this->uninstall();
