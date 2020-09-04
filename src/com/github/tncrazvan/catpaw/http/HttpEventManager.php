@@ -22,6 +22,7 @@ use com\github\tncrazvan\catpaw\http\methods\HttpMethodUnlock;
 use com\github\tncrazvan\catpaw\http\methods\HttpMethodView;
 use com\github\tncrazvan\catpaw\tools\Caster;
 use com\github\tncrazvan\catpaw\tools\Status;
+use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\catpaw\tools\XMLSerializer;
 
 abstract class HttpEventManager extends EventManager{
@@ -243,25 +244,20 @@ abstract class HttpEventManager extends EventManager{
     public function commit(&$data):void{
         $this->commits->push(new HttpCommit($data));
     }
-
+    
     public function push(int $count=-1):bool{
         $i = 0 ;
         $this->commits->setIteratorMode(\SplDoublyLinkedList::IT_MODE_DELETE);
-        for ($this->commits->rewind(); $this->commits->valid(); $this->commits->next()) {
+        for ($this->commits->rewind();$this->commits->valid();$this->commits->next()) {
             $httpCommit = $this->commits->current();
-            $contents = &$httpCommit->getData();
-            $length = \strlen($contents);
-            $result = \fwrite($this->client, $contents, $length);
+            $contents = $httpCommit->getData();
+            $result = $this->fwrite_stream($contents);
             if(!$result){
                 $this->close();
                 $this->listener->getSharedObject()->unsetHttpConnectionsEntry($this->requestId);
                 $this->uninstall();
-                break;
-            }else if($result < $length){
-                $extra = substr($contents,$result);
-                $this->commit($extra);
+                return false;
             }
-
             $i++;
             if($count > 0 && $i >= $count)
                 break;

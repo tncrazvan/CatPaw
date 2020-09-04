@@ -41,6 +41,23 @@ abstract class EventManager{
     //public function isAutocommit():bool{return $this->autocommit;}
 
     protected $client;
+
+    /**
+     * Write to a socket stream.
+     * @param contents contents to send.
+     */
+    function fwrite_stream(&$contents) {
+        $fwrite = 0;
+        for ($written = 0; $written < \strlen($contents); $written += $fwrite) {
+            $fwrite = \fwrite($this->client, \substr($contents, $written));
+            if ($fwrite === false) {
+                return false;
+            }
+        }
+        return $written;
+    }
+
+
     /**
      * Check if http consumer is available for this event.
      * @return void
