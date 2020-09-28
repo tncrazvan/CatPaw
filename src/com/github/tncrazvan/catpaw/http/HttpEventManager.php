@@ -174,7 +174,7 @@ abstract class HttpEventManager extends EventManager{
                             "Status" => Status::METHOD_NOT_ALLOWED
                         ]);
                     }else {
-                        $responseObject = $responseObject->$lowermethod();
+                        $responseObject = $responseObject->$lowermethod(...$this->params);
                     }
                 }else {
                     $responseObject = new HttpResponse([
