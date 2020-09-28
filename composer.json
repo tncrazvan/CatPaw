@@ -10,8 +10,9 @@
 	}
 	],
 	"require": {
-		"php": ">=7.4.8",
-		"tncrazvan/asciitable": ">=1.0.0"
+		"php": ">=7.4",
+		"tncrazvan/asciitable": ">=1.0.0",
+		"tncrazvan/phporm": ">=1.1.5"
 	},
 	"config": {
 		"preferred-install": "source"
