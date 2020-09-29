@@ -11,8 +11,7 @@
 	],
 	"require": {
 		"php": ">=7.4",
-		"tncrazvan/asciitable": ">=1.0.0",
-		"tncrazvan/orm": ">=1.1.6"
+		"tncrazvan/asciitable": ">=1.0.0"
 	},
 	"config": {
 		"preferred-install": "dist"
