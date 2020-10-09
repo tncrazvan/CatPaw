@@ -14,9 +14,11 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEventOnOpen;
 class SharedObject extends Http{
     const DIR = __DIR__;
 
-    public function __construct(array &$settings,bool $print=true){
-
-        if(isset($settings['asciiTable']))
+    public function __construct(array &$settings,bool $forceHideTable = false){
+        $print=true;
+        if($forceHideTable)
+            $print = false;
+        else if(isset($settings['asciiTable']))
             $print = $settings["asciiTable"];
 
         if(isset($settings['webRoot'])){
