@@ -14,7 +14,7 @@ class ServerFile{
      * This variable can also be a ccessed through Script::args() which also provides type hinting.
      * @return string result of the script.
      */
-    public static function include(string $filename,... $args){
+    public static function include(string $filename,...$args){
         global $_ARGS;
         global $_EVENT;
         $_ARGS = $args;
@@ -36,7 +36,7 @@ class ServerFile{
      * This variable can also be a ccessed through Script::args() which also provides type hinting.
      * @return string result of the script.
      */
-    public static function requireOnce(string $filename,... $args){
+    public static function requireOnce(string $filename,...$args){
         global $_ARGS;
         global $_EVENT;
         $_ARGS = $args;
@@ -56,7 +56,7 @@ class ServerFile{
      * The elements of this array will be joined on "/" and create a filename.
      * @return bool true if the file exists, false otherwise.
      */
-    public static function dirname(string... $filename):string{
+    public static function dirname(string ...$filename):string{
         return \dirname(\preg_replace('#/+#','/',\join("/",$filename)));
     }
     /**
@@ -65,7 +65,7 @@ class ServerFile{
      * The elements of this array will be joined on "/" and create a filename.
      * @return bool true if the file exists, false otherwise.
      */
-    public static function exists(string... $filename):bool{
+    public static function exists(string ...$filename):bool{
         return \file_exists(\preg_replace('#/+#','/',\join("/",$filename)));
     }
     /**
@@ -74,7 +74,7 @@ class ServerFile{
      * The elements of this array will be joined on "/" and create a filename.
      * @return bool true if the file is a directory, false otherwise.
      */
-    public static function isDir(string... $filename):bool{
+    public static function isDir(string ...$filename):bool{
         return \is_dir(preg_replace('#/+#','/',\join("/",$filename)));
     }
     /**
@@ -82,7 +82,7 @@ class ServerFile{
      * This will deal with range requests.
      * @param HttpEvent the event calling this method.
      * This is needed so that the method can process other metadata such as byte range fields.
-     * @param parts of the filename (will be joined on "/").
+     * @param filename parts of the filename (will be joined on "/").
      * The elements of this array will be joined on "/" and create a filename.
      * @return HttpResponse This method manages byterange requests.
      * If the request header contains byterange fields, Content-Type will be set as 
