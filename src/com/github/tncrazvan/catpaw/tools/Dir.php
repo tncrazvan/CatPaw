@@ -5,14 +5,25 @@ use InvalidArgumentException;
 
 abstract class Dir{
     /**
+     * Alias of findFilesRecursive
      * Get the filenames within a directory recursively.
      * @param root startup directory.
      * @param map an associative array that will hold your results.
      */
     public static function getFilenamesRecursive(string $root,?array &$map):void{
+        static::findFilesRecursive($root,$map);
+    }
+
+    /**
+     * Get the filenames within a directory recursively.
+     * @param root startup directory.
+     * @param map an associative array that will hold your results.
+     */
+    public static function findFilesRecursive(string $root,?array &$map):void{
+        $root = \preg_replace('/\/++/','/',$root);
         //$fn = end(explode("/",$root));
-        if(is_dir($root)){
-            $scan = scandir($root);
+        if(\is_dir($root)){
+            $scan = \scandir($root);
             foreach ($scan as $a => &$file){
                 if($file == "." || $file == ".." || $file == ".git") continue;
                 self::getFilenamesRecursive("$root/$file",$map);
@@ -20,8 +31,8 @@ abstract class Dir{
         }else
             $map[] = [
                 "name" => $root,
-                "size" => filesize($root),
-                "lastChange" => filemtime($root)
+                "size" => \filesize($root),
+                "lastChange" => \filemtime($root)
             ];
     }
 

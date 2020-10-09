@@ -17,10 +17,12 @@ class CatPaw{
     private bool $listening;
     private SharedObject $so;
     private $client;
+    private int $count = 0;
     public function __construct(array $settings,?\Closure $beforeStart=null) {
+        $this->count++;
         $protocol="tcp";
         //creating SharedObject
-        $so = new SharedObject($settings);
+        $so = new SharedObject($settings,$this->count > 1);
         $this->so = $so;
         //creating context
         $context = stream_context_create();
@@ -285,7 +287,9 @@ class CatPaw{
 
             if($action !== null && (microtime(true)*1000) - $lastTime >= $actionIntervalMS && !$actionWorking) {
                 $actionWorking = true;
-                $actionIntervalMS = $action();
+                $actionIntervalMS = $action($this->so);
+                if($actionIntervalMS < 0) 
+                    $this->listening = false;
                 $lastTime = microtime(true)*1000;
                 $actionWorking = false;
             }
