@@ -17,12 +17,10 @@ class CatPaw{
     private bool $listening;
     private SharedObject $so;
     private $client;
-    private int $count = 0;
-    public function __construct(array $settings,?\Closure $beforeStart=null) {
-        $this->count++;
+    public function __construct(array $settings,bool $forceHideAsciiTable = false,?\Closure $beforeStart=null) {
         $protocol="tcp";
         //creating SharedObject
-        $so = new SharedObject($settings,$this->count > 1);
+        $so = new SharedObject($settings,$forceHideAsciiTable);
         $this->so = $so;
         //creating context
         $context = stream_context_create();
