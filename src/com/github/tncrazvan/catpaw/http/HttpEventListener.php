@@ -232,7 +232,8 @@ class HttpEventListener{
             $location = $listener->getSharedObject()->getWebRoot().$listener->path;
 
             //checking if it's a file
-            if(\file_exists($location) && !\is_dir($location)){
+            //if(\file_exists($location) && !\is_dir($location)){
+            if(!\is_dir($location)){
                 if(is_array($paths["@file"])){
                     if(isset($paths["@file"][$method])){
                         $callback = $paths["@file"][$method];

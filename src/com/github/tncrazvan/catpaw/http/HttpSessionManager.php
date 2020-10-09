@@ -36,7 +36,8 @@ class HttpSessionManager{
     public function issetSession(EventManager $e,&$sessionId):bool{
         if($e->issetRequestCookie("sessionId")){
             $sessionId = $e->getRequestCookie("sessionId");
-            if(file_exists($e->getHttpEventListener()->getSharedObject()->getSessionDIrectory()."/$sessionId")){
+            //if(file_exists($e->getHttpEventListener()->getSharedObject()->getSessionDIrectory()."/$sessionId")){
+            if(\is_file($e->getHttpEventListener()->getSharedObject()->getSessionDIrectory()."/$sessionId")){
                 return true;
             }
         }

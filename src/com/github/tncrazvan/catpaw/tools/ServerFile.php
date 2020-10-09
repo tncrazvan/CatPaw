@@ -100,7 +100,8 @@ class ServerFile{
         $filenameLength = \count($filename);
         if($filenameLength === 0) return $result;
         $filename = \preg_replace('#/+#','/',\join("/",$filename));
-        if(!\file_exists($filename))
+        //if(!\file_exists($filename))
+        if(!\is_file($filename))
             return new HttpResponse([
                 "Status"=>Status::NOT_FOUND
             ]);

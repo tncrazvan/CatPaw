@@ -14,7 +14,8 @@ abstract class Session{
     public static function umount(SharedObject $so):void{
         //check if directory already exists
         //if it does there's a chance it's mounted as a ram disk
-        if(file_exists($so->getSessionDirectory())){
+        //if(file_exists($so->getSessionDirectory())){
+        if(is_dir($so->getSessionDirectory())){
             //try to umount the ramdisk
             echo exec("umount ".$so->getSessionDirectory());
             //remove the session directory recursively
