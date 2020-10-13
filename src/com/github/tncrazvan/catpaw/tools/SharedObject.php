@@ -377,10 +377,10 @@ class SharedObject extends Http{
     
     private array $events = [
         "http"=>[
-            "@forwards" => []
+            "@forward" => []
         ],
         "websocket"=>[
-            "@forwards" => []
+            "@forward" => []
         ]
     ];
 
