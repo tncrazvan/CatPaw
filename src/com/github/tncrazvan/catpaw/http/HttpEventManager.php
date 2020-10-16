@@ -189,33 +189,45 @@ abstract class HttpEventManager extends EventManager{
         }
     }
 
-    public function dispatch(&$responseObject){
-        if(!$responseObject instanceof HttpResponse){
-            $accepts = \explode(",",\trim($this->getRequestHeader("Accept")));
-            foreach($accepts as &$acc){
-                if($acc === 'application/json'){
-                    $responseObject = \json_encode($responseObject);
-                    if(!$this->serverHeaders->has(("Content-Type")))
-                        $this->serverHeaders->set("Content-Type",$acc);
-                }else if($acc === 'application/xml' || $acc === 'text/xml'){
-                    if(\is_array($responseObject)){
-                        $responseObject = XMLSerializer::generateValidXmlFromArray($responseObject);
-                    }else{
-                        $cast = Caster::cast($responseObject,\stdClass::class);
-                        $responseObject = XMLSerializer::generateValidXmlFromObj($cast);
-                    }
-                    if(!$this->serverHeaders->has(("Content-Type")))
-                        $this->serverHeaders->set("Content-Type",$acc);
-                }
-            }
-            if(\is_object($responseObject))
-            $responseObject = \json_encode($responseObject);
+    private function adaptHeadersAndBody(array &$accepts,&$body):void{
+        foreach($accepts as &$accept){
+            if($accept === 'application/json'){
+                $body = \json_encode($body);
+                if(!$this->serverHeaders->has(("Content-Type")))
+                    $this->serverHeaders->set("Content-Type",$accept);
 
-            $response = new HttpResponse($this->serverHeaders,$responseObject);
-            $responseObject = null;
-            $responseObject = &$response;
-            
+                break;
+
+            }else if($accept === 'application/xml' || $accept === 'text/xml'){
+                if(\is_array($body)){
+                    $body = XMLSerializer::generateValidXmlFromArray($body);
+                }else{
+                    $cast = Caster::cast($body,\stdClass::class);
+                    $body = XMLSerializer::generateValidXmlFromObj($cast);
+                }
+                if(!$this->serverHeaders->has(("Content-Type")))
+                    $this->serverHeaders->set("Content-Type",$accept);
+
+                break;
+
+            }
         }
+        
+        if(\is_object($body) || is_array($body))
+            $body = \json_encode($body);
+    }
+
+    public function dispatch(&$responseObject){
+        $accepts = \explode(",",\trim($this->getRequestHeader("Accept")));
+        
+
+        if(!$responseObject instanceof HttpResponse){
+            $this->adaptHeadersAndBody($accepts,$responseObject);
+            $responseObject = new HttpResponse($this->serverHeaders,$responseObject);
+        }else{
+            $this->adaptHeadersAndBody($accepts,$responseObject->getBody());
+        }
+        
 
         $responseHeader = $responseObject->getHeaders();
         $responseHeader->initialize($this);

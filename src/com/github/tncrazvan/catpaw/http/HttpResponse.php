@@ -30,10 +30,10 @@ class HttpResponse{
     }
 
     public function &getBody(){
-        if(\is_array($this->body) || \is_object($this->body)){
+        /*if(\is_array($this->body) || \is_object($this->body)){
             $result = json_encode($this->body);
             return $result;
-        }
+        }*/
         return $this->body;
     }
 
