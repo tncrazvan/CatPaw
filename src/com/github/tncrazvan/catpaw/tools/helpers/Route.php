@@ -4,7 +4,6 @@ namespace com\github\tncrazvan\catpaw\tools\helpers;
 class Route{
     private static array $httpEvents = [];
     
-    
     public static function forward(string $from, string $to):void{
         if(!isset(self::$httpEvents["@forward"]))
             self::$httpEvents["@forward"][$from] = $to;
