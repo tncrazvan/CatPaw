@@ -4,6 +4,19 @@ namespace com\github\tncrazvan\catpaw\tools\helpers;
 class Route{
     private static array $httpEvents = [];
     
+    
+    public static function forward(string $from, string $to):void{
+        if(!isset(self::$httpEvents["@forward"]))
+            self::$httpEvents["@forward"][$from] = $to;
+    }
+
+    public static function notFound(\Closure $block):void{
+        if(!isset(self::$httpEvents["@404"]))
+            self::$httpEvents["@404"] = array();
+
+        self::$httpEvents["@404"]["GET"] = $block;
+    }
+
     public static function copy(string $path,\Closure $block):void{
         if(!isset(self::$httpEvents[$path]))
             self::$httpEvents[$path] = array();
