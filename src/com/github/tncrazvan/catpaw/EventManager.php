@@ -510,7 +510,7 @@ abstract class EventManager{
      * @param key name of the query.
      * @return bool true if
      */
-    public function issetRequestUrlQuery(string $key):bool{
+    public function issetRequestQueryString(string $key):bool{
         return isset($this->requestUrlQueries[$key]);
     }
     
@@ -519,7 +519,7 @@ abstract class EventManager{
      * @param key name of the query.
      * @return string the value of the query if it exists.
      */
-    public function &getRequestUrlQuery(string $key):string{
+    public function &getRequestQueryString(string $key):?string{
         return $this->requestUrlQueries[$key];
     }
 
@@ -527,7 +527,7 @@ abstract class EventManager{
      * Get all the url queries of the request.
      * @return array the request url queries array.
      */
-    public function &getRequestUrlQueries():array{
+    public function &getRequestQueryStrings():array{
         return $this->requestUrlQueries;
     }
     
