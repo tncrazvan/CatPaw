@@ -51,7 +51,7 @@ class HttpEventListener{
 
     
     public function &getQueryString():string{return $this->queryString;}
-    public function issetQueryString():bool{return $this->queryString === '';}
+    public function issetQueryString():bool{return $this->queryString !== '';}
     public function &getPath():string{return $this->path;}
     public function &getResource():string{return $this->resource;}
     public function &getRequestHeaders():HttpHeaders{return $this->requestHeaders;}
