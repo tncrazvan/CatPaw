@@ -185,7 +185,7 @@ class SharedObject extends Http{
                 ."This rule only applies to the reading process, it does __NOT__ apply to the __WRITING__ process in any way.\n"
                 ."Http consumers will __NOT__ follow this rule because they throw away old data as it's being read and that "
                 ."alone will take care of the memory oferflow issue."
-                    =>$this->httpMtu." bytes",
+                    =>$this->httpMaxBodyLength." bytes",
                 "cookieTtl\n\n"
                 ."Cookies Time To Live."
                     =>$this->cookieTtl." seconds",
