@@ -22,7 +22,7 @@ use com\github\tncrazvan\catpaw\http\methods\HttpMethodUnlock;
 use com\github\tncrazvan\catpaw\http\methods\HttpMethodView;
 use com\github\tncrazvan\catpaw\tools\Caster;
 use com\github\tncrazvan\catpaw\tools\Status;
-use com\github\tncrazvan\catpaw\tools\Strings;
+//use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\catpaw\tools\XMLSerializer;
 
 abstract class HttpEventManager extends EventManager{
@@ -43,7 +43,7 @@ abstract class HttpEventManager extends EventManager{
             
             if($data === false)
                 if($_first_commit){
-                    $this->funcheck($dataByReference);
+                    //$this->funcheck($dataByReference);
                     if(!$dataByReference instanceof \Generator){
                         $this->dispatch($dataByReference);
                     }else {
@@ -55,7 +55,7 @@ abstract class HttpEventManager extends EventManager{
                 }
             else
                 if($_first_commit){
-                    $this->funcheck($data);
+                    //$this->funcheck($data);
                     if(!$data instanceof \Generator){
                         $this->dispatch($data);
                     }else {
@@ -105,14 +105,14 @@ abstract class HttpEventManager extends EventManager{
                 "Status"=>Status::INTERNAL_SERVER_ERROR
             ],$ex->getMessage()."\n".$ex->getTraceAsString());
         }
-        $this->funcheck($this->responseObject);
+        //$this->funcheck($this->responseObject);
         $this->dispatch($this->responseObject);
         return false;
     }
 
     public function run():bool{
         if($this->autocommit){
-            $this->funcheck($this->responseObject);
+            //$this->funcheck($this->responseObject);
             if(!$this->responseObject instanceof \Generator){
                 $this->dispatch($this->responseObject);
             }else {
