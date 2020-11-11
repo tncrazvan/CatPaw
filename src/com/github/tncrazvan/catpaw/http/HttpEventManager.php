@@ -80,9 +80,14 @@ abstract class HttpEventManager extends EventManager{
         if(($this->listener->issetProperty('http-consumer') && $this->listener->getProperty('http-consumer')) && !$this->_consumer_provided){
             exit("HttpConsumer not provided for resource {$this->listener->getResource()}.\nPlease inject an HttpConsumer parameter in your callback.\n");
         }
-        $this->responseObject = new HttpResponse([
-            "Status"=>Status::BAD_REQUEST
-        ],$message);
+        if(!$valid){
+            $this->commits = new \SplDoublyLinkedList();
+            $this->responseObject = new HttpResponse([
+                "Status"=>Status::BAD_REQUEST
+            ],$message);
+            $this->dispatch($this->responseObject);
+        }
+        
         return $valid;
     }
 

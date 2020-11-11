@@ -15,17 +15,25 @@ class Route{
      * @param string $classname classname name of your class (usually MyClass::class)
      */
     public static function make(string $basePath, string $classname):void{
-        return static::handler($basePath,$classname,false);
+        static::handler($basePath,$classname,false);
     }
 
     public static function singleton(string $basePath, string $classname):void{
-        return static::handler($basePath,$classname,true);
+        static::handler($basePath,$classname,true);
     }
 
     private static function handler(string &$basePath, string &$classname, bool $singleton = false):void{
         $reflectionClass = new ReflectionClass($classname);
         $instance = new $classname();
-        $map = $instance::map();
+        $methods = $reflectionClass->getMethods();
+        $eventMethods = new \stdClass();
+        foreach($methods as $method){
+            $name = $method->getName();
+            if($method->isStatic()) 
+                continue;
+            $eventMethods->$name = $name;
+        }
+        $map = $instance::map($eventMethods);
 
         $basePath = \preg_replace('/\/+$/','',$basePath);
 
@@ -47,10 +55,14 @@ class Route{
         foreach($map as &$item){
             $method= $item["method"];
             $fname = $item["fname"];
-            $path= implode("/",[
-                $basePath,
-                $item["path"]
-            ]);
+
+            if("" === $item["path"])
+                $path = $basePath;
+            else
+                $path= implode("/",[
+                    $basePath,
+                    $item["path"]
+                ]);
             
             $path = \preg_replace('/^\/{2,}/','/',$path);
 
@@ -185,7 +197,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["COPY"] = $callback;
-        
     }
 
     /**
@@ -198,7 +209,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["DELETE"] = $callback;
-        
     }
 
     /**
@@ -211,7 +221,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["GET"] = $callback;
-        
     }
 
     /**
@@ -224,7 +233,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["HEAD"] = $callback;
-        
     }
     
     /**
@@ -237,7 +245,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["LINK"] = $callback;
-        
     }
     
     /**
@@ -250,7 +257,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["LOCK"] = $callback;
-        
     }
     
     /**
@@ -263,7 +269,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["OPTIONS"] = $callback;
-        
     }
     
     /**
@@ -276,7 +281,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["PATCH"] = $callback;
-        
     }
     
     /**
@@ -289,7 +293,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["POST"] = $callback;
-        
     }
     
     /**
@@ -302,7 +305,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["PROPFIND"] = $callback;
-        
     }
     
     /**
@@ -315,7 +317,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["PURGE"] = $callback;
-        
     }
     
     /**
@@ -328,7 +329,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["PUT"] = $callback;
-        
     }
     
     /**
@@ -341,7 +341,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["UNKNOWN"] = $callback;
-        
     }
     
     /**
@@ -354,7 +353,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["UNLINK"] = $callback;
-        
     }
     
     /**
@@ -367,7 +365,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["UNLOCK"] = $callback;
-        
     }
     
     /**
@@ -380,7 +377,6 @@ class Route{
             self::$httpEvents[$path] = array();
 
         self::$httpEvents[$path]["VIEW"] = $callback;
-        
     }
     
 
