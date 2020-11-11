@@ -25,5 +25,5 @@ abstract class HttpEventHandler{
      * Get all registered local methods of this HttpEventHandler.
      * @return array an array containing all registrations.
      */
-    public abstract static function map():array;
+    public abstract static function map(\stdClass $e):array;
 }
