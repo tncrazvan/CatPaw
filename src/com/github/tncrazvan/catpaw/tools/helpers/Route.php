@@ -4,9 +4,19 @@ namespace com\github\tncrazvan\catpaw\tools\helpers;
 use ReflectionClass;
 
 class Route{
+    private function __construct(){}
+    private static ?Route $singleton = null;
+
+    public static function make():Route{
+        if(static::$singleton == null)
+        static::$singleton = new self();
+
+        return static::$singleton;
+    }
+
     private static array $httpEvents = [];
     private static string $currentTarget = '';
-    private static function resolveTarget(string $method,$target){
+    private function resolveTarget(string $method,$target){
         if(is_string($target)){
             $reflectionClass = new ReflectionClass($target);
             $fname = trim($method);
@@ -35,158 +45,157 @@ class Route{
         return $target;
     }
 
-    public static function target(string $classname):Route{
+    public function target(string $classname):Route{
         static::$currentTarget = $classname;
-        return static;
+        return $this;
     }
 
-    public static function untarget():void{
+    public function untarget():void{
         static::$currentTarget = '';
-        return static;
     }
 
-    public static function forward(string $from, string $to):void{
-        if(!isset(self::$httpEvents["@forward"]))
-            self::$httpEvents["@forward"][$from] = $to;
+    public function forward(string $from, string $to):void{
+        if(!isset(static::$httpEvents["@forward"]))
+            static::$httpEvents["@forward"][$from] = $to;
     }
 
-    public static function notFound( $block):void{
-        if(!isset(self::$httpEvents["@404"]))
-            self::$httpEvents["@404"] = array();
+    public function notFound( $block):void{
+        if(!isset(static::$httpEvents["@404"]))
+            static::$httpEvents["@404"] = array();
 
-        self::$httpEvents["@404"]["GET"] = static::resolveTarget("GET",static::$currentTarget);
+        static::$httpEvents["@404"]["GET"] = $this->resolveTarget("GET",static::$currentTarget);
     }
 
-    public static function copy(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function copy(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["COPY"] = static::resolveTarget("COPY",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["COPY"] = $this->resolveTarget("COPY",static::$currentTarget);
+        return $this;
     }
 
-    public static function delete(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function delete(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["DELETE"] = static::resolveTarget("DELETE",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["DELETE"] = $this->resolveTarget("DELETE",static::$currentTarget);
+        return $this;
     }
 
-    public static function get(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function get(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["GET"] = static::resolveTarget("GET",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["GET"] = $this->resolveTarget("GET",static::$currentTarget);
+        return $this;
     }
 
-    public static function head(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function head(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["HEAD"] = static::resolveTarget("HEAD",static::$currentTarget);
-        return static;
-    }
-    
-    public static function link(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
-
-        self::$httpEvents[$path]["LINK"] = static::resolveTarget("LINK",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["HEAD"] = $this->resolveTarget("HEAD",static::$currentTarget);
+        return $this;
     }
     
-    public static function lock(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function link(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["LOCK"] = static::resolveTarget("LOCK",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["LINK"] = $this->resolveTarget("LINK",static::$currentTarget);
+        return $this;
     }
     
-    public static function options(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function lock(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["OPTIONS"] = static::resolveTarget("OPTIONS",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["LOCK"] = $this->resolveTarget("LOCK",static::$currentTarget);
+        return $this;
     }
     
-    public static function patch(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function options(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["PATCH"] = static::resolveTarget("PATCH",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["OPTIONS"] = $this->resolveTarget("OPTIONS",static::$currentTarget);
+        return $this;
     }
     
-    public static function post(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function patch(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["POST"] = static::resolveTarget("POST",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["PATCH"] = $this->resolveTarget("PATCH",static::$currentTarget);
+        return $this;
     }
     
-    public static function propfind(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function post(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["PROPFIND"] = static::resolveTarget("PROPFIND",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["POST"] = $this->resolveTarget("POST",static::$currentTarget);
+        return $this;
     }
     
-    public static function purge(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function propfind(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["PURGE"] = static::resolveTarget("PURGE",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["PROPFIND"] = $this->resolveTarget("PROPFIND",static::$currentTarget);
+        return $this;
     }
     
-    public static function put(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function purge(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["PUT"] = static::resolveTarget("PUT",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["PURGE"] = $this->resolveTarget("PURGE",static::$currentTarget);
+        return $this;
     }
     
-    public static function unknown(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function put(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["UNKNOWN"] = static::resolveTarget("UNKNOWN",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["PUT"] = $this->resolveTarget("PUT",static::$currentTarget);
+        return $this;
     }
     
-    public static function unlink(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function unknown(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["UNLINK"] = static::resolveTarget("UNLINK",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["UNKNOWN"] = $this->resolveTarget("UNKNOWN",static::$currentTarget);
+        return $this;
     }
     
-    public static function unlock(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function unlink(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["UNLOCK"] = static::resolveTarget("UNLOCK",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["UNLINK"] = $this->resolveTarget("UNLINK",static::$currentTarget);
+        return $this;
     }
     
-    public static function view(string $path):Route{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+    public function unlock(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["VIEW"] = static::resolveTarget("VIEW",static::$currentTarget);
-        return static;
+        static::$httpEvents[$path]["UNLOCK"] = $this->resolveTarget("UNLOCK",static::$currentTarget);
+        return $this;
+    }
+    
+    public function view(string $path):Route{
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
+
+        static::$httpEvents[$path]["VIEW"] = $this->resolveTarget("VIEW",static::$currentTarget);
+        return $this;
     }
     
 
     public static function &getHttpEvents():array{
-        return self::$httpEvents;
+        return static::$httpEvents;
     }
 }
