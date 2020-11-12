@@ -10,10 +10,8 @@ class HttpDefaultEvents{
     public static \Closure $notFound;
     public static \Closure $file;
     public static function init():void{
-        
-        $requestsByIp = [];
 
-        self::$notFound = function(HttpEvent $e){
+        static::$notFound = function(HttpEvent $e){
             $filename = [$e->getHttpEventListener()->getSharedObject()->getWebRoot(),$e->getHttpEventListener()->getPath()];
             if(!ServerFile::exists(...$filename)){
                 $php = [ServerFile::dirname(...$filename),"index.php"];
@@ -43,7 +41,7 @@ class HttpDefaultEvents{
 
 
 
-        self::$file = function(HttpEvent $e) use(&$requestsByIp){
+        static::$file = function(HttpEvent $e){
             
             switch($e->getRequestMethod()){
                 case "GET":
