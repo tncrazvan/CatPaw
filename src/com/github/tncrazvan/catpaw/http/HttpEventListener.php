@@ -309,7 +309,17 @@ class HttpEventListener{
                 $listener->properties[$key] = $property;
             }
         }else{
-            $callback = $paths["@404"];
+            if(\is_array($paths["@404"])){
+                if(!isset($paths["@404"][$method])){
+                    $paths["@404"][$method] = function(){
+                        return new HttpResponse([
+                            "Status" => Status::NOT_FOUND
+                        ],"");
+                    };
+                }
+                $callback = $paths["@404"][$method];
+            } else
+                $callback = $paths["@404"];
         }
             
 
