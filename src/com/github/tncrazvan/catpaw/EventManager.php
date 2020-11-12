@@ -192,6 +192,18 @@ abstract class EventManager{
                     }
                     $params[] = &$param;
                 break;
+                case 'bool':
+                    $name = $parameter->getName();
+                    static $param = null;
+                    $param = \filter_var($this->listener->params[$name], FILTER_VALIDATE_BOOLEAN);
+                    $params[] = &$param;
+                break;
+                case 'float':
+                    $name = $parameter->getName();
+                    static $param = null;
+                    $param = (float) $this->listener->params[$name];
+                    $params[] = &$param;
+                break;
                 case 'array':
                     $name = $parameter->getName();
                     static $param = null;
