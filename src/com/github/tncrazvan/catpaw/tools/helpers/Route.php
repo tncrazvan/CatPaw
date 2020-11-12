@@ -6,7 +6,7 @@ use ReflectionClass;
 use ReflectionMethod;
 
 class Route{
-    private static array $httpEvents = [];
+    protected static array $httpEvents = [];
 
     /**
      * Make a new route from a classname.<br />
@@ -159,8 +159,8 @@ class Route{
      * @param string $to path to forward to
      */
     public static function forward(string $from, string $to):void{
-        if(!isset(self::$httpEvents["@forward"]))
-            self::$httpEvents["@forward"][$from] = $to;
+        if(!isset(static::$httpEvents["@forward"]))
+            static::$httpEvents["@forward"][$from] = $to;
     }
 
     /**
@@ -176,15 +176,23 @@ class Route{
      * ]<br />
      * If this parameter is instead passed as a plain \Closure, the callback will be assigned to the "GET" http method.
      */
-    public static function notFound($block):void{
-        if(!isset(self::$httpEvents["@404"]))
-            self::$httpEvents["@404"] = array();
-
-        if(is_array($block)){
-            self::$httpEvents["@404"] = $block;
-        }else{
-            self::$httpEvents["@404"]["GET"] = $block;
-        }
+    public static function notFound(\Closure $callback):void{
+        static::copy("@404",$callback);
+        static::delete("@404",$callback);
+        static::get("@404",$callback);
+        static::head("@404",$callback);
+        static::link("@404",$callback);
+        static::lock("@404",$callback);
+        static::options("@404",$callback);
+        static::patch("@404",$callback);
+        static::post("@404",$callback);
+        static::propfind("@404",$callback);
+        static::purge("@404",$callback);
+        static::put("@404",$callback);
+        static::unknown("@404",$callback);
+        static::unlink("@404",$callback);
+        static::unlock("@404",$callback);
+        static::view("@404",$callback);
     }
 
     /**
@@ -193,10 +201,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function copy(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["COPY"] = $callback;
+        static::$httpEvents[$path]["COPY"] = $callback;
     }
 
     /**
@@ -205,10 +213,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function delete(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["DELETE"] = $callback;
+        static::$httpEvents[$path]["DELETE"] = $callback;
     }
 
     /**
@@ -217,10 +225,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function get(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["GET"] = $callback;
+        static::$httpEvents[$path]["GET"] = $callback;
     }
 
     /**
@@ -229,10 +237,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function head(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["HEAD"] = $callback;
+        static::$httpEvents[$path]["HEAD"] = $callback;
     }
     
     /**
@@ -241,10 +249,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function link(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["LINK"] = $callback;
+        static::$httpEvents[$path]["LINK"] = $callback;
     }
     
     /**
@@ -253,10 +261,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function lock(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["LOCK"] = $callback;
+        static::$httpEvents[$path]["LOCK"] = $callback;
     }
     
     /**
@@ -265,10 +273,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function options(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["OPTIONS"] = $callback;
+        static::$httpEvents[$path]["OPTIONS"] = $callback;
     }
     
     /**
@@ -277,10 +285,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function patch(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["PATCH"] = $callback;
+        static::$httpEvents[$path]["PATCH"] = $callback;
     }
     
     /**
@@ -289,10 +297,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function post(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["POST"] = $callback;
+        static::$httpEvents[$path]["POST"] = $callback;
     }
     
     /**
@@ -301,10 +309,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function propfind(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["PROPFIND"] = $callback;
+        static::$httpEvents[$path]["PROPFIND"] = $callback;
     }
     
     /**
@@ -313,10 +321,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function purge(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["PURGE"] = $callback;
+        static::$httpEvents[$path]["PURGE"] = $callback;
     }
     
     /**
@@ -325,10 +333,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function put(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["PUT"] = $callback;
+        static::$httpEvents[$path]["PUT"] = $callback;
     }
     
     /**
@@ -337,10 +345,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function unknown(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["UNKNOWN"] = $callback;
+        static::$httpEvents[$path]["UNKNOWN"] = $callback;
     }
     
     /**
@@ -349,10 +357,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function unlink(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["UNLINK"] = $callback;
+        static::$httpEvents[$path]["UNLINK"] = $callback;
     }
     
     /**
@@ -361,10 +369,10 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function unlock(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["UNLOCK"] = $callback;
+        static::$httpEvents[$path]["UNLOCK"] = $callback;
     }
     
     /**
@@ -373,14 +381,14 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function view(string $path, \Closure $callback):void{
-        if(!isset(self::$httpEvents[$path]))
-            self::$httpEvents[$path] = array();
+        if(!isset(static::$httpEvents[$path]))
+            static::$httpEvents[$path] = array();
 
-        self::$httpEvents[$path]["VIEW"] = $callback;
+        static::$httpEvents[$path]["VIEW"] = $callback;
     }
     
 
     public static function &getHttpEvents():array{
-        return self::$httpEvents;
+        return static::$httpEvents;
     }
 }
