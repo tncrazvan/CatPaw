@@ -256,7 +256,7 @@ class CatPaw{
                         try{
                             $responseObject = $e->generator->getReturn();
                             $e->generator = null;
-                            $e->funcheck($responseObject);
+                            //$e->funcheck($responseObject);
                             $e->dispatch($responseObject);
                         }catch(\Exception $ex){
                             $e->generator = null;

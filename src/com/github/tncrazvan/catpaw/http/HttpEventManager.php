@@ -151,7 +151,7 @@ abstract class HttpEventManager extends EventManager{
         return true;
     }
 
-    public function funcheck(&$responseObject){
+    /* public function funcheck(&$responseObject){
         while($responseObject instanceof HttpEventHandler){
             if(
                 $responseObject instanceof HttpMethodGet
@@ -192,7 +192,7 @@ abstract class HttpEventManager extends EventManager{
                 ]);
             }
         }
-    }
+    } */
 
     private function adaptHeadersAndBody(array &$accepts,&$body):void{
         foreach($accepts as &$accept){

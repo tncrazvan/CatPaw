@@ -157,7 +157,7 @@ class HttpEventListener{
                 ],$ex->getMessage()."\n".$ex->getTraceAsString());
             }
             if($error){
-                $this->event->funcheck($this->event->responseObject);
+                //$this->event->funcheck($this->event->responseObject);
                 $this->event->dispatch($this->event->responseObject);
                 return false;
             }else 
