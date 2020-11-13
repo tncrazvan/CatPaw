@@ -11,7 +11,7 @@ class HttpResponseCookies{
         $this->event->setResponseCookie($key,$content,$path,$domain,$expire);
     }
 
-    public function unset(string $key, ?string $path, ?string $domain):void{
+    public function unset(string $key, ?string $path = '/', ?string $domain = null):void{
         $this->event->unsetResponseCookie($key,$path,$domain);
     }
 

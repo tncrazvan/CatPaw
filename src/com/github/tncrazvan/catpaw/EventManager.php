@@ -142,7 +142,11 @@ abstract class EventManager{
                     $params[] = &$param;
                 break;
                 case \Closure::class:
-                    $params[] = $this->_commit_fn;
+                    $name = $parameter->getName();
+                    if('commit' === $name)
+                        $params[] = $this->_commit_fn;
+                    else
+                        $params[] = function(){};
                 break;
                 case 'string':
                     $name = $parameter->getName();
