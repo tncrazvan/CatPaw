@@ -10,7 +10,7 @@ abstract class HttpEventHandler{
      * @param string $functionName name of the local function.
      * @return array an array that contains metadata for this registration.
      */
-    protected static function target(string $method, string $path, string $functionName):array{
+    public static function target(string $method, string $path, string $functionName):array{
         
         $path = \preg_replace('/^\/+/','',$path);
         

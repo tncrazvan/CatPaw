@@ -10,44 +10,38 @@ class HttpDefaultEvents{
     public static \Closure $notFound;
     public static \Closure $file;
     public static function init():void{
-
-        static::$notFound = function(HttpEvent $e){
-            $filename = [$e->getHttpEventListener()->getSharedObject()->getWebRoot(),$e->getHttpEventListener()->getPath()];
+        $webroot = '';
+        static::$notFound = function(HttpEvent $e) use(&$webroot){
+            if('' === $webroot)
+                $webroot = $e->getHttpEventListener()->getSharedObject()->getWebRoot();
+                
+            $filename = [$webroot,$e->getHttpEventListener()->getPath()];
             if(!ServerFile::exists(...$filename)){
-                $php = [ServerFile::dirname(...$filename),"index.php"];
-                if(!ServerFile::exists(...$php)){
-                    $html = [ServerFile::dirname(...$filename),"index.html"];
-                    if(!ServerFile::exists(...$html)){
-                        return new HttpResponse([
-                            "Status" => Status::NOT_FOUND
-                        ]);
-                    }else $filename = $html;
-                }else $filename = $php;
+                if(!ServerFile::exists($webroot,"index.html")){
+                    return new HttpResponse([
+                        "Status" => Status::NOT_FOUND
+                    ]);
+                }else $filename = [$webroot,"index.html"];
             }else if(ServerFile::isDir(...$filename)){
-                $php = [...$filename,"index.php"];
-                if(!ServerFile::exists(...$php)){
-                    $html = [...$filename,"index.html"];
-                    if(!ServerFile::exists(...$html)){
-                        return new HttpResponse([
-                            "Status" => Status::NOT_FOUND
-                        ]);
-                    }else $filename = $html;
-                }else $filename = $php;
+                $html = [...$filename,"index.html"];
+                if(!ServerFile::exists(...$html)){
+                    return new HttpResponse([
+                        "Status" => Status::NOT_FOUND
+                    ]);
+                }else $filename = $html;
             }
-            if(Strings::endsWith($filename[count($filename)-1],'.php'))
-                return ServerFile::include(join('/',$filename));
             return ServerFile::response($e,...$filename);
         };
 
 
 
-        static::$file = function(HttpEvent $e){
-            
+        static::$file = function(HttpEvent $e) use(&$webroot){
+            if('' === $webroot)
+                $webroot = $e->getHttpEventListener()->getSharedObject()->getWebRoot();
+                
             switch($e->getRequestMethod()){
                 case "GET":
-                    if(Strings::endsWith($e->getHttpEventListener()->getPath(),'.php'))
-                        return ServerFile::include(join('/',[$e->getHttpEventListener()->getSharedObject()->getWebRoot(),$e->getHttpEventListener()->getPath()]));
-                    return ServerFile::response($e,$e->getHttpEventListener()->getSharedObject()->getWebRoot(),$e->getHttpEventListener()->getPath());
+                    return ServerFile::response($e,$webroot,$e->getHttpEventListener()->getPath());
                 break;
                 default:
                     return new HttpResponse([

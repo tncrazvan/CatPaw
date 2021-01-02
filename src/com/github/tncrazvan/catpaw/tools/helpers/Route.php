@@ -2,42 +2,161 @@
 namespace com\github\tncrazvan\catpaw\tools\helpers;
 
 use com\github\tncrazvan\catpaw\tools\Strings;
+use com\github\tncrazvan\catpaw\attributes\COPY;
+use com\github\tncrazvan\catpaw\attributes\DELETE;
+use com\github\tncrazvan\catpaw\attributes\GET;
+use com\github\tncrazvan\catpaw\attributes\HEAD;
+use com\github\tncrazvan\catpaw\attributes\LINK;
+use com\github\tncrazvan\catpaw\attributes\LOCK;
+use com\github\tncrazvan\catpaw\attributes\OPTIONS;
+use com\github\tncrazvan\catpaw\attributes\PATCH;
+use com\github\tncrazvan\catpaw\attributes\Path;
+use com\github\tncrazvan\catpaw\attributes\POST;
+use com\github\tncrazvan\catpaw\attributes\PROPFIND;
+use com\github\tncrazvan\catpaw\attributes\PURGE;
+use com\github\tncrazvan\catpaw\attributes\PUT;
+use com\github\tncrazvan\catpaw\attributes\UNKNOWN;
+use com\github\tncrazvan\catpaw\attributes\UNLINK;
+use com\github\tncrazvan\catpaw\attributes\UNLOCK;
+use com\github\tncrazvan\catpaw\attributes\VIEW;
 use ReflectionClass;
 use ReflectionMethod;
+use SplFixedArray;
 
 class Route{
     protected static array $httpEvents = [];
 
     /**
      * Make a new route from a classname.<br />
-     * The given classname MUST extend com\github\tncrazvan\catpaw\http\HttpEventHandler.
      * @param string $basePath Base path of your route (must always start with "/")
      * @param string $classname classname name of your class (usually MyClass::class)
      */
-    public static function make(string $basePath, string $classname):void{
-        static::handler($basePath,$classname,false);
+    public static function make(string $classname):void{
+        static::handler($classname,false);
     }
 
-    public static function singleton(string $basePath, string $classname):void{
-        static::handler($basePath,$classname,true);
+    public static function singleton(string $classname):void{
+        static::handler($classname,true);
     }
 
-    private static function handler(string &$basePath, string &$classname, bool $singleton = false):void{
+    private static function getClassAttributeArguments(ReflectionClass $reflection_class, string $attribute_name):?array{
+        $attributes = $reflection_class->getAttributes();
+        foreach($attributes as &$attribute){
+            $local_attribute_name = $attribute->getName();
+            if($local_attribute_name === $attribute_name)
+                return $attribute->getArguments();
+        }
+        return null;
+    }
+
+    private static function issetClassAttribute(ReflectionClass $reflection_class, string $attribute_name):bool{
+        $attributes = $reflection_class->getAttributes();
+        foreach($attributes as &$attribute){
+            $classname = $attribute->getName();
+            if($classname === $attribute_name)
+                return true;
+        }
+        return false;
+    }
+
+    private static function getMethodAttributeArguments(ReflectionMethod $reflection_method, string $attribute_name):?array{
+        $attributes = $reflection_method->getAttributes();
+        foreach($attributes as &$attribute){
+            $classname = $attribute->getName();
+            if($classname === $attribute_name)
+                return $attribute->getArguments();
+        }
+        return null;
+    }
+
+    private static function issetMethodAttribute(ReflectionMethod $reflection_method, string $attribute_name):bool{
+        $attributes = $reflection_method->getAttributes();
+        foreach($attributes as &$attribute){
+            $classname = $attribute->getName();
+            if($classname === $attribute_name)
+                return true;
+        }
+        return false;
+    }
+
+    private static function handler(string &$classname, bool $singleton = false):void{
         $reflectionClass = new ReflectionClass($classname);
-        $instance = new $classname();
         $methods = $reflectionClass->getMethods();
-        $eventMethods = new \stdClass();
-        foreach($methods as $method){
-            $name = $method->getName();
+        $map = [];
+        $i = 0;
+        foreach($methods as &$method){
             if($method->isStatic()) 
                 continue;
-            $eventMethods->$name = $name;
-        }
-        $map = $instance::map($eventMethods);
 
+            $p = static::getMethodAttributeArguments($method,Path::class);
+            $path = $p && count($p) > 0?$p[0]:'';
+
+            $http_methods = [
+                "COPY" => 
+                static::issetMethodAttribute($method,COPY::class),
+                "DELETE" =>
+                static::issetMethodAttribute($method,DELETE::class),
+                "GET" => 
+                static::issetMethodAttribute($method,GET::class),
+                "HEAD" => 
+                static::issetMethodAttribute($method,HEAD::class),
+                "LINK" => 
+                static::issetMethodAttribute($method,LINK::class),
+                "LOCK" => 
+                static::issetMethodAttribute($method,LOCK::class),
+                "OPTIONS" => 
+                static::issetMethodAttribute($method,OPTIONS::class),
+                "PATCH" => 
+                static::issetMethodAttribute($method,PATCH::class),
+                "POST" => 
+                static::issetMethodAttribute($method,POST::class),
+                "PROPFIND" => 
+                static::issetMethodAttribute($method,PROPFIND::class),
+                "PURGE" => 
+                static::issetMethodAttribute($method,PURGE::class),
+                "PUT" => 
+                static::issetMethodAttribute($method,PUT::class),
+                "UNKNOWN" => 
+                static::issetMethodAttribute($method,UNKNOWN::class),
+                "UNLINK" => 
+                static::issetMethodAttribute($method,UNLINK::class),
+                "UNLOCK" => 
+                static::issetMethodAttribute($method,UNLOCK::class),
+                "VIEW" => 
+                static::issetMethodAttribute($method,VIEW::class)
+            ];
+
+            $http_method = '';
+            foreach($http_methods as $key => &$httpm){
+                if($httpm){
+                    $http_method = $key;
+                    break;
+                }
+            }
+
+            if('' !== $http_method || '' !== $path){
+                $map[$i] = [
+                    "method" => '' !== $http_method?$http_method:"GET",
+                    "path" => '' !== $path?\preg_replace('/^\/+/','', $path):'',
+                    "fname" => $method->getName(),
+                ];
+            }
+            
+            $i++;
+        }
+
+        $args = static::getClassAttributeArguments($reflectionClass,Path::class);
+        $args_length = $args === null?0:\count($args);
+
+        //if no args are provided for Path on class, or Path is note provided at all, ignore class.
+        if($args_length === 0) 
+            return;
+
+
+        $basePath = $args[0];
         $basePath = \preg_replace('/\/+$/','',$basePath);
 
-        if(!Strings::startsWith($basePath,"/"))
+        if(!Strings::startsWith($basePath,'/'))
             $basePath = "/$basePath";
 
         if($singleton)
@@ -53,15 +172,15 @@ class Route{
         string $execute
     ):void{
         foreach($map as &$item){
-            $method= $item["method"];
-            $fname = $item["fname"];
+            $method= $item['method'];
+            $fname = $item['fname'];
 
-            if("" === $item["path"])
+            if('' === $item['path'])
                 $path = $basePath;
             else
-                $path= implode("/",[
+                $path= implode('/',[
                     $basePath,
-                    $item["path"]
+                    $item['path']
                 ]);
             
             $path = \preg_replace('/^\/{2,}/','/',$path);
