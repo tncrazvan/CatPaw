@@ -1,4 +1,4 @@
 <?php
 namespace com\github\tncrazvan\catpaw\attributes;
 #[Attribute]
-class UNLINK{}
+class Service extends Singleton{}

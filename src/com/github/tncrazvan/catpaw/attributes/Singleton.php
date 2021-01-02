@@ -1,4 +1,6 @@
 <?php
 namespace com\github\tncrazvan\catpaw\attributes;
 #[Attribute]
-class UNLOCK{}
+class Singleton{
+    public static array $map = [];
+}
