@@ -4,23 +4,7 @@ namespace com\github\tncrazvan\catpaw\tools\helpers;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
-use com\github\tncrazvan\catpaw\attributes\http\methods\COPY;
-use com\github\tncrazvan\catpaw\attributes\http\methods\DELETE;
-use com\github\tncrazvan\catpaw\attributes\http\methods\GET;
-use com\github\tncrazvan\catpaw\attributes\http\methods\HEAD;
-use com\github\tncrazvan\catpaw\attributes\http\methods\LINK;
-use com\github\tncrazvan\catpaw\attributes\http\methods\LOCK;
-use com\github\tncrazvan\catpaw\attributes\http\methods\OPTIONS;
-use com\github\tncrazvan\catpaw\attributes\http\methods\PATCH;
-use com\github\tncrazvan\catpaw\attributes\http\methods\POST;
-use com\github\tncrazvan\catpaw\attributes\http\methods\PROPFIND;
-use com\github\tncrazvan\catpaw\attributes\http\methods\PURGE;
-use com\github\tncrazvan\catpaw\attributes\http\methods\PUT;
-use com\github\tncrazvan\catpaw\attributes\http\methods\UNKNOWN;
-use com\github\tncrazvan\catpaw\attributes\http\methods\UNLINK;
-use com\github\tncrazvan\catpaw\attributes\http\methods\UNLOCK;
-use com\github\tncrazvan\catpaw\attributes\http\methods\VIEW;
-use com\github\tncrazvan\catpaw\attributes\Service;
+use com\github\tncrazvan\catpaw\tools\AttributeResolver;
 use ReflectionClass;
 use ReflectionMethod;
 
@@ -36,133 +20,7 @@ class Route{
         static::handler($classname);
     }
 
-    private static function getClassAttributeArguments(ReflectionClass $reflection_class, string $attribute_name):?array{
-        $attributes = $reflection_class->getAttributes();
-        foreach($attributes as &$attribute){
-            $local_attribute_name = $attribute->getName();
-            if($local_attribute_name === $attribute_name)
-                return $attribute->getArguments();
-        }
-        return null;
-    }
-
-    private static function issetClassAttribute(ReflectionClass $reflection_class, string ...$attribute_names):bool{
-        $attributes = $reflection_class->getAttributes();
-        foreach($attributes as &$attribute){
-            $classname = $attribute->getName();
-            if(in_array($classname,$attribute_names,true))
-                return true;
-            
-        }
-        return false;
-    }
-
-    private static function getMethodAttributeArguments(ReflectionMethod $reflection_method, string $attribute_name):?array{
-        $attributes = $reflection_method->getAttributes();
-        foreach($attributes as &$attribute){
-            $classname = $attribute->getName();
-            if($classname === $attribute_name)
-                return $attribute->getArguments();
-        }
-        return null;
-    }
-
-    private static function issetMethodAttribute(ReflectionMethod $reflection_method, string $attribute_name):bool{
-        $attributes = $reflection_method->getAttributes();
-        foreach($attributes as &$attribute){
-            $classname = $attribute->getName();
-            if($classname === $attribute_name)
-                return true;
-        }
-        return false;
-    }
-
-    private static function getMethodAttribute(\ReflectionMethod $method):array{
-        return [
-            "COPY" => 
-            static::issetMethodAttribute($method,COPY::class),
-            "DELETE" =>
-            static::issetMethodAttribute($method,DELETE::class),
-            "GET" => 
-            static::issetMethodAttribute($method,GET::class),
-            "HEAD" => 
-            static::issetMethodAttribute($method,HEAD::class),
-            "LINK" => 
-            static::issetMethodAttribute($method,LINK::class),
-            "LOCK" => 
-            static::issetMethodAttribute($method,LOCK::class),
-            "OPTIONS" => 
-            static::issetMethodAttribute($method,OPTIONS::class),
-            "PATCH" => 
-            static::issetMethodAttribute($method,PATCH::class),
-            "POST" => 
-            static::issetMethodAttribute($method,POST::class),
-            "PROPFIND" => 
-            static::issetMethodAttribute($method,PROPFIND::class),
-            "PURGE" => 
-            static::issetMethodAttribute($method,PURGE::class),
-            "PUT" => 
-            static::issetMethodAttribute($method,PUT::class),
-            "UNKNOWN" => 
-            static::issetMethodAttribute($method,UNKNOWN::class),
-            "UNLINK" => 
-            static::issetMethodAttribute($method,UNLINK::class),
-            "UNLOCK" => 
-            static::issetMethodAttribute($method,UNLOCK::class),
-            "VIEW" => 
-            static::issetMethodAttribute($method,VIEW::class)
-        ];
-    }
-
-    private static function resolveMethodAttributes(\ReflectionMethod $method, array &$map, int $i):void{
-        $p = static::getMethodAttributeArguments($method,Path::class);
-        $path = $p && count($p) > 0?$p[0]:'';
-
-        $http_methods = static::getMethodAttribute($method);
-
-        $http_method = '';
-        foreach($http_methods as $key => &$httpm){
-            if($httpm){
-                $http_method = $key;
-                break;
-            }
-        }
-
-        if('' !== $http_method || '' !== $path){
-            $map[$i] = [
-                "method" => '' !== $http_method?$http_method:"GET",
-                "path" => '' !== $path?\preg_replace('/^\/+/','', $path):'',
-                "fname" => $method->getName(),
-            ];
-        }
-    }
-
-    public static function resolveClassPropertiesAttributes(string &$classname,$instance):void{
-        $reflectionClass = new \ReflectionClass($classname);
-        $props = $reflectionClass->getProperties();
-        foreach($props as &$prop){
-            $prop->setAccessible(true);
-            if(
-                $prop->isInitialized($instance) 
-                || '' === $classname 
-                || 'string' === $classname 
-                || 'array' === $classname 
-                || 'int' === $classname 
-                || 'bool' === $classname
-                )
-                continue;
-            try{
-                $proptype = $prop->getType()->getName();
-                if(!isset(Singleton::$map[$proptype])){
-                    Singleton::$map[$proptype] = new $proptype();
-                }
-                $prop->setValue($instance,Singleton::$map[$proptype]);
-            }catch(\ReflectionException $e){
-                //echo "$name is not injectable because it does not specify a static 'inject' method.\n";
-            }
-            $prop->setAccessible(false);
-        }
-    }
+    
 
     private static function handler(string &$classname):void{
         $reflectionClass = new ReflectionClass($classname);
@@ -175,14 +33,14 @@ class Route{
         foreach($methods as &$method){
             if($method->isStatic()) 
                 continue;
-            static::resolveMethodAttributes($method,$map,$i);
+            AttributeResolver::resolveMethodAttributes($method,$map,$i);
             $i++;
         }
         ############################################################################
 
         //resolve main "Path" attribute
         ##################################################################################################################
-        $args = static::getClassAttributeArguments($reflectionClass,Path::class);
+        $args = AttributeResolver::getClassAttributeArguments($reflectionClass,Path::class);
         $args_length = $args === null?0:\count($args);
         //if no args are provided for Path on class, or Path is note provided at all, ignore class.
         if($args_length === 0) 
@@ -197,7 +55,7 @@ class Route{
 
         //resolve other class attributes
         ############################################################################
-        $singleton = static::issetClassAttribute($reflectionClass,Singleton::class,Service::class);
+        $singleton = AttributeResolver::issetClassAttribute($reflectionClass,Singleton::class);
         ############################################################################
 
         if($singleton){
@@ -237,12 +95,12 @@ class Route{
                 $namedAndTypedParamsString,
                 $namedParamsString
             ] = static::getMappedParameters($reflectionMethod);
-            $route = Route::class;
+            $resolver = AttributeResolver::class;
             $script =<<<EOF
             return function($namedAndTypedParamsString){
                 \$instance = $execute;
                 \$classname = '$classname';
-                $route::resolveClassPropertiesAttributes(\$classname,\$instance);
+                $resolver::resolveClassPropertiesAttributes(\$classname,\$instance);
                 return \$instance->$fname($namedParamsString);
             };
             EOF;
