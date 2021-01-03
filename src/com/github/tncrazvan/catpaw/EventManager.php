@@ -8,7 +8,10 @@ use com\github\tncrazvan\catpaw\http\HttpEventOnClose;
 use com\github\tncrazvan\catpaw\http\HttpEventListener;
 use com\github\tncrazvan\catpaw\http\HttpRequestBody;
 use com\github\tncrazvan\catpaw\http\HttpRequestCookies;
+use com\github\tncrazvan\catpaw\http\HttpRequestHeaders;
+use com\github\tncrazvan\catpaw\http\HttpResponse;
 use com\github\tncrazvan\catpaw\http\HttpResponseCookies;
+use com\github\tncrazvan\catpaw\http\HttpResponseHeaders;
 use com\github\tncrazvan\catpaw\tools\Caster;
 use com\github\tncrazvan\catpaw\tools\formdata\FormData;
 use com\github\tncrazvan\catpaw\tools\LinkedList;
@@ -22,7 +25,7 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 abstract class EventManager{
     protected ?array $requestUrlQueries=[];
     protected ?array $session = null;
-    protected HttpHeaders $serverHeaders;
+    protected HttpResponseHeaders $serverHeaders;
     protected HttpEventListener $listener;
     protected string $requestId;
     protected ?string $sessionId;
@@ -129,6 +132,12 @@ abstract class EventManager{
                 break;
                 case HttpResponseCookies::class://inject the HttpEvent instance
                     $params[] = &HttpResponseCookies::factory($this);
+                break;
+                case HttpRequestHeaders::class:
+                    $params[] = &$this->getRequestHttpHeaders();
+                break;
+                case HttpResponseHeaders::class:
+                    $params[] = &$this->getResponseHttpHeaders();
                 break;
                 case HttpConsumer::class:
                     if($this instanceof HttpEvent)
@@ -319,7 +328,7 @@ abstract class EventManager{
         $this->requestId = \spl_object_hash($this).rand();
         $this->listener = $listener;
         $this->client = $listener->getClient();
-        $this->serverHeaders = new HttpHeaders($this);
+        $this->serverHeaders = new HttpResponseHeaders($this);
         $queries=[];
         $object=[];
         
@@ -431,7 +440,7 @@ abstract class EventManager{
      * Get your response headers object.
      * @return HttpHeaders header of the your response message.
      */
-    public function &getResponseHttpHeaders():HttpHeaders{
+    public function &getResponseHttpHeaders():HttpResponseHeaders{
         return $this->serverHeaders;
     }
 
@@ -456,7 +465,7 @@ abstract class EventManager{
      * Get the request headers object.
      * @return HttpHeaders headers of the client request.
      */
-    public function &getRequestHttpHeaders():HttpHeaders{
+    public function &getRequestHttpHeaders():HttpRequestHeaders{
         return $this->listener->getRequestHeaders();
     }
 
