@@ -144,7 +144,17 @@ class AttributeResolver{
         }
     }
 
+
+    
+    private static $_props_resolved = [];
+    /**
+     * Properties injections are resolved at runtime not launch time.<br />
+     * However property injections themselves are singletons and they will be resolved only ONCE and then reused
+     * for all subsequent executions.
+     */
     public static function resolveClassPropertiesAttributes(string &$classname,$instance):void{
+        if(isset(static::$_props_resolved[$classname])) return;
+        static::$_props_resolved[] = $classname;
         $reflectionClass = new \ReflectionClass($classname);
         $props = $reflectionClass->getProperties();
         foreach($props as &$prop){
