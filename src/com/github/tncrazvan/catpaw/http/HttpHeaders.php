@@ -166,8 +166,19 @@ class HttpHeaders{
         $this->cookies[trim($key)] = $cookie;
     }
     
-    public static function fromString(EventManager $em=null, string &$string):HttpHeaders{
-        $httpHeaders = new HttpHeaders($em,false);
+    public static function fromStringAsRequest(EventManager $em=null, string &$string):HttpRequestHeaders{
+        $httpHeaders = new HttpRequestHeaders($em,false);
+        static::fromStringMutate($httpHeaders,$em,$string);
+        return $httpHeaders;
+    }
+
+    public static function fromStringAsResponse(EventManager $em=null, string &$string):HttpResponseHeaders{
+        $httpHeaders = new HttpResponseHeaders($em,false);
+        static::fromStringMutate($httpHeaders,$em,$string);
+        return $httpHeaders;
+    }
+
+    private static function fromStringMutate($httpHeaders, EventManager $em=null, string &$string):void{
         $lines = \preg_split("/\\r\\n/", $string);
         foreach($lines as &$line){
             if($line === "") continue;
@@ -203,6 +214,5 @@ class HttpHeaders{
                 }
             }
         }
-        return $httpHeaders;
     }
 }

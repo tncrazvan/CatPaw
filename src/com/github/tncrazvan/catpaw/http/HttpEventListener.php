@@ -20,7 +20,7 @@ class HttpEventListener{
     //requested resource (path + query)
     private string $resource;
     //request headers
-    private HttpHeaders $requestHeaders;
+    private HttpRequestHeaders $requestHeaders;
     private SharedObject $so;
     private $client;
     private string $hash;
@@ -54,7 +54,7 @@ class HttpEventListener{
     public function issetQueryString():bool{return $this->queryString !== '';}
     public function &getPath():string{return $this->path;}
     public function &getResource():string{return $this->resource;}
-    public function &getRequestHeaders():HttpHeaders{return $this->requestHeaders;}
+    public function &getRequestHeaders():HttpRequestHeaders{return $this->requestHeaders;}
     public function &getSharedObject():SharedObject{return $this->so;}
     public function &getHash():string{return $this->hash;}
     public function &getClient(){return $this->client;}
@@ -345,7 +345,7 @@ class HttpEventListener{
         }
 
 
-        $this->requestHeaders = HttpHeaders::fromString(null, $this->input[0]);
+        $this->requestHeaders = HttpHeaders::fromStringAsRequest(null, $this->input[0]);
         if(!$this->requestHeaders)
             return false;
 
