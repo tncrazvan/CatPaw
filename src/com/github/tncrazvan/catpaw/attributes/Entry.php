@@ -1,10 +1,10 @@
 <?php
-namespace com\github\tncrazvan\catpaw\attributes\http\methods;
+namespace com\github\tncrazvan\catpaw\attributes;
 
 use com\github\tncrazvan\catpaw\attributes\interfaces\AttributeInterface;
 use com\github\tncrazvan\catpaw\attributes\traits\CoreAttributeDefinition;
 
 #[\Attribute]
-class OPTIONS implements AttributeInterface{
+class Entry implements AttributeInterface{
     use CoreAttributeDefinition;
 }
