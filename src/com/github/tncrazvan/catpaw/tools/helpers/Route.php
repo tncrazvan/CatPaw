@@ -1,76 +1,15 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools\helpers;
 
-use com\github\tncrazvan\catpaw\tools\Strings;
-use com\github\tncrazvan\catpaw\attributes\Singleton;
-use com\github\tncrazvan\catpaw\attributes\http\Path;
 use com\github\tncrazvan\catpaw\tools\AttributeResolver;
-use ReflectionClass;
-use ReflectionMethod;
 
 class Route{
     protected static array $httpEvents = [];
 
-    /**
-     * Make a new route from a classname.<br />
-     * @param string $basePath Base path of your route (must always start with "/")
-     * @param string $classname classname name of your class (usually MyClass::class)
-     */
-    public static function make(string $classname):void{
-        static::handler($classname);
-    }
 
-    
-
-    private static function handler(string &$classname):void{
-        $reflectionClass = new ReflectionClass($classname);
-        $methods = $reflectionClass->getMethods();
-        $map = [];
-        $i = 0;
-
-        //resolve methods attributes
-        ############################################################################
-        foreach($methods as &$method){
-            if($method->isStatic()) 
-                continue;
-            AttributeResolver::resolveMethodAttributes($method,$map,$i);
-            $i++;
-        }
-        ############################################################################
-
-        //resolve main "Path" attribute
-        ##################################################################################################################
-        $args = AttributeResolver::getClassAttributeArguments($reflectionClass,Path::class);
-        $args_length = $args === null?0:\count($args);
-        //if no args are provided for Path on class, or Path is note provided at all, ignore class.
-        if($args_length === 0) 
-            return;
-        
-        $basePath = $args[0];
-        $basePath = \preg_replace('/\/+$/','',$basePath);
-        if(!Strings::startsWith($basePath,'/'))
-            $basePath = "/$basePath";
-        ##################################################################################################################
-
-
-        //resolve other class attributes
-        ############################################################################
-        $singleton = AttributeResolver::issetClassAttribute($reflectionClass,Singleton::class);
-        ############################################################################
-
-        if($singleton){
-            if(!isset(Singleton::$map[$classname])){
-                Singleton::$map[$classname] = new $classname();
-            }
-            
-            static::map($map,$reflectionClass,$classname,$basePath,(Singleton::class)."::\$map['$classname']");
-        }else
-            static::map($map,$reflectionClass,$classname,$basePath,"new $classname()");
-    }
-
-    private static function map(
+    public static function map(
         array $map, 
-        ReflectionClass $reflectionClass,
+        \ReflectionClass $reflectionClass,
         string &$classname,
         string $basePath,
         string $execute
@@ -100,7 +39,7 @@ class Route{
             return function($namedAndTypedParamsString){
                 \$instance = $execute;
                 \$classname = '$classname';
-                $resolver::resolveClassPropertiesAttributes(\$classname,\$instance);
+                $resolver::injectProperties(\$classname,\$instance);
                 return \$instance->$fname($namedParamsString);
             };
             EOF;
@@ -110,7 +49,7 @@ class Route{
         }
     }
 
-    private static function getMappedParameters(ReflectionMethod $reflectionMethod):array{
+    private static function getMappedParameters(\ReflectionMethod $reflectionMethod):array{
         $reflectionParameters = $reflectionMethod->getParameters();
         $namedAndTypedParams = array();
         $namedParams = array();

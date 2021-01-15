@@ -121,30 +121,6 @@ class AttributeResolver{
         ];
     }
 
-    public static function resolveMethodAttributes(\ReflectionMethod $method, array &$map, int $i):void{
-        $p = static::getMethodAttributeArguments($method,Path::class);
-        $path = $p && count($p) > 0?$p[0]:'';
-
-        $http_methods = static::getMethodAttribute($method);
-
-        $http_method = '';
-        foreach($http_methods as $key => &$httpm){
-            if($httpm){
-                $http_method = $key;
-                break;
-            }
-        }
-
-        if('' !== $http_method || '' !== $path){
-            $map[$i] = [
-                "method" => '' !== $http_method?$http_method:"GET",
-                "path" => '' !== $path?\preg_replace('/^\/+/','', $path):'',
-                "fname" => $method->getName(),
-            ];
-        }
-    }
-
-
     
     private static $_props_resolved = [];
     /**
@@ -152,7 +128,7 @@ class AttributeResolver{
      * However property injections themselves are singletons and they will be resolved only ONCE and then reused
      * for all subsequent executions.
      */
-    public static function resolveClassPropertiesAttributes(string &$classname,$instance):void{
+    public static function injectProperties(string &$classname,$instance):void{
         if(isset(static::$_props_resolved[$classname])) return;
         static::$_props_resolved[] = $classname;
         $reflectionClass = new \ReflectionClass($classname);
@@ -174,11 +150,11 @@ class AttributeResolver{
             || 'array' === $classname 
             || 'int' === $classname 
             || 'bool' === $classname
-            ) return;
+        ) return;
         $proptype = $prop->getType()->getName();
         if(!isset(Singleton::$map[$proptype])){
             $obj = new $proptype();
-            static::resolveClassPropertiesAttributes($proptype,$obj);
+            static::injectProperties($proptype,$obj);
             Singleton::$map[$proptype] = $obj;
         }
         $prop->setValue($instance,Singleton::$map[$proptype]);
