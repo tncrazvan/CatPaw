@@ -1,4 +1,4 @@
 <?php
 namespace com\github\tncrazvan\catpaw\attributes\http;
-#[Attribute]
+#[\Attribute]
 class Path{}

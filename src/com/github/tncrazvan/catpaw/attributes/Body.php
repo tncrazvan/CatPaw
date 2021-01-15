@@ -1,4 +1,4 @@
 <?php
 namespace com\github\tncrazvan\catpaw\attributes;
-#[Attribute]
+#[\Attribute]
 class Body{}
