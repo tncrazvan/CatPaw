@@ -4,25 +4,8 @@ namespace com\github\tncrazvan\catpaw\http;
 use com\github\tncrazvan\catpaw\EventManager;
 use com\github\tncrazvan\catpaw\http\HttpCommit;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodCopy;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodDelete;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodGet;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodHead;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodLink;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodLock;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodOptions;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodPatch;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodPost;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodPropfind;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodPurge;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodPut;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodUnknown;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodUnlink;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodUnlock;
-use com\github\tncrazvan\catpaw\http\methods\HttpMethodView;
 use com\github\tncrazvan\catpaw\tools\Caster;
 use com\github\tncrazvan\catpaw\tools\Status;
-//use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\catpaw\tools\XMLSerializer;
 
 abstract class HttpEventManager extends EventManager{

@@ -5,7 +5,13 @@ use com\github\tncrazvan\catpaw\tools\AttributeResolver;
 
 class Route{
     protected static array $httpEvents = [];
+    protected static array $httpEventsReflectionMethods = [];
 
+    public static function getReflectionsMethod(string $path, string $http_method):?\ReflectionMethod{
+        if(isset(static::$httpEventsReflectionMethods[$path]))
+            return static::$httpEventsReflectionMethods[$path][$http_method];
+        return null;
+    }
 
     public static function map(
         array $map, 
@@ -44,7 +50,8 @@ class Route{
             };
             EOF;
             $callback = eval($script);
-
+            
+            static::$httpEventsReflectionMethods[$path][$method] = $reflectionMethod;
             static::target($method,$path,$callback);
         }
     }

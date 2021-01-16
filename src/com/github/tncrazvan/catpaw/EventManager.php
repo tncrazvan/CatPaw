@@ -1,6 +1,8 @@
 <?php
 namespace com\github\tncrazvan\catpaw;
 
+use com\github\tncrazvan\catpaw\attributes\Consumes;
+use com\github\tncrazvan\catpaw\attributes\HttpBody;
 use com\github\tncrazvan\catpaw\http\HttpConsumer;
 use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
@@ -9,9 +11,9 @@ use com\github\tncrazvan\catpaw\http\HttpEventListener;
 use com\github\tncrazvan\catpaw\http\HttpRequestBody;
 use com\github\tncrazvan\catpaw\http\HttpRequestCookies;
 use com\github\tncrazvan\catpaw\http\HttpRequestHeaders;
-use com\github\tncrazvan\catpaw\http\HttpResponse;
 use com\github\tncrazvan\catpaw\http\HttpResponseCookies;
 use com\github\tncrazvan\catpaw\http\HttpResponseHeaders;
+use com\github\tncrazvan\catpaw\http\HttpSession;
 use com\github\tncrazvan\catpaw\tools\Caster;
 use com\github\tncrazvan\catpaw\tools\formdata\FormData;
 use com\github\tncrazvan\catpaw\tools\LinkedList;
@@ -23,6 +25,7 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 
 abstract class EventManager{
+    public ?\ReflectionMethod $reflection_method;
     protected ?array $requestUrlQueries=[];
     protected ?array $session = null;
     protected HttpResponseHeaders $serverHeaders;
@@ -150,6 +153,10 @@ abstract class EventManager{
                     $param = new HttpConsumer();
                     $params[] = &$param;
                 break;
+                case HttpSession::class:
+                    $this->startSession();
+                    $params[] = $this->listener->getSharedObject()->getSessions()->getSession($this->sessionId);
+                break;
                 case \Closure::class:
                     $name = $parameter->getName();
                     if('commit' === $name)
@@ -241,19 +248,24 @@ abstract class EventManager{
                     }
                     $params[] = &$param;
                 break;
-                default://unknown type, check if it's path parameter, otherwise inject null
+                default: //unknown type, check if it's path parameter, otherwise inject null
                     static $param = null;
-                    $reflectionClass = new \ReflectionClass($cls);
-                    if($reflectionClass->isSubclassOf(HttpRequestBody::class)){
-                        try{
-                            $param = &$this->getRequestParsedBody($cls);
-                        }catch(\Exception $e){
-                            echo "Could not convert body to '$cls', injecting null value.\n";
-                            echo 
-                                $e->getMessage()
-                                ."\n"
-                                .$e->getTraceAsString()."\n";
+                    //$reflection_class = new \ReflectionClass($cls);
+                    if($this->reflection_method !== null) try{
+                        $consumes = Consumes::findByMethod($this->reflection_method);
+                        $ctype = \strtolower($this->getRequestHeader("Content-Type"));
+                        $lctype = \strtolower($consumes->getContentType());
+                        if($consumes && $ctype === $lctype){
+                            $param = &$this->getRequestParsedBody($consumes->getClassName());
+                        }else{
+                            throw new \Exception("This endpoint consumes Content-Type: $lctype, $ctype has been provided instead.");
                         }
+                        
+                        
+                    }catch(\Throwable $e){
+                        $message = $e->getMessage();
+                        $valid = false;
+                        $param = null;
                     }
                     $params[] = &$param;
                 break;
@@ -273,6 +285,7 @@ abstract class EventManager{
         $ctype = $this->getRequestHeader("Content-Type");
         if($ctype === null){
             $result = null;
+            throw new \Exception("Please specify a Content-Type for your request.");
             return $result;
         }else if($classname !== null){
             if(Strings::startsWith($ctype,"application/x-www-form-urlencoded")){

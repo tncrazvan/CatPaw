@@ -84,6 +84,26 @@ class AttributeResolver{
         return false;
     }
 
+    public static function getParameterAttributeArguments(\ReflectionParameter $reflection_parameter, string $attribute_name):?array{
+        $attributes = $reflection_parameter->getAttributes();
+        foreach($attributes as &$attribute){
+            $classname = $attribute->getName();
+            if($classname === $attribute_name)
+                return $attribute->getArguments();
+        }
+        return null;
+    }
+
+    public static function issetParameterAttribute(\ReflectionParameter $reflection_parameter, string $attribute_name):bool{
+        $attributes = $reflection_parameter->getAttributes();
+        foreach($attributes as &$attribute){
+            $classname = $attribute->getName();
+            if($classname === $attribute_name)
+                return true;
+        }
+        return false;
+    }
+
     public static function getMethodAttribute(\ReflectionMethod $method):array{
         return [
             "COPY" => 
