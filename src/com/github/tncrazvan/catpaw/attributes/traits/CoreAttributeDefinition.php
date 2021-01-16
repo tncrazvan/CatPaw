@@ -21,4 +21,10 @@ trait CoreAttributeDefinition{
             return null;
         return new static(...AttributeResolver::getPropertyAttributeArguments($reflection_property,static::class));
     }
+
+    public static function findByParameter(\ReflectionParameter $reflection_parameter):?static{
+        if(!AttributeResolver::issetParameterAttribute($reflection_parameter,static::class))
+            return null;
+        return new static(...AttributeResolver::getParameterAttributeArguments($reflection_parameter,static::class));
+    }
 }

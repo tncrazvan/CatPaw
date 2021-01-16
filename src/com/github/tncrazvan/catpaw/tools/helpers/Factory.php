@@ -60,7 +60,7 @@ class Factory{
         \ReflectionClass $reflection_class,
         array &$methods,
         Path $path,
-        Singleton $singleton,
+        ?Singleton $singleton,
         string $classname):void{
         $map = [];
         $i = 0;

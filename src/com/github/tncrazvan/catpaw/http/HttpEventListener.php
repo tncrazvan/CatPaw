@@ -4,6 +4,7 @@ namespace com\github\tncrazvan\catpaw\http;
 use com\github\tncrazvan\catpaw\EventManager;
 use com\github\tncrazvan\catpaw\tools\Strings;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
+use com\github\tncrazvan\catpaw\tools\helpers\Route;
 use com\github\tncrazvan\catpaw\tools\SharedObject;
 use com\github\tncrazvan\catpaw\tools\Status;
 
@@ -227,7 +228,7 @@ class HttpEventListener{
             }
     }
 
-    private static function _file(string $method,string &$type, array &$paths, HttpEventListener &$listener, ?\Closure &$callback):bool{
+    private static function _file(string $method,string &$type, array &$paths, HttpEventListener &$listener, ?\Closure &$callback, ?\ReflectionMethod &$reflection_method):bool{
         if($type === 'http'){
             $location = $listener->getSharedObject()->getWebRoot().$listener->path;
 
@@ -237,6 +238,7 @@ class HttpEventListener{
                 if(is_array($paths["@file"])){
                     if(isset($paths["@file"][$method])){
                         $callback = $paths["@file"][$method];
+                        $reflection_method = Route::getReflectionsMethod('@file',$method);
                         foreach($paths["@file"] as $key =>&$property){
                             if($key === $method) continue;
                             $listener->properties[$key] = $property;
@@ -252,7 +254,7 @@ class HttpEventListener{
     }
 
 
-    private static function _event(string $method,array &$paths, HttpEventListener &$listener, ?\Closure &$callback):bool{
+    private static function _event(string $method, array &$paths, HttpEventListener &$listener, ?\Closure &$callback, ?\ReflectionMethod &$reflection_method):bool{
         $_event_path = \preg_replace('/(?<=^)\/+/','',$listener->path);
         foreach($paths as $route => &$cb){
             if($route === '@file' || 
@@ -280,6 +282,7 @@ class HttpEventListener{
                 if(is_array($cb)){
                     if(isset($cb[$method])){
                         $callback = $cb[$method];
+                        $reflection_method = Route::getReflectionsMethod("/$route",$method);
                         foreach($cb as $key =>&$property){
                             if($key === $method) continue;
                             $listener->properties[$key] = &$property;
@@ -294,16 +297,16 @@ class HttpEventListener{
         return false;
     }
 
-    public static function callback(string $type,HttpEventListener $listener):\Closure{
+    public static function callback(string $type, HttpEventListener $listener, ?\ReflectionMethod &$reflection_method):\Closure{
         $method = \strtoupper($listener->getRequestHeaders()->getMethod());
         $paths = &$listener->getSharedObject()->getEvents()[$type];
-
         
 
         self::_forward($paths,$listener);
 
         if($type === 'http' && is_array($paths["@404"]) && isset($paths["@404"][$method])){
             $callback = $paths["@404"][$method];
+            $reflection_method = Route::getReflectionsMethod('@404',$method);
             foreach($paths["@404"] as $key =>&$property){
                 if($key === $method) continue;
                 $listener->properties[$key] = $property;
@@ -323,10 +326,10 @@ class HttpEventListener{
         }
             
 
-        if(self::_file($method,$type,$paths,$listener,$callback))
+        if(self::_file($method,$type,$paths,$listener,$callback,$reflection_method))
             return $callback;
 
-        if(self::_event($method,$paths,$listener,$callback))
+        if(self::_event($method,$paths,$listener,$callback,$reflection_method))
             return $callback;
         
         return $callback;

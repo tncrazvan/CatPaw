@@ -5,6 +5,6 @@ use com\github\tncrazvan\catpaw\attributes\interfaces\AttributeInterface;
 use com\github\tncrazvan\catpaw\attributes\traits\CoreAttributeDefinition;
 
 #[\Attribute]
-class Body implements AttributeInterface{
+class HttpBody implements AttributeInterface{
     use CoreAttributeDefinition;
 }
