@@ -26,7 +26,7 @@ use com\github\tncrazvan\catpaw\tools\Strings;
 class Factory{
 
     private static array $args = [];
-    public static function injectConstructor(string $classname,?\Closure $args=null):void{
+    public static function setConstructorInjector(string $classname,?\Closure $args=null):void{
         static::$args[$classname] = $args;
     }
 
