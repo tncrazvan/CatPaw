@@ -24,18 +24,34 @@ use com\github\tncrazvan\catpaw\tools\AttributeResolver;
 use com\github\tncrazvan\catpaw\tools\Strings;
 
 class Factory{
-    /**
-     * Make a new route from a classname.<br />
-     * @param string $basePath Base path of your route (must always start with "/")
-     * @param string $classname classname name of your class (usually MyClass::class)
-     */
-    public static function make(string $classname,...$args):?object{
-        $reflection_class = new \ReflectionClass($classname);
-        $methods = $reflection_class->getMethods();
 
+    private static array $args = [];
+    public static function injectConstructor(string $classname,?\Closure $args=null):void{
+        static::$args[$classname] = $args;
+    }
+
+    public static function getConstructorInjector(string $classname):\Closure{
+        if(!isset(static::$args[$classname])) return fn()=>[];
+        return static::$args[$classname];
+    }
+
+    /**
+     * Make a new instance of the given class.<br />
+     * This method will take care of dependency injections.
+     * @param string $classname full name name of the class
+     */
+    public static function make(string $classname):?object{
+        $reflection_class = new \ReflectionClass($classname);
+
+        $singleton = Singleton::findByClass($reflection_class);
+        if($singleton && isset(Singleton::$map[$classname]))
+            return Singleton::$map[$classname];
+        
+
+        $methods = $reflection_class->getMethods();
+        $args = isset(static::$args[$classname])? static::$args[$classname]() : [];
         //resolve other class attributes
         ############################################################################
-        $singleton = Singleton::findByClass($reflection_class);
         if($singleton && !isset(Singleton::$map[$classname]))
             Singleton::$map[$classname] = new $classname(...$args);
 
@@ -79,7 +95,8 @@ class Factory{
         if($singleton){
             Route::map($map, $reflection_class, $classname, $base_path, (Singleton::class)."::\$map['$classname']");
         }else {
-            Route::map($map, $reflection_class, $classname, $base_path, "new $classname()");
+            $factory = Factory::class;
+            Route::map($map, $reflection_class, $classname, $base_path, "new $classname(...$factory::getConstructorInjector('$classname')())");
         }
     }
 

@@ -21,6 +21,7 @@ use com\github\tncrazvan\catpaw\attributes\http\methods\UNKNOWN;
 use com\github\tncrazvan\catpaw\attributes\http\methods\UNLINK;
 use com\github\tncrazvan\catpaw\attributes\http\methods\UNLOCK;
 use com\github\tncrazvan\catpaw\attributes\http\methods\VIEW;
+use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 
 class AttributeResolver{
     public static function getClassAttributeArguments(\ReflectionClass $reflection_class, string $attribute_name):?array{
@@ -173,7 +174,7 @@ class AttributeResolver{
         ) return;
         $proptype = $prop->getType()->getName();
         if(!isset(Singleton::$map[$proptype])){
-            $obj = new $proptype();
+            $obj = Factory::make($proptype);
             static::injectProperties($proptype,$obj);
             Singleton::$map[$proptype] = $obj;
         }
