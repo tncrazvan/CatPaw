@@ -86,6 +86,7 @@ class Factory{
                 'path' => '',
                 'fname' => $reflection_method->getName()
             ];
+            $i++;
         });
 
         $base_path = \preg_replace('/\/+$/','', $path->getValue());
