@@ -103,12 +103,14 @@ class ServerFile{
         //if(!\file_exists($filename))
         if(!\is_file($filename))
             return new HttpResponse([
-                "Status"=>Status::NOT_FOUND
+                "Status"=>Status::NOT_FOUND,
+                "Content-Type" => "text/plain"
             ]);
         $raf = \fopen($filename,"r");
         if(!$raf){
             return new HttpResponse([
-                "Status"=>Status::NOT_FOUND
+                "Status"=>Status::NOT_FOUND,
+                "Content-Type" => "text/plain"
             ]);
         }
         $filesize = \filesize($filename);

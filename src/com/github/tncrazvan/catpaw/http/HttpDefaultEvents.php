@@ -19,14 +19,16 @@ class HttpDefaultEvents{
             if(!ServerFile::exists(...$filename)){
                 if(!ServerFile::exists($webroot,"index.html")){
                     return new HttpResponse([
-                        "Status" => Status::NOT_FOUND
+                        "Status" => Status::NOT_FOUND,
+                        "Content-Type" => "text/plain"
                     ]);
                 }else $filename = [$webroot,"index.html"];
             }else if(ServerFile::isDir(...$filename)){
                 $html = [...$filename,"index.html"];
                 if(!ServerFile::exists(...$html)){
                     return new HttpResponse([
-                        "Status" => Status::NOT_FOUND
+                        "Status" => Status::NOT_FOUND,
+                        "Content-Type" => "text/plain"
                     ]);
                 }else $filename = $html;
             }

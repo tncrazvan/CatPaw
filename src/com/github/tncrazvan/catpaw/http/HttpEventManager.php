@@ -137,14 +137,15 @@ abstract class HttpEventManager extends EventManager{
     
 
     private function adaptHeadersAndBody(array &$accepts,&$body):void{
-
+        $count_accepts = \count($accepts);
+        
         if($this->reflection_method !== null && !$this->serverHeaders->has(("Content-Type")) && ($produces = Produces::findByMethod($this->reflection_method))){
             $produced = \preg_split('/\s*,\s*/',\strtolower($produces->getProducedContentTypes()));
         }else{
             $produced = \preg_split('/\s*,\s*/',$this->serverHeaders->get("Content-Type"));
         }
 
-        if(\count($accepts) === 1 && \count($produced) === 1 && $accepts[0] === '' && $produced[0] === '')
+        if($count_accepts === 1 && \count($produced) === 1 && $accepts[0] === '' && $produced[0] === '')
             return;
 
         foreach($accepts as &$accept){
@@ -169,6 +170,12 @@ abstract class HttpEventManager extends EventManager{
                 }
             }
         }
+
+        if(isset($produced[0])){
+            $this->serverHeaders->set("Content-Type",$produced[0]);
+            return;
+        }
+
         $this->setResponseStatus(Status::BAD_REQUEST);
         $this->serverHeaders->set("Content-Type","text/plain");
         $body = "This resource produces types [".\implode(',',$produced)."], which don't match with any types accepted by the request [".\implode(',',$accepts)."].";
