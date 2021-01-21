@@ -19,6 +19,7 @@ use com\github\tncrazvan\catpaw\attributes\http\methods\UNLINK;
 use com\github\tncrazvan\catpaw\attributes\http\methods\UNLOCK;
 use com\github\tncrazvan\catpaw\attributes\http\methods\VIEW;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
+use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
 use com\github\tncrazvan\catpaw\tools\AttributeResolver;
 use com\github\tncrazvan\catpaw\tools\Strings;
@@ -50,6 +51,17 @@ class Factory{
 
         $methods = $reflection_class->getMethods();
         $args = isset(static::$args[$classname])? static::$args[$classname]() : [];
+
+        if($reflection_class->getConstructor() !== null) {
+            $i = 0;
+            foreach ($reflection_class->getConstructor()->getParameters() as &$parameter) {
+                if(Inject::findByParameter($parameter)) {
+                    $args[$i] = Factory::make($parameter->getType()->getname());
+                }
+                $i++;
+            }
+        }
+
         //resolve other class attributes
         ############################################################################
         if($singleton)
@@ -107,7 +119,11 @@ class Factory{
         foreach($methods as $method){
             $entry = Entry::findByMethod($method);
             if($entry){
-                $method->invoke($instance,...[]);
+                if($method->isStatic()){
+                    $method->invoke(null,...[]);
+                }else{
+                    $method->invoke($instance,...[]);
+                }
                 break;
             }
         }
