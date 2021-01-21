@@ -41,18 +41,18 @@ class Factory{
      * @param string $classname full name name of the class
      */
     public static function make(string $classname):?object{
+        if(isset(Singleton::$map[$classname]))
+            return Singleton::$map[$classname];
+        
         $reflection_class = new \ReflectionClass($classname);
 
         $singleton = Singleton::findByClass($reflection_class);
-        if($singleton && isset(Singleton::$map[$classname]))
-            return Singleton::$map[$classname];
-        
 
         $methods = $reflection_class->getMethods();
         $args = isset(static::$args[$classname])? static::$args[$classname]() : [];
         //resolve other class attributes
         ############################################################################
-        if($singleton && !isset(Singleton::$map[$classname]))
+        if($singleton)
             Singleton::$map[$classname] = new $classname(...$args);
 
         $instance = $singleton ? Singleton::$map[$classname] : new $classname(...$args);
@@ -80,10 +80,12 @@ class Factory{
         string $classname):void{
         $map = [];
         $i = 0;
-        static::findHttpMethods($methods,function(string $http_method, \ReflectionMethod $reflection_method) use (&$map,&$i){
+        static::findHttpMethods($methods,function(string $http_method, \ReflectionMethod $reflection_method) use (&$map,&$i,&$path){
+            $local_path = Path::findByMethod($reflection_method);
+            
             $map[$i] = [
                 'method' => $http_method,
-                'path' => '',
+                'path' => $local_path?\preg_replace('/^\/+/','',$local_path->getValue()):'',
                 'fname' => $reflection_method->getName()
             ];
             $i++;

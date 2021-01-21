@@ -260,8 +260,6 @@ abstract class EventManager{
                         }else{
                             throw new \Exception("This endpoint consumes Content-Type: $lctype, $ctype has been provided instead.");
                         }
-                        
-                        
                     }catch(\Throwable $e){
                         $message = $e->getMessage();
                         $valid = false;
