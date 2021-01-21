@@ -134,49 +134,7 @@ abstract class HttpEventManager extends EventManager{
         }
         return true;
     }
-
-    /* public function funcheck(&$responseObject){
-        while($responseObject instanceof HttpEventHandler){
-            if(
-                $responseObject instanceof HttpMethodGet
-                || $responseObject instanceof HttpMethodPost
-                || $responseObject instanceof HttpMethodPut
-                || $responseObject instanceof HttpMethodPatch
-                || $responseObject instanceof HttpMethodDelete
-                || $responseObject instanceof HttpMethodCopy
-                || $responseObject instanceof HttpMethodHead
-                || $responseObject instanceof HttpMethodOptions
-                || $responseObject instanceof HttpMethodLink
-                || $responseObject instanceof HttpMethodUnlink
-                || $responseObject instanceof HttpMethodPurge
-                || $responseObject instanceof HttpMethodLock
-                || $responseObject instanceof HttpMethodUnlock
-                || $responseObject instanceof HttpMethodPropfind
-                || $responseObject instanceof HttpMethodView
-                || $responseObject instanceof HttpMethodUnknown
-            ){
-                $lowermethod = \strtolower($this->getRequestMethod());
-                if(\method_exists($responseObject,$lowermethod)){
-                    $rfm = new \ReflectionMethod($responseObject,$lowermethod);
-                    if (!$rfm->isPublic()) {
-                        $responseObject = new HttpResponse([
-                            "Status" => Status::METHOD_NOT_ALLOWED
-                        ]);
-                    }else {
-                        $responseObject = $responseObject->$lowermethod(...$this->params);
-                    }
-                }else {
-                    $responseObject = new HttpResponse([
-                        "Status" => Status::METHOD_NOT_ALLOWED
-                    ]);
-                }
-            }else{
-                $responseObject = new HttpResponse([
-                    "Status" => Status::METHOD_NOT_ALLOWED
-                ]);
-            }
-        }
-    } */
+    
 
     private function adaptHeadersAndBody(array &$accepts,&$body):void{
 
@@ -185,6 +143,9 @@ abstract class HttpEventManager extends EventManager{
         }else{
             $produced = \preg_split('/\s*,\s*/',$this->serverHeaders->get("Content-Type"));
         }
+
+        if(\count($accepts) === 1 && \count($produced) === 1 && $accepts[0] === '' && $produced[0] === '')
+            return;
 
         foreach($accepts as &$accept){
             if(\in_array($accept,$produced)){
@@ -207,26 +168,6 @@ abstract class HttpEventManager extends EventManager{
                     return;
                 }
             }
-            /* if($accept === $ctype && $accept === 'application/json'){
-                $body = \json_encode($body);
-                if(!$this->serverHeaders->has(("Content-Type")))
-                    $this->serverHeaders->set("Content-Type",$accept);
-
-                return;
-
-            }else if($accept === $ctype && ($accept === 'application/xml' || $accept === 'text/xml')){
-                if(\is_array($body)){
-                    $body = XMLSerializer::generateValidXmlFromArray($body);
-                }else{
-                    $cast = Caster::cast($body,\stdClass::class);
-                    $body = XMLSerializer::generateValidXmlFromObj($cast);
-                }
-                if(!$this->serverHeaders->has(("Content-Type")))
-                    $this->serverHeaders->set("Content-Type",$accept);
-
-                return;
-
-            } */
         }
         $this->setResponseStatus(Status::BAD_REQUEST);
         $this->serverHeaders->set("Content-Type","text/plain");
