@@ -4,6 +4,7 @@ namespace com\github\tncrazvan\catpaw\tools\helpers;
 use com\github\tncrazvan\catpaw\tools\AttributeResolver;
 
 class Route{
+    protected static array $orderedHttpEventsKeys = [];
     protected static array $httpEvents = [];
     protected static array $httpEventsReflectionMethods = [];
 

@@ -1,6 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\http;
 
+use com\github\tncrazvan\catpaw\attributes\Produces;
 use com\github\tncrazvan\catpaw\EventManager;
 use com\github\tncrazvan\catpaw\http\HttpCommit;
 use com\github\tncrazvan\catpaw\http\HttpResponse;
@@ -178,15 +179,42 @@ abstract class HttpEventManager extends EventManager{
     } */
 
     private function adaptHeadersAndBody(array &$accepts,&$body):void{
+
+        if($this->reflection_method !== null && !$this->serverHeaders->has(("Content-Type")) && ($produces = Produces::findByMethod($this->reflection_method))){
+            $produced = \preg_split('/\s*,\s*/',\strtolower($produces->getProducedContentTypes()));
+        }else{
+            $produced = \preg_split('/\s*,\s*/',$this->serverHeaders->get("Content-Type"));
+        }
+
         foreach($accepts as &$accept){
-            if($accept === 'application/json'){
+            if(\in_array($accept,$produced)){
+                switch($accept){
+                    case 'application/json':
+                        $body = \json_encode($body);
+                        if(!$this->serverHeaders->has(("Content-Type")))
+                            $this->serverHeaders->set("Content-Type",$accept);
+                    return;
+                    case 'application/xml':
+                    case 'text/xml':
+                        if(\is_array($body)){
+                            $body = XMLSerializer::generateValidXmlFromArray($body);
+                        }else{
+                            $cast = Caster::cast($body,\stdClass::class);
+                            $body = XMLSerializer::generateValidXmlFromObj($cast);
+                        }
+                        if(!$this->serverHeaders->has(("Content-Type")))
+                            $this->serverHeaders->set("Content-Type",$accept);
+                    return;
+                }
+            }
+            /* if($accept === $ctype && $accept === 'application/json'){
                 $body = \json_encode($body);
                 if(!$this->serverHeaders->has(("Content-Type")))
                     $this->serverHeaders->set("Content-Type",$accept);
 
-                break;
+                return;
 
-            }else if($accept === 'application/xml' || $accept === 'text/xml'){
+            }else if($accept === $ctype && ($accept === 'application/xml' || $accept === 'text/xml')){
                 if(\is_array($body)){
                     $body = XMLSerializer::generateValidXmlFromArray($body);
                 }else{
@@ -196,13 +224,13 @@ abstract class HttpEventManager extends EventManager{
                 if(!$this->serverHeaders->has(("Content-Type")))
                     $this->serverHeaders->set("Content-Type",$accept);
 
-                break;
+                return;
 
-            }
+            } */
         }
-        
-        if(\is_object($body) || is_array($body))
-            $body = \json_encode($body);
+        $this->setResponseStatus(Status::BAD_REQUEST);
+        $this->serverHeaders->set("Content-Type","text/plain");
+        $body = "This resource produces types [".\implode(',',$produced)."], which don't match with any types accepted by the request [".\implode(',',$accepts)."].";
     }
 
     public function dispatch(&$responseObject){

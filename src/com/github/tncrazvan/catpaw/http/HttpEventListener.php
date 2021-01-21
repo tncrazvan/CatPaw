@@ -269,7 +269,8 @@ class HttpEventListener{
             $len=\count($pieces);
             $c = 0;
             $parts = \preg_split('/\//',$_event_path);
-            for($i=0,$lenR = \count($parts);$i<$len && $i<$lenR;$i++){
+            $len_parts = \count($parts);
+            for($i=0;$i<$len && $i<$len_parts;$i++){
                 $matches = null;
                 if(\preg_match(self::PATTERN_PATH_PARAM,$pieces[$i],$matches)) {
                     $listener->params[$matches[0]] = $parts[$i];
@@ -278,7 +279,7 @@ class HttpEventListener{
                 else if($pieces[$i] === $parts[$i])  $c++;
             }
 
-            if($c === $len){
+            if($c === $len_parts){
                 if(is_array($cb)){
                     if(isset($cb[$method])){
                         $callback = $cb[$method];

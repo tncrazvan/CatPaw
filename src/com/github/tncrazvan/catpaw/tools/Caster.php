@@ -18,8 +18,12 @@ class Caster{
         }else{
             $props = \get_object_vars($obj);
             foreach($props as $key => &$value){
-                $mname = 'set'.\ucfirst($key);
-                $result->$mname($value);
+                if(isset($result->$key))
+                    $result->$key = $value;
+                else{
+                    $mname = 'set'.\ucfirst($key);
+                    $result->$mname($value);
+                }
             }
         }
         return $result;
