@@ -41,7 +41,7 @@ class Factory{
      * This method will take care of dependency injections.
      * @param string $classname full name name of the class
      */
-    public static function make(string $classname):?object{
+    public static function make(string $classname, bool $lazy_paths = true):?object{
         if(isset(Singleton::$map[$classname]))
             return Singleton::$map[$classname];
         
@@ -56,7 +56,7 @@ class Factory{
             $i = 0;
             foreach ($reflection_class->getConstructor()->getParameters() as &$parameter) {
                 if(Inject::findByParameter($parameter)) {
-                    $args[$i] = Factory::make($parameter->getType()->getname());
+                    $args[$i] = Factory::make($parameter->getType()->getname(),false);
                 }
                 $i++;
             }
@@ -73,13 +73,15 @@ class Factory{
         //resolve main "Path" attribute
         ##################################################################################################################
         $path = Path::findByClass($reflection_class);
-        if($path)
-            static::path($reflection_class,$methods,$path,$singleton,$classname);
-        else
+        if($path){
+            if(!$lazy_paths)
+                AttributeResolver::injectProperties($classname,$instance);
+            static::path($reflection_class,$methods,$path,$singleton,$classname,$lazy_paths);
+        }else
             AttributeResolver::injectProperties($classname,$instance);
         
 
-        static::entry($methods,$instance);
+        static::entry($methods,$instance,$classname);
 
         return $instance;
     }
@@ -89,7 +91,8 @@ class Factory{
         array &$methods,
         Path $path,
         ?Singleton $singleton,
-        string $classname):void{
+        string $classname,
+        bool $inject):void{
         $map = [];
         $i = 0;
         static::findHttpMethods($methods,function(string $http_method, \ReflectionMethod $reflection_method) use (&$map,&$i,&$path){
@@ -108,20 +111,21 @@ class Factory{
             $base_path = "/$base_path";
             
         if($singleton){
-            Route::map($map, $reflection_class, $classname, $base_path, (Singleton::class)."::\$map['$classname']");
+            Route::map($map, $reflection_class, $classname, $base_path, $inject, (Singleton::class)."::\$map['$classname']");
         }else {
             $factory = Factory::class;
-            Route::map($map, $reflection_class, $classname, $base_path, "new $classname(...$factory::getConstructorInjector('$classname')())");
+            Route::map($map, $reflection_class, $classname, $base_path, $inject, "new $classname(...$factory::getConstructorInjector('$classname')())");
         }
     }
 
-    private static function entry($methods,$instance):void{
+    private static function entry($methods,$instance,string &$classname):void{
         foreach($methods as $method){
             $entry = Entry::findByMethod($method);
             if($entry){
                 if($method->isStatic()){
                     $method->invoke(null,...[]);
                 }else{
+                    AttributeResolver::injectProperties($classname,$instance);
                     $method->invoke($instance,...[]);
                 }
                 break;

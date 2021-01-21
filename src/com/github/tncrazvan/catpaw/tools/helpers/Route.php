@@ -19,6 +19,7 @@ class Route{
         \ReflectionClass $reflectionClass,
         string &$classname,
         string $basePath,
+        bool $inject,
         string $execute
     ):void{
         foreach($map as &$item){
@@ -42,11 +43,12 @@ class Route{
                 $namedParamsString
             ] = static::getMappedParameters($reflectionMethod);
             $resolver = AttributeResolver::class;
+            $injector = $inject?"$resolver::injectProperties(\$classname,\$instance);":'';
             $script =<<<EOF
             return function($namedAndTypedParamsString){
                 \$instance = $execute;
                 \$classname = '$classname';
-                $resolver::injectProperties(\$classname,\$instance);
+                $injector
                 return \$instance->$fname($namedParamsString);
             };
             EOF;
