@@ -2,6 +2,7 @@
 namespace com\github\tncrazvan\catpaw\tools\helpers;
 
 use com\github\tncrazvan\catpaw\attributes\Entry;
+use com\github\tncrazvan\catpaw\attributes\Extend;
 use com\github\tncrazvan\catpaw\attributes\http\methods\COPY;
 use com\github\tncrazvan\catpaw\attributes\http\methods\DELETE;
 use com\github\tncrazvan\catpaw\attributes\http\methods\GET;
@@ -20,6 +21,8 @@ use com\github\tncrazvan\catpaw\attributes\http\methods\UNLOCK;
 use com\github\tncrazvan\catpaw\attributes\http\methods\VIEW;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
 use com\github\tncrazvan\catpaw\attributes\Inject;
+use com\github\tncrazvan\catpaw\attributes\Repository;
+use com\github\tncrazvan\catpaw\attributes\Service;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
 use com\github\tncrazvan\catpaw\tools\AttributeResolver;
 use com\github\tncrazvan\catpaw\tools\Strings;
@@ -36,6 +39,25 @@ class Factory{
         return static::$args[$classname];
     }
 
+    private static function interfaceExtendsClass(\ReflectionClass $reflection_class):string{
+        foreach($reflection_class->getInterfaces() as $reflection_interface){
+            if(($extend = Extend::findByClass($reflection_interface)))
+                return $extend->getClassName();
+        }
+        return '';
+    }
+
+    private static function adaptToRepository(\ReflectionClass $reflection_class, $instance):void{
+        foreach($reflection_class->getInterfaces() as $interface){
+            if(($repository = Repository::findByClass($reflection_class))){
+                $entity_classname = $repository->getEntityClassName();
+                $entity_id = $repository->getEntityId();
+                $instance->classname = $entity_classname;
+                $instance->id = $entity_id;
+            }
+        }
+    }
+
     /**
      * Make a new instance of the given class.<br />
      * This method will take care of dependency injections.
@@ -46,8 +68,12 @@ class Factory{
             return Singleton::$map[$classname];
         
         $reflection_class = new \ReflectionClass($classname);
+        if($reflection_class->isInterface())
+            return null;
 
         $singleton = Singleton::findByClass($reflection_class);
+        $repository = Repository::findByClass($reflection_class);
+        $service = Service::findByClass($reflection_class);
 
         $methods = $reflection_class->getMethods();
         $args = isset(static::$args[$classname])? static::$args[$classname]() : [];
@@ -64,10 +90,24 @@ class Factory{
 
         //resolve other class attributes
         ############################################################################
-        if($singleton)
+        if($singleton || $service || $repository){
             Singleton::$map[$classname] = new $classname(...$args);
+            if($repository)
+                static::adaptToRepository($reflection_class,Singleton::$map[$classname]);
+        }
 
-        $instance = $singleton ? Singleton::$map[$classname] : new $classname(...$args);
+
+        $instance = 
+            $singleton || $service || $repository ?
+                    //then
+                    Singleton::$map[$classname]
+                
+                :   //else
+                
+                    new $classname(...$args)
+                
+        ;
+        
         ############################################################################
 
         //resolve main "Path" attribute

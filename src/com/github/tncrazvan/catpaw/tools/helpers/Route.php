@@ -59,7 +59,7 @@ class Route{
         }
     }
 
-    private static function getMappedParameters(\ReflectionMethod $reflectionMethod):array{
+    public static function getMappedParameters(\ReflectionMethod $reflectionMethod):array{
         $reflectionParameters = $reflectionMethod->getParameters();
         $namedAndTypedParams = array();
         $namedParams = array();
