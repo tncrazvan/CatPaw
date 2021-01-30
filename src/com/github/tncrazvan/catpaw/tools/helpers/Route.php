@@ -7,16 +7,22 @@ class Route{
     protected static array $orderedHttpEventsKeys = [];
     protected static array $httpEvents = [];
     protected static array $httpEventsReflectionMethods = [];
+    protected static array $httpEventsReflectionClasses = [];
 
-    public static function getReflectionsMethod(string $path, string $http_method):?\ReflectionMethod{
+    public static function getReflectionMethod(string $path, string $http_method):?\ReflectionMethod{
         if(isset(static::$httpEventsReflectionMethods[$path]))
             return static::$httpEventsReflectionMethods[$path][$http_method];
+        return null;
+    }
+    public static function getReflectionClass(string $path, string $http_method):?\ReflectionClass{
+        if(isset(static::$httpEventsReflectionClasses[$path]))
+            return static::$httpEventsReflectionClasses[$path][$http_method];
         return null;
     }
 
     public static function map(
         array $map, 
-        \ReflectionClass $reflectionClass,
+        \ReflectionClass $reflection_class,
         string &$classname,
         string $basePath,
         bool $inject,
@@ -36,12 +42,12 @@ class Route{
             
             $path = \preg_replace('/^\/{2,}/','/',$path);
 
-            $reflectionMethod = $reflectionClass->getMethod($fname);
+            $reflection_method = $reflection_class->getMethod($fname);
             
             [
                 $namedAndTypedParamsString,
                 $namedParamsString
-            ] = static::getMappedParameters($reflectionMethod);
+            ] = static::getMappedParameters($reflection_method);
             $resolver = AttributeResolver::class;
             $injector = $inject?"$resolver::injectProperties(\$classname,\$instance);":'';
             $script =<<<EOF
@@ -54,13 +60,14 @@ class Route{
             EOF;
             $callback = eval($script);
             
-            static::$httpEventsReflectionMethods[$path][$method] = $reflectionMethod;
+            static::$httpEventsReflectionMethods[$path][$method] = $reflection_method;
+            static::$httpEventsReflectionClasses[$path][$method] = $reflection_class;
             static::target($method,$path,$callback);
         }
     }
 
-    public static function getMappedParameters(\ReflectionMethod $reflectionMethod):array{
-        $reflectionParameters = $reflectionMethod->getParameters();
+    public static function getMappedParameters(\ReflectionMethod $reflection_method):array{
+        $reflectionParameters = $reflection_method->getParameters();
         $namedAndTypedParams = array();
         $namedParams = array();
         foreach($reflectionParameters as $reflectionParameter){

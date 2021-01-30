@@ -2,6 +2,9 @@
 namespace com\github\tncrazvan\catpaw\tools\helpers;
 
 use Closure;
+use com\github\tncrazvan\catpaw\attributes\database\Column;
+use com\github\tncrazvan\catpaw\attributes\database\Id;
+use com\github\tncrazvan\catpaw\attributes\Entity;
 use com\github\tncrazvan\catpaw\attributes\Entry;
 use com\github\tncrazvan\catpaw\attributes\Extend;
 use com\github\tncrazvan\catpaw\attributes\http\methods\COPY;
@@ -22,12 +25,13 @@ use com\github\tncrazvan\catpaw\attributes\http\methods\UNLOCK;
 use com\github\tncrazvan\catpaw\attributes\http\methods\VIEW;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
 use com\github\tncrazvan\catpaw\attributes\Inject;
+use com\github\tncrazvan\catpaw\attributes\Produces;
 use com\github\tncrazvan\catpaw\attributes\Repository;
 use com\github\tncrazvan\catpaw\attributes\Service;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
-use com\github\tncrazvan\catpaw\tools\actions\ArrayAction;
 use com\github\tncrazvan\catpaw\tools\AttributeResolver;
 use com\github\tncrazvan\catpaw\tools\Strings;
+use PDO;
 
 class Factory{
 
@@ -49,15 +53,59 @@ class Factory{
         return '';
     }
 
-    private static function adaptToRepository(\ReflectionClass $reflection_class, $instance):void{
-        foreach($reflection_class->getInterfaces() as $interface){
-            if(($repository = Repository::findByClass($reflection_class))){
-                $entity_classname = $repository->getEntityClassName();
-                $entity_id = $repository->getEntityId();
-                $instance->classname = $entity_classname;
-                $instance->id = $entity_id;
+    private static function adaptToEntity(\ReflectionClass $reflection_class, SimpleEntity $instance, Entity $entity):void{
+        $tableName = $entity->getTableName();
+        $instance->setTableName($tableName!==''?$tableName:\strtolower($reflection_class->getShortName()));
+        $columns = [];
+        $pks = [];
+        foreach($reflection_class->getProperties() as $reflection_property){
+            $id = Id::findByProperty($reflection_property);
+            if($id){
+                $colName = $id->getName();
+                if($colName === '') $colName = $reflection_property->getName();
+                $colType = $id->getType();
+                if($colType < 0){
+                    switch($reflection_property->getType()->getName()){
+                        case 'int':
+                            $colType = \PDO::PARAM_INT;
+                        break;
+                        case 'float':
+                        case 'string':
+                        default:
+                            $colType = \PDO::PARAM_STR;
+                        break;
+                    }
+                }
+                $columns[$colName] = $colType;
+                $pks[] = $colName;
+            }else{
+                $column = Column::findByProperty($reflection_property);
+                if($column){
+                    $colName = $column->getName();
+                    if($colName === '') $colName = $reflection_property->getName();
+                    $colType = $column->getType();
+                    if($colType < 0){
+                        switch($reflection_property->getType()->getName()){
+                            case 'int':
+                                $colType = \PDO::PARAM_INT;
+                            break;
+                            case 'float':
+                            case 'string':
+                            default:
+                                $colType = \PDO::PARAM_STR;
+                            break;
+                        }
+                    }
+                    $columns[$colName] = $colType;
+                }
             }
         }
+    }
+    private static function adaptToRepository(SimpleRepository $instance, Repository $repository):void{
+        $entity_classname = $repository->getEntityClassName();
+        $entity_id = $repository->getEntityId();
+        $instance->classname = $entity_classname;
+        $instance->id = $entity_id;   
     }
 
     /**
@@ -76,9 +124,10 @@ class Factory{
 
         if(count($reflection_class->getAttributes()) === 0) return null;
 
-        $singleton = Singleton::findByClass($reflection_class);
-        $repository = Repository::findByClass($reflection_class);
-        $service = Service::findByClass($reflection_class);
+        $entity = Entity::findByClass($reflection_class);
+        $service = $entity?null:Service::findByClass($reflection_class);
+        $repository = $service||$entity?null:Repository::findByClass($reflection_class);
+        $singleton = $entity?null:Singleton::findByClass($reflection_class);
 
         $methods = $reflection_class->getMethods();
         $args = isset(static::$args[$classname])? static::$args[$classname]() : [];
@@ -98,7 +147,7 @@ class Factory{
         if($singleton || $service || $repository){
             Singleton::$map[$classname] = new $classname(...$args);
             if($repository)
-                static::adaptToRepository($reflection_class,Singleton::$map[$classname]);
+                static::adaptToRepository(Singleton::$map[$classname],$repository);
         }
 
 
@@ -112,12 +161,14 @@ class Factory{
                     new $classname(...$args)
                 
         ;
+        if($entity && $instance instanceof SimpleEntity)
+            static::adaptToEntity($reflection_class,$instance,$entity);
         
         ############################################################################
 
         //resolve main "Path" attribute
         ##################################################################################################################
-        $path = Path::findByClass($reflection_class);
+        $path = $entity?null:Path::findByClass($reflection_class);
         if($path){
             if(!$lazy_paths)
                 AttributeResolver::injectProperties($classname,$instance);
@@ -137,10 +188,11 @@ class Factory{
         Path $path,
         ?Singleton $singleton,
         string $classname,
-        bool $inject):void{
+        bool $inject
+        ):void{
         $map = [];
         $i = 0;
-        static::findHttpMethods($methods,function(string $http_method, \ReflectionMethod $reflection_method) use (&$map,&$i,&$path){
+        static::findHttpMethods($methods,function(string $http_method, \ReflectionMethod $reflection_method) use (&$map,&$i){
             $local_path = Path::findByMethod($reflection_method);
             
             $map[$i] = [

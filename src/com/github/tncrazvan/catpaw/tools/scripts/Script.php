@@ -2,7 +2,6 @@
 namespace com\github\tncrazvan\catpaw\tools\scripts;
 
 use com\github\tncrazvan\catpaw\http\HttpEvent;
-use com\github\tncrazvan\catpaw\http\HttpRequestHeaders;
 
 class Script{
     public static function args():array{

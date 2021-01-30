@@ -139,7 +139,12 @@ abstract class HttpEventManager extends EventManager{
     private function adaptHeadersAndBody(array &$accepts,&$body):void{
         $count_accepts = \count($accepts);
         
-        if($this->reflection_method !== null && !$this->serverHeaders->has(("Content-Type")) && ($produces = Produces::findByMethod($this->reflection_method))){
+        if($this->reflection_method !== null && !$this->serverHeaders->has(("Content-Type")) 
+            && ( 
+                ($produces = Produces::findByMethod($this->reflection_method))
+                || ($produces = Produces::findByClass($this->reflection_class))
+            )
+        ){
             $produced = \preg_split('/\s*,\s*/',\strtolower($produces->getProducedContentTypes()));
         }else{
             $produced = \preg_split('/\s*,\s*/',$this->serverHeaders->get("Content-Type"));

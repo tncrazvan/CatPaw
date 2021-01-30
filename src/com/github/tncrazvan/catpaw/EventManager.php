@@ -2,7 +2,6 @@
 namespace com\github\tncrazvan\catpaw;
 
 use com\github\tncrazvan\catpaw\attributes\Consumes;
-use com\github\tncrazvan\catpaw\attributes\HttpBody;
 use com\github\tncrazvan\catpaw\http\HttpConsumer;
 use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
@@ -26,6 +25,7 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEvent;
 
 abstract class EventManager{
     public ?\ReflectionMethod $reflection_method;
+    public ?\ReflectionClass $reflection_class;
     protected ?array $requestUrlQueries=[];
     protected ?array $session = null;
     protected HttpResponseHeaders $serverHeaders;

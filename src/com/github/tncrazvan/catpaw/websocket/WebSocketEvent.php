@@ -7,7 +7,8 @@ use com\github\tncrazvan\catpaw\websocket\WebSocketEventManager;
 class WebSocketEvent extends WebSocketEventManager{
     public static function &make(HttpEventListener &$listener):WebSocketEvent{
         $reflection_method = null;
-        $callback = HttpEventListener::callback("websocket", $listener, $reflection_method);
+        $reflection_class = null;
+        $callback = HttpEventListener::callback("websocket", $listener, $reflection_method, $reflection_class);
         
         $listener->setProperty("http-consumer", false); //make sure it's not a live body injection
         $event = new WebSocketEvent();

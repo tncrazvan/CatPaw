@@ -228,7 +228,15 @@ class HttpEventListener{
             }
     }
 
-    private static function _file(string $method,string &$type, array &$paths, HttpEventListener &$listener, ?\Closure &$callback, ?\ReflectionMethod &$reflection_method):bool{
+    private static function _file(
+        string $method,
+        string &$type,
+        array &$paths,
+        HttpEventListener &$listener,
+        ?\Closure &$callback,
+        ?\ReflectionMethod &$reflection_method,
+        ?\ReflectionClass &$reflection_class
+    ):bool{
         if($type === 'http'){
             $location = $listener->getSharedObject()->getWebRoot().$listener->path;
 
@@ -238,7 +246,8 @@ class HttpEventListener{
                 if(is_array($paths["@file"])){
                     if(isset($paths["@file"][$method])){
                         $callback = $paths["@file"][$method];
-                        $reflection_method = Route::getReflectionsMethod('@file',$method);
+                        $reflection_method = Route::getReflectionMethod('@file',$method);
+                        $reflection_class = Route::getReflectionClass('@file',$method);
                         foreach($paths["@file"] as $key =>&$property){
                             if($key === $method) continue;
                             $listener->properties[$key] = $property;
@@ -254,7 +263,14 @@ class HttpEventListener{
     }
 
 
-    private static function _event(string $method, array &$paths, HttpEventListener &$listener, ?\Closure &$callback, ?\ReflectionMethod &$reflection_method):bool{
+    private static function _event(
+        string $method, 
+        array &$paths, 
+        HttpEventListener &$listener, 
+        ?\Closure &$callback, 
+        ?\ReflectionMethod &$reflection_method,
+        ?\ReflectionClass &$reflection_class,
+    ):bool{
         $_event_path = \preg_replace('/(?<=^)\/+/','',$listener->path);
         foreach($paths as $route => &$cb){
             if($route === '@file' || 
@@ -283,7 +299,8 @@ class HttpEventListener{
                 if(is_array($cb)){
                     if(isset($cb[$method])){
                         $callback = $cb[$method];
-                        $reflection_method = Route::getReflectionsMethod("/$route",$method);
+                        $reflection_method = Route::getReflectionMethod("/$route",$method);
+                        $reflection_class = Route::getReflectionClass("/$route",$method);
                         foreach($cb as $key =>&$property){
                             if($key === $method) continue;
                             $listener->properties[$key] = &$property;
@@ -298,7 +315,12 @@ class HttpEventListener{
         return false;
     }
 
-    public static function callback(string $type, HttpEventListener $listener, ?\ReflectionMethod &$reflection_method):\Closure{
+    public static function callback(
+        string $type, 
+        HttpEventListener $listener, 
+        ?\ReflectionMethod &$reflection_method,
+        ?\ReflectionClass &$reflection_class
+    ):\Closure{
         $method = \strtoupper($listener->getRequestHeaders()->getMethod());
         $paths = &$listener->getSharedObject()->getEvents()[$type];
         
@@ -307,7 +329,8 @@ class HttpEventListener{
 
         if($type === 'http' && is_array($paths["@404"]) && isset($paths["@404"][$method])){
             $callback = $paths["@404"][$method];
-            $reflection_method = Route::getReflectionsMethod('@404',$method);
+            $reflection_method = Route::getReflectionMethod('@404',$method);
+            $reflection_class = Route::getReflectionClass('@404',$method);
             foreach($paths["@404"] as $key =>&$property){
                 if($key === $method) continue;
                 $listener->properties[$key] = $property;
@@ -327,10 +350,10 @@ class HttpEventListener{
         }
             
 
-        if(self::_file($method,$type,$paths,$listener,$callback,$reflection_method))
+        if(self::_file($method,$type,$paths,$listener,$callback,$reflection_method,$reflection_class))
             return $callback;
 
-        if(self::_event($method,$paths,$listener,$callback,$reflection_method))
+        if(self::_event($method,$paths,$listener,$callback,$reflection_method,$reflection_class))
             return $callback;
         
         return $callback;

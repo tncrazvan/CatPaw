@@ -9,14 +9,20 @@ use com\github\tncrazvan\catpaw\tools\Strings;
 
 #[Singleton]
 class AttributeLoader{
+
+    private ClassFinder $finder;
+    public function __construct(){
+        $this->finder = new ClassFinder();
+    }
     public function setLocation(string $location):AttributeLoader{
         $this->location = $location;
         return $this;
     }
 
     public function loadSome(string $namespace,BooleanAction $checkClassname):AttributeLoader{
-        ClassFinder::setAppRoot($this->location);
-        foreach(ClassFinder::getClassesInNamespace($namespace) as &$classname){
+        $this->finder->setAppRoot($this->location);
+        $classnames = $this->finder->getClassesInNamespace($namespace);
+        foreach($classnames as &$classname){
             if($checkClassname($classname))
                 Factory::make($classname);
         }
@@ -24,8 +30,9 @@ class AttributeLoader{
     }
 
     public function load(string $namespace):AttributeLoader{
-        ClassFinder::setAppRoot($this->location);
-        foreach(ClassFinder::getClassesInNamespace($namespace) as &$classname){
+        $this->finder->setAppRoot($this->location);
+        $classnames = $this->finder->getClassesInNamespace($namespace,fn(string &$dirname)=>$this->load("$namespace\\$dirname"));
+        foreach($classnames as &$classname){
             Factory::make($classname);
         }
         return $this;
