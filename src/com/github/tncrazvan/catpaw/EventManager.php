@@ -253,6 +253,8 @@ abstract class EventManager{
                     //$reflection_class = new \ReflectionClass($cls);
                     if($this->reflection_method !== null) try{
                         $consumes = Consumes::findByMethod($this->reflection_method);
+                        if(!$consumes) 
+                            $consumes = Consumes::findByClass($this->reflection_class);
                         $ctype = \strtolower($this->getRequestHeader("Content-Type"));
                         $lctype = \strtolower($consumes->getContentType());
                         if($consumes && $ctype === $lctype){
