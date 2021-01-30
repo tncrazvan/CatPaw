@@ -488,6 +488,14 @@ abstract class EventManager{
     public function &getRequestHeader(string $key):?string{
         return $this->listener->getRequestHeaders()->get($key);
     }
+
+    /**
+     * Checks if a specific request header is set.
+     * @param key name of the header.
+     */
+    public function &issetRequestHeader(string $key):bool{
+        return $this->listener->getRequestHeaders()->has($key);
+    }
     
     /**
      * Get the request method name.

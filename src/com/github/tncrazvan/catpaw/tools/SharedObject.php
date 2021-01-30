@@ -270,6 +270,7 @@ class SharedObject extends Http{
     private $dir;
 
     
+    public function &getLoadedScripts():array{return $this->loadedScripts;}
     public function getSessions():HttpSessionManager{return $this->sessions;}
     public function getHeaders():array{return $this->headers;}
 
@@ -347,6 +348,7 @@ class SharedObject extends Http{
 
 
 
+    private array $loadedScripts = [];
     private HttpSessionManager $sessions;
     private array $headers = [];
     private array $httpQueue = [];
