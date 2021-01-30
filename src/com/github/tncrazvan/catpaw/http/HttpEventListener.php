@@ -279,7 +279,7 @@ class HttpEventListener{
                 else if($pieces[$i] === $parts[$i])  $c++;
             }
 
-            if($c === $len_parts){
+            if($c === $len){
                 if(is_array($cb)){
                     if(isset($cb[$method])){
                         $callback = $cb[$method];

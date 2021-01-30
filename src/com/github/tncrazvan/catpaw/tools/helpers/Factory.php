@@ -1,6 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools\helpers;
 
+use Closure;
 use com\github\tncrazvan\catpaw\attributes\Entry;
 use com\github\tncrazvan\catpaw\attributes\Extend;
 use com\github\tncrazvan\catpaw\attributes\http\methods\COPY;
@@ -24,17 +25,18 @@ use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\attributes\Repository;
 use com\github\tncrazvan\catpaw\attributes\Service;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
+use com\github\tncrazvan\catpaw\tools\actions\ArrayAction;
 use com\github\tncrazvan\catpaw\tools\AttributeResolver;
 use com\github\tncrazvan\catpaw\tools\Strings;
 
 class Factory{
 
     private static array $args = [];
-    public static function setConstructorInjector(string $classname,?\Closure $args=null):void{
+    public static function setConstructorInjector(string $classname,?Closure $args=null):void{
         static::$args[$classname] = $args;
     }
 
-    public static function getConstructorInjector(string $classname):\Closure{
+    public static function getConstructorInjector(string $classname):Closure{
         if(!isset(static::$args[$classname])) return fn()=>[];
         return static::$args[$classname];
     }
@@ -68,8 +70,11 @@ class Factory{
             return Singleton::$map[$classname];
         
         $reflection_class = new \ReflectionClass($classname);
+
         if($reflection_class->isInterface())
             return null;
+
+        if(count($reflection_class->getAttributes()) === 0) return null;
 
         $singleton = Singleton::findByClass($reflection_class);
         $repository = Repository::findByClass($reflection_class);
