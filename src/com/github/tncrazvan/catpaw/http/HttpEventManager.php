@@ -67,7 +67,7 @@ abstract class HttpEventManager extends EventManager{
         if(!$valid){
             $this->commits = new \SplDoublyLinkedList();
             $this->responseObject = new HttpResponse([
-                "Status"=>Status::BAD_REQUEST
+                'Status'=>Status::BAD_REQUEST
             ],$message);
             $this->dispatch($this->responseObject);
         }
@@ -83,15 +83,15 @@ abstract class HttpEventManager extends EventManager{
             return true;
         }catch(\TypeError $ex){
             $this->responseObject = new HttpResponse([
-                "Status"=>Status::INTERNAL_SERVER_ERROR
+                'Status'=>Status::INTERNAL_SERVER_ERROR
             ],$ex->getMessage()."\n".$ex->getTraceAsString());
         }catch(HttpEventException $ex){
             $this->responseObject = new HttpResponse([
-                "Status"=>$ex->getStatus()
+                'Status'=>$ex->getStatus()
             ],$ex->getMessage()."\n".$ex->getTraceAsString());
         }catch(\Exception $ex){
             $this->responseObject = new HttpResponse([
-                "Status"=>Status::INTERNAL_SERVER_ERROR
+                'Status'=>Status::INTERNAL_SERVER_ERROR
             ],$ex->getMessage()."\n".$ex->getTraceAsString());
         }
         //$this->funcheck($this->responseObject);
@@ -112,17 +112,17 @@ abstract class HttpEventManager extends EventManager{
                     $error = false;
                 }catch(\TypeError $ex){
                     $response = new HttpResponse([
-                        "Status"=>Status::INTERNAL_SERVER_ERROR
+                        'Status'=>Status::INTERNAL_SERVER_ERROR
                     ],$ex->getMessage()."\n".$ex->getTraceAsString());
                     $this->responseObject = &$response;
                 }catch(HttpEventException $ex){
                     $response = new HttpResponse([
-                        "Status"=>$ex->getStatus()
+                        'Status'=>$ex->getStatus()
                     ],$ex->getMessage()."\n".$ex->getTraceAsString());
                     $this->responseObject = &$response;
                 }catch(\Exception $ex){
                     $response = new HttpResponse([
-                        "Status"=>Status::INTERNAL_SERVER_ERROR
+                        'Status'=>Status::INTERNAL_SERVER_ERROR
                     ],$ex->getMessage()."\n".$ex->getTraceAsString());
                     $this->responseObject = &$response;
                 }
@@ -139,7 +139,7 @@ abstract class HttpEventManager extends EventManager{
     private function adaptHeadersAndBody(array &$accepts,&$body):void{
         $count_accepts = \count($accepts);
         
-        if($this->reflection_method !== null && !$this->serverHeaders->has(("Content-Type")) 
+        if($this->reflection_method !== null && !$this->serverHeaders->has('Content-Type') 
             && ( 
                 ($produces = Produces::findByMethod($this->reflection_method))
                 || ($produces = Produces::findByClass($this->reflection_class))
@@ -147,19 +147,24 @@ abstract class HttpEventManager extends EventManager{
         ){
             $produced = \preg_split('/\s*,\s*/',\strtolower($produces->getProducedContentTypes()));
         }else{
-            $produced = \preg_split('/\s*,\s*/',$this->serverHeaders->get("Content-Type"));
+            $produced = \preg_split('/\s*,\s*/',$this->serverHeaders->get('Content-Type'));
         }
 
         if($count_accepts === 1 && \count($produced) === 1 && $accepts[0] === '' && $produced[0] === '')
             return;
+        $len = \count($produced);
+        if($len === 0)
+            $produced = ['*/*'];
+        else if($len === 1 && $produced[0] === '')
+            $produced[0] = '*/*';
 
         foreach($accepts as &$accept){
             if(\in_array($accept,$produced)){
                 switch($accept){
                     case 'application/json':
                         $body = \json_encode($body);
-                        if(!$this->serverHeaders->has(("Content-Type")))
-                            $this->serverHeaders->set("Content-Type",$accept);
+                        if(!$this->serverHeaders->has('Content-Type'))
+                            $this->serverHeaders->set('Content-Type',$accept);
                     return;
                     case 'application/xml':
                     case 'text/xml':
@@ -169,25 +174,32 @@ abstract class HttpEventManager extends EventManager{
                             $cast = Caster::cast($body,\stdClass::class);
                             $body = XMLSerializer::generateValidXmlFromObj($cast);
                         }
-                        if(!$this->serverHeaders->has(("Content-Type")))
-                            $this->serverHeaders->set("Content-Type",$accept);
+                        if(!$this->serverHeaders->has('Content-Type'))
+                            $this->serverHeaders->set('Content-Type',$accept);
                     return;
+                    case '*/*':
+                        if(\is_array($body) || \is_object($body)){
+                            $body = \json_encode($body);
+                            if(!$this->serverHeaders->has('Content-Type'))
+                                $this->serverHeaders->set('Content-Type','application/json');
+                        }
+                        return;
                 }
             }
         }
 
-        if(isset($produced[0])){
-            $this->serverHeaders->set("Content-Type",$produced[0]);
+        if(isset($produced[0]) && $produced[0] !== ''){
+            $this->serverHeaders->set('Content-Type',$produced[0]);
             return;
         }
 
         $this->setResponseStatus(Status::BAD_REQUEST);
-        $this->serverHeaders->set("Content-Type","text/plain");
-        $body = "This resource produces types [".\implode(',',$produced)."], which don't match with any types accepted by the request [".\implode(',',$accepts)."].";
+        $this->serverHeaders->set('Content-Type','text/plain');
+        $body = 'This resource produces types ['.\implode(',',$produced).'], which don\'t match with any types accepted by the request ['.\implode(',',$accepts).'].';
     }
 
     public function dispatch(&$responseObject){
-        $accepts = \explode(",",\trim($this->getRequestHeader("Accept")));
+        $accepts = \explode(",",\trim($this->getRequestHeader('Accept')));
         
 
         if(!$responseObject instanceof HttpResponse){
@@ -202,9 +214,9 @@ abstract class HttpEventManager extends EventManager{
         $responseHeader->initialize($this);
         $responseHeader->mix($this->serverHeaders);
 
-        if(!$responseHeader->has("Content-Length")){
+        if(!$responseHeader->has('Content-Length')){
             $length = \strlen($responseObject->getBody());
-            $responseHeader->set("Content-Length",''.$length);
+            $responseHeader->set('Content-Length',''.$length);
         }
 
         $chunks = \str_split($responseObject->toString(),$this->listener->getSharedObject()->getHttpMtu());
