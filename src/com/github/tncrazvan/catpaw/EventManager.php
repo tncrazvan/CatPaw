@@ -7,7 +7,6 @@ use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpHeaders;
 use com\github\tncrazvan\catpaw\http\HttpEventOnClose;
 use com\github\tncrazvan\catpaw\http\HttpEventListener;
-use com\github\tncrazvan\catpaw\http\HttpRequestBody;
 use com\github\tncrazvan\catpaw\http\HttpRequestCookies;
 use com\github\tncrazvan\catpaw\http\HttpRequestHeaders;
 use com\github\tncrazvan\catpaw\http\HttpResponseCookies;
@@ -78,9 +77,9 @@ abstract class EventManager{
             $cls = $type->getName();
             if($cls === HttpConsumer::class){
                 if($this instanceof HttpEvent)
-                    $this->listener->setProperty("http-consumer", true);
+                    $this->listener->setProperty('http-consumer', true);
                 else
-                    $this->listener->setProperty("http-consumer", false);
+                    $this->listener->setProperty('http-consumer', false);
             }
         }
     }
@@ -144,9 +143,9 @@ abstract class EventManager{
                 break;
                 case HttpConsumer::class:
                     if($this instanceof HttpEvent)
-                        $this->listener->setProperty("http-consumer", true);
+                        $this->listener->setProperty('http-consumer', true);
                     else
-                        $this->listener->setProperty("http-consumer", false);
+                        $this->listener->setProperty('http-consumer', false);
                         
                     $this->_consumer_provided = true;
                     static $param = null;
@@ -189,7 +188,7 @@ abstract class EventManager{
                     switch($name){
                         case 'body':
                             if(\is_numeric($this->listener->input[1]))
-                                $param = \intval($this->listener->input[1]);
+                                $param = (int) $this->listener->input[1];
                             else{
                                 $message = 'Body was expected to be numeric, but non numeric value has been provided instead:'.$this->listener->input[1];
                                 $valid = false;
@@ -199,7 +198,7 @@ abstract class EventManager{
                         default:
                             if(isset($this->listener->params[$name]))
                                 if(\is_numeric($this->listener->params[$name]))
-                                    $param = \intval($this->listener->params[$name]);
+                                    $param = (int) $this->listener->params[$name];
                                 else{
                                     $message = 'Parameter {'.$name.'} was expected to be numeric, but non numeric value has been provided instead:'.$this->listener->params[$name];
                                     $valid = false;
@@ -215,13 +214,30 @@ abstract class EventManager{
                 case 'bool':
                     $name = $parameter->getName();
                     static $param = null;
-                    $param = \filter_var($this->listener->params[$name], FILTER_VALIDATE_BOOLEAN);
+
+                    switch ($name) {
+                        case 'body':
+                            $param = \filter_var($this->listener->input[1], FILTER_VALIDATE_BOOLEAN);
+                        break;
+                        default:
+                            $param = \filter_var($this->listener->params[$name], FILTER_VALIDATE_BOOLEAN);
+                        break;
+                    }
+
                     $params[] = &$param;
                 break;
                 case 'float':
                     $name = $parameter->getName();
                     static $param = null;
-                    $param = (float) $this->listener->params[$name];
+                    switch ($name) {
+                        case 'body':
+                            if(\is_numeric($this->listener->input[1]))
+                                $param = (float) $this->listener->input[1];
+                        break;
+                        default:
+                            $param = (float) $this->listener->params[$name];
+                        break;
+                    }
                     $params[] = &$param;
                 break;
                 case 'array':
@@ -307,7 +323,7 @@ abstract class EventManager{
                 \mb_parse_str($this->listener->input[1],$result);
                 return $result;
             }else if(Strings::startsWith($ctype,"application/json")){
-                $result = \json_decode($this->listener->input[1]);
+                $result = \json_decode($this->listener->input[1],true);
                 return $result;
             }else if(Strings::startsWith($ctype,"multipart/")){
                 FormData::parse($this,$this->listener->input[1],$result);
