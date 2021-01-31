@@ -190,12 +190,12 @@ abstract class HttpEventManager extends EventManager{
         }else{
             $produced = \preg_split('/\s*,\s*/',$this->serverHeaders->get('Content-Type'));
         }
-        
+
         $produced = array_filter($produced,fn($item)=>$item!=='');
 
         $cproduced = \count($produced);
         if($cproduced === 0)
-            $produced = ["text/plain"];
+            $produced = ["text/plain","application/json","application/xml","text/xml","text/html"];
         
 
         if(\count($accepts) === 1 && \count($produced) === 1 && $accepts[0] === '' && $produced[0] === '')
