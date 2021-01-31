@@ -135,6 +135,47 @@ abstract class HttpEventManager extends EventManager{
         return true;
     }
     
+    private function transform(&$body,string &$ctype,array &$fallback_ctypes):void{
+        switch($ctype){
+            case 'application/json':
+                $body = \json_encode($body);
+                $this->serverHeaders->set('Content-Type',$ctype);
+            return;
+            case 'application/xml':
+            case 'text/xml':
+                if(\is_array($body)){
+                    $body = XMLSerializer::generateValidXmlFromArray($body);
+                }else{
+                    $cast = Caster::cast($body,\stdClass::class);
+                    $body = XMLSerializer::generateValidXmlFromObj($cast);
+                }
+                $this->serverHeaders->set('Content-Type',$ctype);
+            return;
+            case 'text/plain':
+                if(\is_array($body) || \is_object($body))
+                    $body = \json_encode($body);
+                
+                $this->serverHeaders->set('Content-Type','text/plain');
+            return;
+            case '*/*':
+                if(\is_array($body) || \is_object($body)){
+                    $body = \json_encode($body);
+                    
+                    if(\in_array('application/json',$fallback_ctypes))
+                        $this->serverHeaders->set('Content-Type','application/json');
+                    else
+                        $this->serverHeaders->set('Content-Type','text/plain');
+                }else 
+                    $this->serverHeaders->set('Content-Type','text/plain');
+                
+            return;
+            default:
+                if(\is_array($body) || \is_object($body))
+                    $body = \json_encode($body);
+                $this->serverHeaders->set('Content-Type',$ctype);
+            return;
+        }
+    }
 
     private function adaptHeadersAndBody(array &$accepts,&$body):void{
         $count_accepts = \count($accepts);
@@ -152,49 +193,12 @@ abstract class HttpEventManager extends EventManager{
 
         if($count_accepts === 1 && \count($produced) === 1 && $accepts[0] === '' && $produced[0] === '')
             return;
-        
-
 
         foreach($accepts as &$accept){
             if(\in_array($accept,$produced)){
-                switch($accept){
-                    case 'application/json':
-                        $body = \json_encode($body);
-                        if(!$this->serverHeaders->has('Content-Type'))
-                            $this->serverHeaders->set('Content-Type',$accept);
-                    return;
-                    case 'application/xml':
-                    case 'text/xml':
-                        if(\is_array($body)){
-                            $body = XMLSerializer::generateValidXmlFromArray($body);
-                        }else{
-                            $cast = Caster::cast($body,\stdClass::class);
-                            $body = XMLSerializer::generateValidXmlFromObj($cast);
-                        }
-                        if(!$this->serverHeaders->has('Content-Type'))
-                            $this->serverHeaders->set('Content-Type',$accept);
-                    return;
-                    case '*/*':
-                        if(\is_array($body) || \is_object($body)){
-                            $body = \json_encode($body);
-                            if(!$this->serverHeaders->has('Content-Type'))
-                                $this->serverHeaders->set('Content-Type','application/json');
-                        }else{
-                            if(!$this->serverHeaders->has('Content-Type'))
-                                $this->serverHeaders->set('Content-Type','text/plain');
-                        }
-                        return;
-                }
+                $this->transform($body,$accept,$produced);
+                return;
             }
-        }
-
-        if(isset($produced[0]) && $produced[0] !== ''){
-            if(\is_array($body) || \is_object($body))
-                $body = \json_encode($body);
-            
-            if(!$this->serverHeaders->has('Content-Type'))
-                $this->serverHeaders->set('Content-Type',$produced[0]);
-            return;
         }
 
         $this->setResponseStatus(Status::BAD_REQUEST);
