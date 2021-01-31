@@ -11,11 +11,14 @@ use com\github\tncrazvan\catpaw\tools\Strings;
 class AttributeLoader{
 
     private ClassFinder $finder;
+    private string $location = '';
     public function __construct(){
         $this->finder = new ClassFinder();
     }
     public function setLocation(string $location):AttributeLoader{
         $this->location = $location;
+        if(!str_ends_with($this->location,'/'))
+            $this->location .= '/';
         return $this;
     }
 
@@ -29,7 +32,7 @@ class AttributeLoader{
         return $this;
     }
 
-    public function load(string $namespace):AttributeLoader{
+    public function load(string $namespace=''):AttributeLoader{
         $this->finder->setAppRoot($this->location);
         $classnames = $this->finder->getClassesInNamespace($namespace,fn(string &$dirname)=>$this->load("$namespace\\$dirname"));
         foreach($classnames as &$classname){

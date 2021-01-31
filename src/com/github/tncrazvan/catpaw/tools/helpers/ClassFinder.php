@@ -40,7 +40,8 @@ class ClassFinder {
 
         while($namespaceFragments) {
             $possibleNamespace = implode('\\', $namespaceFragments) . '\\';
-
+            if($possibleNamespace === "\\")
+                $possibleNamespace = '';
             if(array_key_exists($possibleNamespace, $composerNamespaces)){
                 return realpath($this->appRoot . $composerNamespaces[$possibleNamespace] . implode('/', $undefinedNamespaceFragments));
             }
