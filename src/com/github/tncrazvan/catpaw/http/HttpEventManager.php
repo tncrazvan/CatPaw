@@ -152,11 +152,8 @@ abstract class HttpEventManager extends EventManager{
 
         if($count_accepts === 1 && \count($produced) === 1 && $accepts[0] === '' && $produced[0] === '')
             return;
-        $len = \count($produced);
-        if($len === 0)
-            $produced = ['*/*'];
-        else if($len === 1 && $produced[0] === '')
-            $produced[0] = '*/*';
+        
+
 
         foreach($accepts as &$accept){
             if(\in_array($accept,$produced)){
@@ -182,6 +179,9 @@ abstract class HttpEventManager extends EventManager{
                             $body = \json_encode($body);
                             if(!$this->serverHeaders->has('Content-Type'))
                                 $this->serverHeaders->set('Content-Type','application/json');
+                        }else{
+                            if(!$this->serverHeaders->has('Content-Type'))
+                                $this->serverHeaders->set('Content-Type','text/plain');
                         }
                         return;
                 }
@@ -189,7 +189,11 @@ abstract class HttpEventManager extends EventManager{
         }
 
         if(isset($produced[0]) && $produced[0] !== ''){
-            $this->serverHeaders->set('Content-Type',$produced[0]);
+            if(\is_array($body) || \is_object($body))
+                $body = \json_encode($body);
+            
+            if(!$this->serverHeaders->has('Content-Type'))
+                $this->serverHeaders->set('Content-Type',$produced[0]);
             return;
         }
 
