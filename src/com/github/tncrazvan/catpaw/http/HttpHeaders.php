@@ -116,8 +116,8 @@ class HttpHeaders{
         $this->version = $version;
     }
 
-    public function setContentType($content):void{
-        $this->set("Content-Type",$content);
+    public function setContentType(string ...$content):void{
+        $this->set("Content-Type",\implode(',',$content));
     }
 
     public function &get(string $key){

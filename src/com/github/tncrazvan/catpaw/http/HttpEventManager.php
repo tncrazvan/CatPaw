@@ -158,6 +158,7 @@ abstract class HttpEventManager extends EventManager{
                 $this->serverHeaders->set('Content-Type','text/plain');
             return;
             case '*/*':
+            case '':
                 if(\is_array($body) || \is_object($body)){
                     $body = \json_encode($body);
                     
@@ -178,8 +179,7 @@ abstract class HttpEventManager extends EventManager{
     }
 
     private function adaptHeadersAndBody(array &$accepts,&$body):void{
-        $count_accepts = \count($accepts);
-        
+
         if($this->reflection_method !== null && !$this->serverHeaders->has('Content-Type') 
             && ( 
                 ($produces = Produces::findByMethod($this->reflection_method))
@@ -190,12 +190,19 @@ abstract class HttpEventManager extends EventManager{
         }else{
             $produced = \preg_split('/\s*,\s*/',$this->serverHeaders->get('Content-Type'));
         }
+        
+        $produced = array_filter($produced,fn($item)=>$item!=='');
 
-        if($count_accepts === 1 && \count($produced) === 1 && $accepts[0] === '' && $produced[0] === '')
+        $cproduced = \count($produced);
+        if($cproduced === 0)
+            $produced = ["text/plain"];
+        
+
+        if(\count($accepts) === 1 && \count($produced) === 1 && $accepts[0] === '' && $produced[0] === '')
             return;
 
         foreach($accepts as &$accept){
-            if(\in_array($accept,$produced)){
+            if('*/*' === $accept || '' === $accept || \in_array($accept,$produced)){
                 $this->transform($body,$accept,$produced);
                 return;
             }
