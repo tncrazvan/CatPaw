@@ -1,5 +1,5 @@
 <?php
-namespace com\github\tncrazvan\catpaw\tools;
+namespace com\github\tncrazvan\catpaw\tools\process;
 
 class ProcessStdin{
     public static ?array $headers = [];

@@ -1,5 +1,7 @@
 <?php
-namespace com\github\tncrazvan\catpaw\tools;
+namespace com\github\tncrazvan\catpaw\tools\process;
+
+use Opis\Closure\SerializableClosure;
 
 class Process{
     /**
@@ -10,7 +12,7 @@ class Process{
      * This callback will be passed the standard input stream of the process which you can use to write data to the process.
      * @param void
      */
-    public static function spawn(string $cmd,array $headers = [],?\Closure $call = null){
+    public static function cmd(string $cmd,array $headers = [],?\Closure $call = null):void{
         $descriptorspec = array(
             0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
             1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
