@@ -11,7 +11,8 @@
 	],
 	"require": {
 		"php": ">=8.0",
-		"tncrazvan/asciitable": ">=1.0.1"
+		"tncrazvan/asciitable": ">=1.0.1",
+		"react/react": ">=1.0.1"
 	},
 	"config": {
 		"preferred-install": "dist"
