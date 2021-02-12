@@ -11,6 +11,25 @@ use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 use com\github\tncrazvan\catpaw\tools\helpers\Route;
 use com\github\tncrazvan\catpaw\tools\Status;
 
+
+define('PATH_PARAMS', []);
+
+define('METHODS', []);
+define('METHODS_ATTRIBUTES', []);
+
+define('METHODS_ARGS', []);
+define('METHODS_ARGS_ATTRIBUTES', []);
+
+define('FUNCTIONS', []);
+define('FUNCTIONS_ATTRIBUTES', []);
+
+define('FUNCTIONS_ARGS', []);
+define('FUNCTIONS_ARGS_ATTRIBUTES', []);
+
+define('KLASS', []);
+define('CLASS_ATTRIBUTES', []);
+
+
 #[Path("/user/{username}")]
 class User{
     #[GET]

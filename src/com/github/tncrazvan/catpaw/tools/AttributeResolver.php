@@ -4,7 +4,6 @@ namespace com\github\tncrazvan\catpaw\tools;
 
 use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
-use com\github\tncrazvan\catpaw\attributes\http\Path;
 use com\github\tncrazvan\catpaw\attributes\http\methods\COPY;
 use com\github\tncrazvan\catpaw\attributes\http\methods\DELETE;
 use com\github\tncrazvan\catpaw\attributes\http\methods\GET;

@@ -1,6 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw;
 
+use com\github\tncrazvan\catpaw\tools\helpers\metadata\Meta;
 use React\Http\Message\Response;
 use com\github\tncrazvan\catpaw\tools\helpers\Route;
 
@@ -46,15 +47,15 @@ class CatPaw{
         $params = [];
 
         //check if request matches any axposed endpoint and extract parameters
-        $localPath = static::usingPath( $method,$path,$params,Route::$reflection_functions );
+        $localPath = static::usingPath( $method,$path,$params,Meta::FUNCTIONS );
         if(!$localPath)
-            $localPath = static::usingPath( $method,$path,$params,Route::$reflection_methods );
+            $localPath = static::usingPath( $method,$path,$params,Meta::METHODS );
 
         if($localPath === null)
-            return $this->_invoker->invoke($request,$method,'@404',$params);
+            return HttpInvoker::invoke($request,$method,'@404',$params);
 
         try{
-            $result = $this->_invoker->invoke($request,$method,$localPath,$params);
+            $result = HttpInvoker::invoke($request,$method,$localPath,$params);
             return $result;
 
         }catch(\Throwable $e){
