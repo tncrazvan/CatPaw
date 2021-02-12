@@ -45,6 +45,26 @@ class AttributeResolver{
         return false;
     }
 
+    public static function getFunctionAttributeArguments(\ReflectionFunction $reflection_function, string $attribute_name):?array{
+        $attributes = $reflection_function->getAttributes();
+        foreach($attributes as &$attribute){
+            $classname = $attribute->getName();
+            if($classname === $attribute_name)
+                return $attribute->getArguments();
+        }
+        return null;
+    }
+
+    public static function issetFunctionAttribute(\ReflectionFunction $reflection_function, string $attribute_name):bool{
+        $attributes = $reflection_function->getAttributes();
+        foreach($attributes as &$attribute){
+            $classname = $attribute->getName();
+            if($classname === $attribute_name)
+                return true;
+        }
+        return false;
+    }
+
     public static function getMethodAttributeArguments(\ReflectionMethod $reflection_method, string $attribute_name):?array{
         $attributes = $reflection_method->getAttributes();
         foreach($attributes as &$attribute){

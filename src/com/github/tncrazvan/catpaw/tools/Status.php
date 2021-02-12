@@ -1,7 +1,26 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools;
 
-class Status{
+use com\github\tncrazvan\catpaw\attributes\interfaces\AttributeInterface;
+use com\github\tncrazvan\catpaw\attributes\traits\CoreAttributeDefinition;
+
+#[\Attribute]
+class Status implements AttributeInterface{
+    use CoreAttributeDefinition;
+
+    public function __construct(
+        private int $code = 200
+    ) {}
+
+    public function getCode():int{
+        return $this->code;
+    }
+
+    public function setCode(int $value):void{
+        $this->code = $value;
+    }
+
+
     const 
         //INFORMATINOAL RESPONSES
         CONTINUE = "100 Continue",

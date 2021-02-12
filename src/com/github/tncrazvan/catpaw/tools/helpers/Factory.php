@@ -25,7 +25,6 @@ use com\github\tncrazvan\catpaw\attributes\http\methods\UNLOCK;
 use com\github\tncrazvan\catpaw\attributes\http\methods\VIEW;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
 use com\github\tncrazvan\catpaw\attributes\Inject;
-use com\github\tncrazvan\catpaw\attributes\Produces;
 use com\github\tncrazvan\catpaw\attributes\Repository;
 use com\github\tncrazvan\catpaw\attributes\Service;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
@@ -172,7 +171,15 @@ class Factory{
         if($path){
             if(!$lazy_paths)
                 AttributeResolver::injectProperties($classname,$instance);
-            static::path($reflection_class,$methods,$path,$singleton,$classname,$lazy_paths);
+            static::path(
+                $instance,
+                $reflection_class,
+                $methods,
+                $path,
+                $singleton,
+                $classname,
+                $lazy_paths
+            );
         }else
             AttributeResolver::injectProperties($classname,$instance);
         
@@ -183,13 +190,14 @@ class Factory{
     }
 
     private static function path(
+        mixed &$instance,
         \ReflectionClass $reflection_class,
         array &$methods,
         Path $path,
         ?Singleton $singleton,
         string $classname,
         bool $inject
-        ):void{
+    ):void{
         $map = [];
         $i = 0;
         static::findHttpMethods($methods,function(string $http_method, \ReflectionMethod $reflection_method) use (&$map,&$i){
@@ -208,10 +216,26 @@ class Factory{
             $base_path = "/$base_path";
             
         if($singleton){
-            Route::map($map, $reflection_class, $classname, $base_path, $inject, (Singleton::class)."::\$map['$classname']");
+            Route::map(
+                $map,
+                $instance,
+                $reflection_class,
+                $classname,
+                $base_path,
+                $inject,
+                (Singleton::class)."::\$map['$classname']"
+            );
         }else {
             $factory = Factory::class;
-            Route::map($map, $reflection_class, $classname, $base_path, $inject, "new $classname(...$factory::getConstructorInjector('$classname')())");
+            Route::map(
+                $map,
+                $instance,
+                $reflection_class,
+                $classname,
+                $base_path,
+                $inject,
+                "new $classname(...$factory::getConstructorInjector('$classname')())"
+            );
         }
     }
 
