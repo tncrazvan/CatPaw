@@ -8,6 +8,7 @@ class CatPaw{
     private array $_map = [];
     public function __construct(
         private int $port = 8080,
+        private ?\Closure $listen = null,
         private array $events = [],
         private ?\React\EventLoop\LoopInterface $loop = null,
         private ?\React\Http\Server $server = null
@@ -24,9 +25,18 @@ class CatPaw{
         }
 
         $loop = \React\EventLoop\Factory::create();
+        $last = microtime(true) * 1000;
         $server = new \React\Http\Server( 
             $loop, 
-            fn( \Psr\Http\Message\ServerRequestInterface $request ) => $this->serve( $request, $invoker )
+            function( \Psr\Http\Message\ServerRequestInterface $request ) use(&$invoker,&$last,$listen) {
+                $now = microtime(true) * 1000;
+                if($now - $last > 100){
+                    $listen();
+                    $last = $now;
+                }
+                
+                return $this->serve( $request, $invoker );
+            }
         );
         
 
