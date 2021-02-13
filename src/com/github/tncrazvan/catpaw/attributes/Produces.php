@@ -14,7 +14,7 @@ class Produces implements AttributeInterface{
         $this->content_types = $content_types;
     }
 
-    public function getProducedContentTypes():string{
+    public function getContentType():string{
         return $this->content_types;
     }
 }

@@ -1,6 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools\helpers;
 
+use com\github\tncrazvan\catpaw\attributes\Body;
 use com\github\tncrazvan\catpaw\attributes\Consumes;
 use com\github\tncrazvan\catpaw\attributes\Entity;
 use com\github\tncrazvan\catpaw\attributes\http\Headers;
@@ -74,6 +75,7 @@ class Route{
                     Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
                     Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
                     Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Session::class] = Session::findByParameter($param);
+                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
                 }
             }else if($reflection_function){
                 Meta::$FUNCTIONS[$method][$path] = $reflection_method;
@@ -94,6 +96,7 @@ class Route{
                     Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
                     Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
                     Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Session::class] = Session::findByParameter($param);
+                    Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
                 }
             }
             

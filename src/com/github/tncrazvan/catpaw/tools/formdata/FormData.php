@@ -5,9 +5,9 @@ use com\github\tncrazvan\catpaw\http\HttpEvent;
 use com\github\tncrazvan\catpaw\http\HttpRequestBody;
 
 class FormData {
-    public static function parse(HttpEvent $e,string &$input,?array &$entries = []):bool{
+    public static function parse(string &$ctype,string &$input,?array &$entries = []):bool{
         // grab multipart boundary from content type header
-        if(!preg_match('/boundary=(.*)$/', $e->getRequestHeader("Content-Type"), $matches)){
+        if(!preg_match('/boundary=(.*)$/', $ctype, $matches)){
             return false;
         }
         $boundary = $matches[1];

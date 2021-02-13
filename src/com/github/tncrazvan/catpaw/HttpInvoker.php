@@ -1,6 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw;
 
+use com\github\tncrazvan\catpaw\attributes\Body;
 use com\github\tncrazvan\catpaw\attributes\Consumes;
 use com\github\tncrazvan\catpaw\attributes\http\Headers;
 use Exception;
@@ -13,13 +14,22 @@ use com\github\tncrazvan\catpaw\attributes\helpers\Factory;
 use com\github\tncrazvan\catpaw\attributes\helpers\metadata\Meta;
 use com\github\tncrazvan\catpaw\attributes\sessions\Session;
 use com\github\tncrazvan\catpaw\sessions\SessionManager;
+use com\github\tncrazvan\catpaw\tools\helpers\parsing\BodyParser;
 use com\github\tncrazvan\catpaw\tools\XMLSerializer;
+use Payload;
 
 class HttpInvoker{
 
     public function __construct(
-        private SessionManager $sm
-    ){}
+        private SessionManager $sm,
+        private ?Response $bad_request_no_content_type = null,
+        private ?Response $bad_request_cant_consume = null,
+    ){
+        if(!$this->bad_request_no_content_type)
+            $this->bad_request_no_content_type = new Response(Status::BAD_REQUEST,[],'');
+        if(!$this->bad_request_cant_consume)
+            $this->bad_request_cant_consume = new Response(Status::BAD_REQUEST,[],'');
+    }
 
     public function &invoke(
         ServerRequestInterface $request,
@@ -27,6 +37,11 @@ class HttpInvoker{
         string $http_path,
         array $http_params
    ):Response{
+        $ctype = $request->getHeaderLine("Content-Type");
+        if(!$ctype || '' === $ctype){
+            throw new Exception("Bad request on \"$http_method $http_path\", no Content-Type specified.");
+        }
+
         $__FUNCTION__ = Meta::$FUNCTIONS[$http_method][$http_path]??null;
 
         if($__FUNCTION__){
@@ -44,6 +59,7 @@ class HttpInvoker{
         $__CONSUMES__ = $__FUNCTION__?null:Meta::$METHODS_ATTRIBUTES[$http_method][$http_path][Consumes::class]??null;
         $__PRODUCES__ = $__FUNCTION__?null:Meta::$METHODS_ATTRIBUTES[$http_method][$http_path][Produces::class]??null;
         
+
         if(!$__FUNCTION__){
             if(!$__PRODUCES__ && $__CLASS_PRODUCES__ = Meta::$CLASS_ATTRIBUTES[$http_method][$http_path][Produces::class]??null){
                 $__PRODUCES__ = $__CLASS_PRODUCES__;
@@ -52,6 +68,26 @@ class HttpInvoker{
                 $__CONSUMES__ = $__CLASS_CONSUMES__;
             }
         }
+
+        if($__CONSUMES__){
+            $cconsumed = 0;
+            $consumed = static::filterConsumedContentType($__CONSUMES__,$ctype,$cconsumed);
+            
+
+            $can_consumes = false;
+            foreach($consumed as &$consumes_item){
+                if($ctype === $consumes_item){
+                    $can_consumes = true;
+                    break;
+                }
+            }
+            if(!$can_consumes){
+                $consumes_glued = \implode(',',$consumed);
+                throw new Exception("Bad request on \"$http_method $http_path\", can only consume Content-Type \"$consumes_glued\"; provided \"$ctype\".");
+            }
+
+        }
+
         $cookies = $request->getCookieParams();
         $sessionId = $cookies['sessionId']??null;
         $status = new Status();
@@ -62,6 +98,8 @@ class HttpInvoker{
                 if($__ARG__ instanceof \ReflectionParameter){
                     $this->inject(
                         $request,
+                        $__CONSUMES__,
+                        $ctype,
                         $__PATH_PARAMS__,
                         $__ARG__,
                         $__ARGS_ATTRIBUTES__,
@@ -95,7 +133,7 @@ class HttpInvoker{
             return $body;
 
         if($__PRODUCES__ && $__PRODUCES__ instanceof Produces && !isset($http_headers['Content-Type'])){
-            $http_headers['Content-Type'] = $__PRODUCES__->getProducedContentTypes();
+            $http_headers['Content-Type'] = $__PRODUCES__->getContentType();
         }
 
         $http_status = $status->getCode();
@@ -118,6 +156,46 @@ class HttpInvoker{
         return $response;
     }
 
+    private static function &filterConsumedContentType(
+        ?Consumes $__CONSUMES__,
+        ?string $ctype,
+        int &$len
+    ):array{
+        if( $__CONSUMES__ )
+            $produced = \preg_split( '/\s*,\s*/',$__CONSUMES__->getContentType() );
+        else
+            $produced = [];
+        
+        $len = 0;
+        $produced = array_filter($produced,function($type) use(&$len){
+            if(empty($type))
+                return false;
+            $len++;
+            return true;
+        });
+        return $produced;
+    }
+
+    private static function &filterProducedContentType(
+        ?Produces $__PRODUCES__,
+        ?string $ctype,
+        int &$len
+    ):array{
+        if( $__PRODUCES__ && !$ctype )
+            $produced = \preg_split( '/\s*,\s*/',$__PRODUCES__->getContentType() );
+        else
+            $produced = \preg_split( '/\s*,\s*/',$ctype??'' );
+        
+        $len = 0;
+        $produced = array_filter($produced,function($type) use(&$len){
+            if(empty($type))
+                return false;
+            $len++;
+            return true;
+        });
+        return $produced;
+    }
+
     private function adaptResponse(
         ?Produces $__PRODUCES__,
         int &$http_status,
@@ -127,23 +205,15 @@ class HttpInvoker{
         string $http_method,
         string $http_path,
     ):void{
-        if( $__PRODUCES__ && !isset( $http_headers['Content-Type'] ) )
-            $produced = \preg_split( '/\s*,\s*/',$__PRODUCES__->getProducedContentTypes() );
-        else
-            $produced = \preg_split( '/\s*,\s*/',$http_headers['Content-Type']??'' );
-        
         $cproduced = 0;
-        $produced = array_filter($produced,function($type) use(&$cproduced){
-            if(empty($type))
-                return false;
-            $cproduced++;
-            return true;
-        });
+
+        $produced = static::filterProducedContentType($__PRODUCES__,$http_headers["Content-Type"]??null,$cproduced);
 
         if($cproduced === 0){
             $http_status = Status::NO_CONTENT;
             unset($http_headers['Content-Type']);
-            echo "The resource \"$http_method $http_path\" is not configured to produce any type of content.\n";
+            if($http_method === 'GET')
+                echo "The resource \"$http_method $http_path\" is not configured to produce any type of content.\n";
             return;
         }
         
@@ -220,8 +290,15 @@ class HttpInvoker{
         }
     }
 
+    public static function __could_not_inject(string $name, string $classname, string $extra = ''):string{        
+        return 
+        "Parameter \"$name\" could not be injected as \"$classname\".".( '' === $extra?'':"\n$extra");
+    }
+
     private function inject(
         ServerRequestInterface $request,
+        ?Consumes $__CONSUMES__,
+        string &$ctype,
         ?array $__PATH_PARAMS__,
         \ReflectionParameter $__ARG__,
         ?array $__ARGS_ATTRIBUTES__,
@@ -246,32 +323,44 @@ class HttpInvoker{
                     $args[] = \filter_var($http_params[$name] || false, FILTER_VALIDATE_BOOLEAN);
                 break;
                 case 'string':
-                    $args[] = &$http_params[$name] || ($optional?$__ARG__->getDefaultValue():null);
+                    if(!$http_params[$name]){
+                        if($optional)
+                            $args[] = $__ARG__->getDefaultValue();
+                        else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Name \"$name\" does not math with any path parameter."));
+                    }else
+                        $args[] = &$http_params[$name];
                 break;
                 case 'int':
-                    if(isset($http_params[$name])){
+                    if(!$http_params[$name]){
+                        if($optional)
+                            $args[] = $__ARG__->getDefaultValue();
+                        else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Name \"$name\" does not math with any path parameter."));
+                    }else{
                         if(\is_numeric($http_params[$name]))
                             $args[] = (int) $http_params[$name];
                         else{
                             throw new Exception('Parameter {'.$name.'} was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
                         }
-                    }else{
-                        $args[] = &$param;
                     }
                 break;
                 case 'float':
-                    if(isset($http_params[$name])){
+                    if(!$http_params[$name]){
+                        if($optional)
+                            $args[] = $__ARG__->getDefaultValue();
+                        else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Name \"$name\" does not math with any path parameter."));
+                    }else{
                         if(\is_numeric($http_params[$name]))
                             $args[] = (float) $http_params[$name];
                         else{
                             throw new Exception('Parameter {'.$name.'} was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
                         }
-                    }else{
-                        $args[] = &$param;
                     }
                 break;
                 default:
-                    $args[] = null;
+                    throw new Exception(static::__could_not_inject($name,$classname));
                 break;
             }
         }else{
@@ -284,20 +373,72 @@ class HttpInvoker{
                             $args[] = &$http_headers;
                         }else if($__ARGS_ATTRIBUTES__[$name][Session::class]??false)
                             $args[] = &$this->session($http_headers,$sessionId);
+                        else if($__CONSUMES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
+                            $b = $request->getBody()->getContents();
+                            $args[] = BodyParser::parse($b,$ctype,null,true);
+                        }else
+                            throw new Exception("Body could not be unserialized to type \"$classname\".");
+                    else
+                        throw new Exception(static::__could_not_inject($name,$classname,"Could not find attribute any attribute on \"$name\"."));
+                    break;
+                case 'string':
+                    if( $__CONSUMES__ ) 
+                        if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
+                            $args[] = $request->getBody()->getContents();
+                        }else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find attribute any attribute on \"$name\"."));
+                    else
+                        throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
+                    break;
+                case 'int':
+                    if( $__CONSUMES__ ) 
+                        if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
+                            $b = $request->getBody()->getContents();
+                            if(\is_numeric($b))
+                                $args[] = (int) $b;
+                            else{
+                                throw new Exception('Body was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
+                            }
+                        }else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find attribute any attribute on \"$name\"."));
+                    else
+                        throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
+                    break;
+                case 'float':
+                    if( $__CONSUMES__ ) 
+                        if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
+                            $b = $request->getBody()->getContents();
+                            if(\is_numeric($b))
+                                $args[] = (float) $b;
+                            else{
+                                throw new Exception('Body was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
+                            }
+                        }else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find attribute any attribute on \"$name\"."));
+                    else
+                        throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
                     break;
                 case Status::class:
-                    if($__ARGS_ATTRIBUTES__)
-                        if($__ARGS_ATTRIBUTES__[$name][Status::class]??false){
-                            if($optional)
-                                $status = $__ARG__->getDefaultValue();
-                            $args[] = &$status;
-                        }
+                    if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Status::class]??false){
+                        if($optional)
+                            $status = $__ARG__->getDefaultValue();
+                        $args[] = &$status;
+                    }else
+                        throw new Exception(static::__could_not_inject($name,$classname,"Could not find attribute any attribute on \"$name\"."));
                     break;
                 case ServerRequestInterface::class:
                     $args[] = $request;
                     break;
                 default:
-                    $args[] = null;
+                    if($__CONSUMES__){
+                        if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
+                            $b = $request->getBody()->getContents();
+                            $args[] = BodyParser::parse($b,$ctype,$classname);
+                        }else{
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find attribute any attribute on \"$name\"."));
+                        }
+                    }else
+                        throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
                 break;
             }
         }

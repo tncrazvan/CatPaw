@@ -75,8 +75,9 @@ class CatPaw{
             return $result;
 
         }catch(\Throwable $e){
-
-            return new \React\Http\Message\Response( 500,[],"{$e->getMessage()}\n{$e->getTraceAsString()}\n" );
+            $message = $this->config->show_exception?$e->getMessage():'';
+            $trace = $this->config->show_exception && $this->config->show_stack_trace?"\n".$e->getTraceAsString():'';
+            return new \React\Http\Message\Response( 500,[],$message.$trace );
 
         }
             
@@ -90,9 +91,9 @@ class CatPaw{
             return null;
         foreach($_map[$method] as $localPath => $item){
             $localPieces = \explode('/',$localPath);
-            $max = \count($localPieces);
-            $c = 0;
             $requestedPieces = \explode('/',$requestedPath);
+            $max = \count($requestedPieces);
+            $c = 0;
             foreach($localPieces as $index => &$localPiece){
                 if(\preg_match(static::PATTERN_PARAM,$localPiece,$matches) && $matches && isset($matches[0])){
                     $paramName = $matches[0];

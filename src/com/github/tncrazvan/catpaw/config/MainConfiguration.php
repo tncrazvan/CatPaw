@@ -46,4 +46,14 @@ abstract class MainConfiguration{
      * Default value is **1440** (24 minutes).
      */
     public int $session_ttl = 1_440;
+
+    /**
+     * This will define wether or not the stack trace should be shown to the client whenever an Exception is catched.
+     */
+    public bool $show_stack_trace = false;
+
+    /**
+     * This will define wether or not exceptions should be shown to the client whenever they are catched.
+     */
+    public bool $show_exception = false;
 }
