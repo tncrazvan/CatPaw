@@ -11,6 +11,7 @@ use com\github\tncrazvan\catpaw\attributes\Repository;
 use com\github\tncrazvan\catpaw\attributes\Service;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
 use com\github\tncrazvan\catpaw\attributes\helpers\metadata\Meta;
+use com\github\tncrazvan\catpaw\attributes\sessions\Session;
 use com\github\tncrazvan\catpaw\tools\Status;
 
 class Route{
@@ -72,6 +73,7 @@ class Route{
                     Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
                     Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
                     Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
+                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Session::class] = Session::findByParameter($param);
                 }
             }else if($reflection_function){
                 Meta::$FUNCTIONS[$method][$path] = $reflection_method;
@@ -89,8 +91,9 @@ class Route{
                 foreach($params as $param){
                     $path_param = PathParam::findByParameter($param);
                     Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
-                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
-                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
+                    Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
+                    Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
+                    Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Session::class] = Session::findByParameter($param);
                 }
             }
             

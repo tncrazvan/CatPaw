@@ -11,11 +11,17 @@ use com\github\tncrazvan\catpaw\attributes\Produces;
 use com\github\tncrazvan\catpaw\tools\Caster;
 use com\github\tncrazvan\catpaw\attributes\helpers\Factory;
 use com\github\tncrazvan\catpaw\attributes\helpers\metadata\Meta;
+use com\github\tncrazvan\catpaw\attributes\sessions\Session;
+use com\github\tncrazvan\catpaw\sessions\SessionManager;
 use com\github\tncrazvan\catpaw\tools\XMLSerializer;
 
 class HttpInvoker{
 
-    public static function &invoke(
+    public function __construct(
+        private SessionManager $sm
+    ){}
+
+    public function &invoke(
         ServerRequestInterface $request,
         string $http_method,
         string $http_path,
@@ -23,23 +29,14 @@ class HttpInvoker{
    ):Response{
         $__FUNCTION__ = Meta::$FUNCTIONS[$http_method][$http_path]??null;
 
-        if($__FUNCTION__)
+        if($__FUNCTION__){
             $__ARGS__ = Meta::$FUNCTIONS_ARGS[$http_method][$http_path]??null;
-        else
+            //$__ARGS_NAMES__ = Meta::$FUNCTIONS_ARGS_NAMES[$http_method][$http_path]??null;
+            $__ARGS_ATTRIBUTES__ = Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$http_method][$http_path]??null;
+        }else{
             $__ARGS__ = Meta::$METHODS_ARGS[$http_method][$http_path]??null;
-
-        $__ARGS_NAMES__ = [];
-
-        $__STATUS__ = null;
-        $__HEADERS__ = null;
-
-        
-
-        foreach(Meta::$METHODS_ARGS_NAMES[$http_method][$http_path] as &$__ARG_NAME__){
-            if(!$__STATUS__)
-                $__STATUS__ = Meta::$METHODS_ARGS_ATTRIBUTES[$http_method][$http_path][$__ARG_NAME__][Status::class]??null;
-            if(!$__HEADERS__)
-                $__HEADERS__ = Meta::$METHODS_ARGS_ATTRIBUTES[$http_method][$http_path][$__ARG_NAME__][Headers::class]??null;
+            //$__ARGS_NAMES__ = Meta::$METHODS_ARGS_NAMES[$http_method][$http_path]??null;
+            $__ARGS_ATTRIBUTES__ = Meta::$METHODS_ARGS_ATTRIBUTES[$http_method][$http_path]??null;
         }
         
 
@@ -55,22 +52,23 @@ class HttpInvoker{
                 $__CONSUMES__ = $__CLASS_CONSUMES__;
             }
         }
-
+        $cookies = $request->getCookieParams();
+        $sessionId = $cookies['sessionId']??null;
         $status = new Status();
         $http_headers = [];
         $params = array();
         if($__ARGS__)
             foreach($__ARGS__ as &$__ARG__){
                 if($__ARG__ instanceof \ReflectionParameter){
-                    static::inject(
+                    $this->inject(
                         $__PATH_PARAMS__,
-                        $__HEADERS__,
-                        $__STATUS__,
                         $__ARG__,
+                        $__ARGS_ATTRIBUTES__,
                         $status,
                         $http_headers,
                         $http_params,
-                        $params
+                        $params,
+                        $sessionId
                     );
                 }
             }
@@ -101,7 +99,7 @@ class HttpInvoker{
         if($body === null)
             $body = '';
             
-        static::adaptResponse(
+        $this->adaptResponse(
             $__PRODUCES__,
             $http_status,
             $http_headers,
@@ -116,7 +114,7 @@ class HttpInvoker{
         return $response;
     }
 
-    private static function adaptResponse(
+    private function adaptResponse(
         ?Produces $__PRODUCES__,
         int &$http_status,
         array &$http_headers,
@@ -146,8 +144,8 @@ class HttpInvoker{
         }
 
         foreach($accepts as &$accepts_item){
-            if('*/*' === $accepts_item || \in_array($accepts_item,$produced)){
-                static::transform($body,$http_headers,$accepts_item,$produced);
+            if(str_starts_with($accepts_item,'*/*') || \in_array($accepts_item,$produced)){
+                $this->transform($body,$http_headers,$accepts_item,$produced);
                 return;
             }
         }
@@ -158,7 +156,7 @@ class HttpInvoker{
     }
 
 
-    private static function transform(
+    private function transform(
         mixed &$body,
         array &$http_headers,
         string &$ctype,
@@ -206,15 +204,15 @@ class HttpInvoker{
         }
     }
 
-    private static function inject(
+    private function inject(
         ?array $__PATH_PARAMS__,
-        ?Headers $__HEADERS__,
-        ?Status $__STATUS__,
         \ReflectionParameter $__ARG__,
+        ?array $__ARGS_ATTRIBUTES__,
         Status &$status,
         array &$http_headers,
         array &$http_params,
-        array &$args
+        array &$args,
+        ?string &$sessionId
    ):void{
         $name = $__ARG__->getName();
         $classname = $__ARG__->getType()->getName();
@@ -245,21 +243,28 @@ class HttpInvoker{
                     $args[] = null;
                 break;
             }
-        }
-        else{
+        }else{
             switch($classname){
                 case 'array':
-                    if($__HEADERS__)
-                        $args[] = &$http_headers;
+                    if($__ARGS_ATTRIBUTES__)
+                        if($__ARGS_ATTRIBUTES__[$name][Headers::class]??false)
+                            $args[] = &$http_headers;
+                        else if($__ARGS_ATTRIBUTES__[$name][Session::class]??false)
+                            $args[] = &$this->session($http_headers,$sessionId);
                     break;
                 case Status::class:
-                    if($__STATUS__)
-                        $args[] = &$status;
+                    if($__ARGS_ATTRIBUTES__)
+                        if($__ARGS_ATTRIBUTES__[$name][Status::class]??false)
+                            $args[] = &$status;
                     break;
                 default:
                     $args[] = null;
                 break;
             }
         }
+    }
+
+    private function &session(array &$http_headers, ?string &$sessionId):array{
+        return $this->sm->startSession($http_headers,$sessionId);
     }
 }

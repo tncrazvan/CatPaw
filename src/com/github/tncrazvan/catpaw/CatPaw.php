@@ -2,18 +2,19 @@
 namespace com\github\tncrazvan\catpaw;
 
 use com\github\tncrazvan\catpaw\attributes\helpers\metadata\Meta;
-use React\Http\Message\Response;
-use com\github\tncrazvan\catpaw\tools\helpers\Route;
+use com\github\tncrazvan\catpaw\sessions\SessionManager;
 
 class CatPaw{
     private array $_map = [];
-    private HttpInvoker $_invoker;
     public function __construct(
         private int $port = 8080,
         private array $events = [],
         private ?\React\EventLoop\LoopInterface $loop = null,
         private ?\React\Http\Server $server = null
     ){
+        $sm = new SessionManager();
+        $invoker = new HttpInvoker($sm);
+
         foreach ( $this->events as $key => $event ) {
             if( $event instanceof HttpEvent ){
                 if( !isset( $this->_map[$event->getMethod()] ) ){
@@ -25,10 +26,9 @@ class CatPaw{
         $loop = \React\EventLoop\Factory::create();
         $server = new \React\Http\Server( 
             $loop, 
-            fn( \Psr\Http\Message\ServerRequestInterface $request ) => $this->serve( $request )
+            fn( \Psr\Http\Message\ServerRequestInterface $request ) => $this->serve( $request, $invoker )
         );
         
-        $this->_invoker = new HttpInvoker($server);
 
         $socket = new \React\Socket\Server(8080, $loop);
         $server->listen($socket);
@@ -39,7 +39,7 @@ class CatPaw{
 
     }
 
-    private function serve( \Psr\Http\Message\ServerRequestInterface $request ):\React\Http\Message\Response{
+    private function serve( \Psr\Http\Message\ServerRequestInterface $request, HttpInvoker $invoker ):\React\Http\Message\Response{
         $method = $request->getMethod();
         $uri = $request->getUri();            
         $path = $uri->getPath();
@@ -52,10 +52,10 @@ class CatPaw{
             $localPath = static::usingPath( $method,$path,$params,Meta::$METHODS );
 
         if($localPath === null)
-            return HttpInvoker::invoke($request,$method,'@404',$params);
+            return $invoker->invoke($request,$method,'@404',$params);
 
         try{
-            $result = HttpInvoker::invoke($request,$method,$localPath,$params);
+            $result = $invoker->invoke($request,$method,$localPath,$params);
             return $result;
 
         }catch(\Throwable $e){
