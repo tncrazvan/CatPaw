@@ -23,6 +23,8 @@ class User{
         #[Session] ?array &$session
     ):string{
         $headers["test"] = "test";
+        $session["username"] = $username;
+        print_r($session);
         return "hello $username!!";
     }
 }

@@ -87,6 +87,8 @@ class HttpInvoker{
             $__METHOD__->setAccessible(false);
         }
         
+        $this->sm->saveSession($this->sm->getSession($sessionId));
+
         if($body instanceof Response)
             return $body;
 
