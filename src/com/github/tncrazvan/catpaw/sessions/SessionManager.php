@@ -52,7 +52,7 @@ class SessionManager{
         return $session->storage();
     }
     
-    public function loadSession(string $sessionId):void{
+    public function loadSession(string &$sessionId):void{
         $data = json_decode(file_get_contents($this->directory."/$sessionId"),true);
         $headers = null;
         $session = (new Session())->init($this,$headers);
@@ -84,11 +84,11 @@ class SessionManager{
         unlink($this->directory.'/'.$session->id());
     }
     
-    public function &getSession(string $sessionId):Session{
+    public function &getSession(string &$sessionId):?Session{
         return $this->list[$sessionId];
     }
     
-    public function issetSession(string $sessionId):bool{
+    public function issetSession(string &$sessionId):bool{
         return isset($this->list[$sessionId]);
     }
 }
