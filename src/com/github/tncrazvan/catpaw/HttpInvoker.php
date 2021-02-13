@@ -61,6 +61,7 @@ class HttpInvoker{
             foreach($__ARGS__ as &$__ARG__){
                 if($__ARG__ instanceof \ReflectionParameter){
                     $this->inject(
+                        $request,
                         $__PATH_PARAMS__,
                         $__ARG__,
                         $__ARGS_ATTRIBUTES__,
@@ -208,6 +209,7 @@ class HttpInvoker{
     }
 
     private function inject(
+        ServerRequestInterface $request,
         ?array $__PATH_PARAMS__,
         \ReflectionParameter $__ARG__,
         ?array $__ARGS_ATTRIBUTES__,
@@ -259,6 +261,9 @@ class HttpInvoker{
                     if($__ARGS_ATTRIBUTES__)
                         if($__ARGS_ATTRIBUTES__[$name][Status::class]??false)
                             $args[] = &$status;
+                    break;
+                case ServerRequestInterface::class:
+                    $args[] = $request;
                     break;
                 default:
                     $args[] = null;

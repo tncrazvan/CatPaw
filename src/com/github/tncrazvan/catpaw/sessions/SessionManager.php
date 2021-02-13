@@ -2,26 +2,16 @@
 namespace com\github\tncrazvan\catpaw\sessions;
 
 use com\github\tncrazvan\catpaw\attributes\sessions\Session;
+use com\github\tncrazvan\catpaw\config\MainConfiguration;
 use com\github\tncrazvan\catpaw\tools\Dir;
 
 class SessionManager{
-    /**
-     * The time each session will live for (in seconds).
-     */
-    public int $ttl = 60 * 24;
-    /**
-     * Ram session size in MBs.
-     */
-    public int $size = 512;
-    /**
-    * The directory where sessions will be saved.
-    */
-    public string $directory = '@sessions';
-
-    public function __construct() {
+    public function __construct(
+        private MainConfiguration $config
+    ) {
         $cud = getcwd();
-        Dir::umount("$cud/{$this->directory}");
-        Dir::mount("$cud/{$this->directory}",$this->size);
+        Dir::umount("$cud/{$config->session_directory}");
+        Dir::mount("$cud/{$config->session_directory}",$config->session_size);
     }
 
     public array $list = [];
@@ -30,7 +20,7 @@ class SessionManager{
             //load the session
             $this->loadSession($sessionId);
             //if session is expired
-            if($this->list[$sessionId]->getTime() + $this->ttl < time()){
+            if($this->list[$sessionId]->getTime() + $this->config->session_ttl < time()){
                 //delete the expired session
                 $this->stopSession($this->list[$sessionId]);
             }else{ //if session is alive
@@ -53,7 +43,7 @@ class SessionManager{
     }
     
     public function loadSession(string &$sessionId):void{
-        $data = json_decode(file_get_contents($this->directory."/$sessionId"),true);
+        $data = json_decode(file_get_contents($this->config->session_directory."/$sessionId"),true);
         $headers = null;
         $session = (new Session())->init($this,$headers);
         $session->setStorage($data["STORAGE"]);
@@ -63,7 +53,7 @@ class SessionManager{
     }
     
     public function saveSession(Session $session):void{
-        $filename = $this->directory."/".$session->id();
+        $filename = $this->config->session_directory."/".$session->id();
         $dirname = dirname($filename);
         if(!is_dir($dirname)){
             mkdir($dirname,0777,true);
@@ -81,7 +71,7 @@ class SessionManager{
     
     public function stopSession(Session $session):void{
         unset($this->list[$session->id()]);
-        unlink($this->directory.'/'.$session->id());
+        unlink($this->config->session_directory.'/'.$session->id());
     }
     
     public function &getSession(string &$sessionId):?Session{

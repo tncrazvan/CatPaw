@@ -2,18 +2,19 @@
 namespace com\github\tncrazvan\catpaw;
 
 use com\github\tncrazvan\catpaw\attributes\helpers\metadata\Meta;
+use com\github\tncrazvan\catpaw\config\MainConfiguration;
 use com\github\tncrazvan\catpaw\sessions\SessionManager;
 
 class CatPaw{
     private array $_map = [];
     public function __construct(
-        private int $port = 8080,
+        private MainConfiguration $config,
         private ?\Closure $listen = null,
         private array $events = [],
         private ?\React\EventLoop\LoopInterface $loop = null,
         private ?\React\Http\Server $server = null
     ){
-        $sm = new SessionManager();
+        $sm = new SessionManager($config);
         $invoker = new HttpInvoker($sm);
 
         foreach ( $this->events as $key => $event ) {
@@ -42,14 +43,15 @@ class CatPaw{
         else
             $server = new \React\Http\Server( 
                 $loop, 
+                ...$config->middlewares,
                 fn( \Psr\Http\Message\ServerRequestInterface $request ) => $this->serve( $request, $invoker )
             );
         
 
-        $socket = new \React\Socket\Server(8080, $loop);
+        $socket = new \React\Socket\Server($config->uri, $loop, $config->context);
         $server->listen($socket);
         
-        echo "Server running at http://127.0.0.1:$port\n";
+        echo "Server running at {$socket->getAddress()}\n";
 
         $loop->run();
 
