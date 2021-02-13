@@ -146,12 +146,21 @@ class HttpInvoker{
             echo "The resource \"$http_method $http_path\" is not configured to produce any type of content.\n";
             return;
         }
+        
+        $any = null;
 
         foreach($accepts as &$accepts_item){
-            if(str_starts_with($accepts_item,'*/*') || \in_array($accepts_item,$produced)){
+            if(!$any && str_starts_with($accepts_item,'*/*'))
+                $any = $accepts_item;
+            else if(\in_array($accepts_item,$produced)){
                 $this->transform($body,$http_headers,$accepts_item,$produced);
                 return;
             }
+        }
+
+        if($any){
+            $this->transform($body,$http_headers,$produced[0],$produced);
+            return;
         }
 
         $http_status = Status::BAD_REQUEST;
@@ -219,8 +228,14 @@ class HttpInvoker{
         array &$args,
         ?string &$sessionId
    ):void{
+        $optional = $__ARG__->isOptional();
         $name = $__ARG__->getName();
-        $classname = $__ARG__->getType()->getName();
+        $type = $__ARG__->getType();
+        if(!$type){
+            $args[] = null;
+            return;
+        }
+        $classname = $type->getName();
         static $param = null;
         if($__PATH_PARAMS__ && isset($__PATH_PARAMS__[$name])){
             switch($classname){
@@ -228,7 +243,7 @@ class HttpInvoker{
                     $args[] = \filter_var($http_params[$name] || false, FILTER_VALIDATE_BOOLEAN);
                 break;
                 case 'string':
-                    $args[] = &$http_params[$name] || null;
+                    $args[] = &$http_params[$name] || ($optional?$__ARG__->getDefaultValue():null);
                 break;
                 case 'int':
                     if(isset($http_params[$name])){
@@ -242,7 +257,15 @@ class HttpInvoker{
                     }
                 break;
                 case 'float':
-                    $args[] = (float) $http_params[$name];
+                    if(isset($http_params[$name])){
+                        if(\is_numeric($http_params[$name]))
+                            $args[] = (float) $http_params[$name];
+                        else{
+                            throw new Exception('Parameter {'.$name.'} was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
+                        }
+                    }else{
+                        $args[] = &$param;
+                    }
                 break;
                 default:
                     $args[] = null;
@@ -252,15 +275,20 @@ class HttpInvoker{
             switch($classname){
                 case 'array':
                     if($__ARGS_ATTRIBUTES__)
-                        if($__ARGS_ATTRIBUTES__[$name][Headers::class]??false)
+                        if($__ARGS_ATTRIBUTES__[$name][Headers::class]??false){
+                            if($optional)
+                                $http_headers = $__ARG__->getDefaultValue();
                             $args[] = &$http_headers;
-                        else if($__ARGS_ATTRIBUTES__[$name][Session::class]??false)
+                        }else if($__ARGS_ATTRIBUTES__[$name][Session::class]??false)
                             $args[] = &$this->session($http_headers,$sessionId);
                     break;
                 case Status::class:
                     if($__ARGS_ATTRIBUTES__)
-                        if($__ARGS_ATTRIBUTES__[$name][Status::class]??false)
+                        if($__ARGS_ATTRIBUTES__[$name][Status::class]??false){
+                            if($optional)
+                                $status = $__ARG__->getDefaultValue();
                             $args[] = &$status;
+                        }
                     break;
                 case ServerRequestInterface::class:
                     $args[] = $request;
