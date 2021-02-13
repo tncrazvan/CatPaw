@@ -3,8 +3,8 @@ namespace com\github\tncrazvan\catpaw\tools\helpers;
 
 use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\tools\helpers\SimpleQueryBuilder;
-use io\github\tncrazvan\orm\tools\Column;
-use io\github\tncrazvan\orm\tools\Entity;
+use com\github\tncrazvan\catpaw\qb\tools\Column;
+use com\github\tncrazvan\catpaw\qb\tools\Entity;
 
 class SimpleRepository{
     

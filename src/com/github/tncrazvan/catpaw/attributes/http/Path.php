@@ -3,7 +3,6 @@ namespace com\github\tncrazvan\catpaw\attributes\http;
 
 use com\github\tncrazvan\catpaw\attributes\interfaces\AttributeInterface;
 use com\github\tncrazvan\catpaw\attributes\traits\CoreAttributeDefinition;
-use com\github\tncrazvan\catpaw\tools\Strings;
 
 #[\Attribute]
 class Path implements AttributeInterface{

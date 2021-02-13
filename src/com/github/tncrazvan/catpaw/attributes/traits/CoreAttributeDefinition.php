@@ -1,9 +1,15 @@
 <?php
 namespace com\github\tncrazvan\catpaw\attributes\traits;
 
-use com\github\tncrazvan\catpaw\tools\AttributeResolver;
+use com\github\tncrazvan\catpaw\attributes\AttributeResolver;
 
 trait CoreAttributeDefinition{
+    public static function findByFunction(\ReflectionFunction $reflection_function):?static{
+        if(!AttributeResolver::issetFunctionAttribute($reflection_function,static::class))
+            return null;
+        return new static(...AttributeResolver::getFunctionAttributeArguments($reflection_function,static::class));
+    }
+
     public static function findByMethod(\ReflectionMethod $reflection_method):?static{
         if(!AttributeResolver::issetMethodAttribute($reflection_method,static::class))
             return null;
