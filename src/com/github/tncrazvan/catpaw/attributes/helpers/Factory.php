@@ -218,24 +218,16 @@ class Factory{
             
         if($singleton){
             Route::map(
-                $map,
-                $instance,
                 $reflection_class,
-                $classname,
                 $base_path,
-                $inject,
-                (Singleton::class)."::\$map['$classname']"
+                $map
             );
         }else {
             $factory = Factory::class;
             Route::map(
-                $map,
-                $instance,
                 $reflection_class,
-                $classname,
                 $base_path,
-                $inject,
-                "new $classname(...$factory::getConstructorInjector('$classname')())"
+                $map
             );
         }
     }

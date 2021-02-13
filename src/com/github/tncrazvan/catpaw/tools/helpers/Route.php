@@ -20,13 +20,9 @@ class Route{
     private static array $initialized_attributes = [];
 
     public static function map(
-        array $map, 
-        mixed &$instance,
         \ReflectionClass $reflection_class,
-        string &$classname,
         string $basePath,
-        bool $inject,
-        string $execute
+        array $map, 
     ):void{
         foreach($map as &$item){
             $method= $item['method'];
