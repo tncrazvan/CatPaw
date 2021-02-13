@@ -28,25 +28,20 @@ class CatPaw{
         $loop = \React\EventLoop\Factory::create();
         $last = microtime(true) * 1000;
         if($listen)
-            $server = new \React\Http\Server( 
-                $loop, 
-                function( \Psr\Http\Message\ServerRequestInterface $request ) use(&$invoker,&$last,$listen) {
-                    $now = microtime(true) * 1000;
-                    if($now - $last > 100){
-                        $listen();
-                        $last = $now;
-                    }
-                    
-                    return $this->serve( $request, $invoker );
+            $event = function( \Psr\Http\Message\ServerRequestInterface $request ) use(&$invoker,&$last,$listen) {
+                $now = microtime(true) * 1000;
+                if($now - $last > 100){
+                    $listen();
+                    $last = $now;
                 }
-            );
+                
+                return $this->serve( $request, $invoker );
+            };
         else
-            $server = new \React\Http\Server( 
-                $loop, 
-                ...$config->middlewares,
-                fn( \Psr\Http\Message\ServerRequestInterface $request ) => $this->serve( $request, $invoker )
-            );
+            $event = fn( \Psr\Http\Message\ServerRequestInterface $request ) => $this->serve( $request, $invoker );
         
+        
+        $server = new \React\Http\Server($loop,...[...$config->middlewares,$event]);
 
         $socket = new \React\Socket\Server($config->uri, $loop, $config->context);
         $server->listen($socket);

@@ -5,9 +5,9 @@ abstract class MainConfiguration{
 
     /**
      * Full uri in the form of **{scheme?}{hostname}:{port}** the server should use.
-     * For example **localhost:8080** or **tcp://localhost:8080**.
+     * For example **127.0.0.1:8080** or **tcp://127.0.0.1:8080**.
      */
-    public string $uri = 'localhost:8080';
+    public mixed $uri = '127.0.0.1:8080';
 
     /**
      * Middlewares to employ while processing requests.
