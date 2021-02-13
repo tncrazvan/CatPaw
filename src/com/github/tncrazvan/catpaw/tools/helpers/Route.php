@@ -10,7 +10,7 @@ use com\github\tncrazvan\catpaw\attributes\Produces;
 use com\github\tncrazvan\catpaw\attributes\Repository;
 use com\github\tncrazvan\catpaw\attributes\Service;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
-use com\github\tncrazvan\catpaw\tools\helpers\metadata\Meta;
+use com\github\tncrazvan\catpaw\attributes\helpers\metadata\Meta;
 use com\github\tncrazvan\catpaw\tools\Status;
 
 class Route{
@@ -55,46 +55,54 @@ class Route{
     ):void{
         if(!isset(static::$initialized_attributes[$method][$path]) || !static::$initialized_attributes[$method][$path]){
             if($reflection_method){
-                Meta::METHODS[$method][$path] = $reflection_method;
-                Meta::METHODS_ARGS[$method][$path] = $reflection_method->getParameters();
+                Meta::$METHODS[$method][$path] = $reflection_method;
+                Meta::$METHODS_ARGS[$method][$path] = $reflection_method->getParameters();
 
-                Meta::METHODS_ATTRIBUTES[$method][$path][Path::class] = Path::findByMethod($reflection_method);
-                Meta::METHODS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByMethod($reflection_method);
-                Meta::METHODS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByMethod($reflection_method);
+                foreach(Meta::$METHODS_ARGS[$method][$path] as &$param){
+                    Meta::$METHODS_ARGS_NAMES[$method][$path][] = $param->getName();
+                }
+
+                Meta::$METHODS_ATTRIBUTES[$method][$path][Path::class] = Path::findByMethod($reflection_method);
+                Meta::$METHODS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByMethod($reflection_method);
+                Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByMethod($reflection_method);
                 
                 $params = $reflection_method->getParameters();
                 foreach($params as $param){
                     $path_param = PathParam::findByParameter($param);
-                    Meta::PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
-                    Meta::METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
-                    Meta::METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
+                    Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
+                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
+                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
                 }
             }else if($reflection_function){
-                Meta::FUNCTIONS[$method][$path] = $reflection_method;
-                Meta::FUNCTIONS_ARGS[$method][$path] = $reflection_function->getParameters();
+                Meta::$FUNCTIONS[$method][$path] = $reflection_method;
+                Meta::$FUNCTIONS_ARGS[$method][$path] = $reflection_function->getParameters();
 
-                Meta::FUNCTIONS_ATTRIBUTES[$method][$path][Path::class] = Path::findByFunction($reflection_function);
-                Meta::FUNCTIONS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByFunction($reflection_function);
-                Meta::FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByFunction($reflection_function);
+                foreach(Meta::$FUNCTIONS_ARGS[$method][$path] as &$param){
+                    Meta::$FUNCTIONS_ARGS_NAMES[$method][$path][] = $param->getName();
+                }
+
+                Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Path::class] = Path::findByFunction($reflection_function);
+                Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByFunction($reflection_function);
+                Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByFunction($reflection_function);
                 
                 $params = $reflection_function->getParameters();
                 foreach($params as $param){
                     $path_param = PathParam::findByParameter($param);
-                    Meta::PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
-                    Meta::METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
-                    Meta::METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
+                    Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
+                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
+                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
                 }
             }
             
             if($reflection_class){
-                Meta::KLASS[$method][$path] = $reflection_class;
-                Meta::CLASS_ATTRIBUTES[$method][$path][Service::class] = Service::findByClass($reflection_class);
-                Meta::CLASS_ATTRIBUTES[$method][$path][Singleton::class] = Singleton::findByClass($reflection_class);
-                Meta::CLASS_ATTRIBUTES[$method][$path][Repository::class] = Repository::findByClass($reflection_class);
-                Meta::CLASS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByClass($reflection_class);
-                Meta::CLASS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByClass($reflection_class);
-                Meta::CLASS_ATTRIBUTES[$method][$path][Entity::class] = Entity::findByClass($reflection_class);
-                Meta::CLASS_ATTRIBUTES[$method][$path][Path::class] = Path::findByClass($reflection_class);
+                Meta::$KLASS[$method][$path] = $reflection_class;
+                Meta::$CLASS_ATTRIBUTES[$method][$path][Service::class] = Service::findByClass($reflection_class);
+                Meta::$CLASS_ATTRIBUTES[$method][$path][Singleton::class] = Singleton::findByClass($reflection_class);
+                Meta::$CLASS_ATTRIBUTES[$method][$path][Repository::class] = Repository::findByClass($reflection_class);
+                Meta::$CLASS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByClass($reflection_class);
+                Meta::$CLASS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByClass($reflection_class);
+                Meta::$CLASS_ATTRIBUTES[$method][$path][Entity::class] = Entity::findByClass($reflection_class);
+                Meta::$CLASS_ATTRIBUTES[$method][$path][Path::class] = Path::findByClass($reflection_class);
             }
 
             static::$initialized_attributes[$method][$path] = true;
@@ -176,8 +184,8 @@ class Route{
      * @param string $to path to forward to
      */
     public static function forward(string $method, string $from, string $to):void{
-        if(!isset(Meta::FUNCTIONS[$from][$method])){
-            Meta::FUNCTIONS[$from][$method] = Meta::FUNCTIONS[$to][$method];
+        if(!isset(Meta::$FUNCTIONS[$from][$method])){
+            Meta::$FUNCTIONS[$from][$method] = Meta::$FUNCTIONS[$to][$method];
         }
     }
 
@@ -219,18 +227,18 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function copy(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['COPY'] ) )
-            Meta::FUNCTIONS_ARGS['COPY'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['COPY'] ) )
+            Meta::$FUNCTIONS_ARGS['COPY'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('COPY',$path,null,null,$reflection_method);
 
-        Meta::FUNCTIONS_ARGS['COPY'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['COPY'][$path] = $reflection_method->getParameters();
 
-        if( !isset( Meta::FUNCTIONS['COPY'] ) )
-            Meta::FUNCTIONS['COPY'] = array();
+        if( !isset( Meta::$FUNCTIONS['COPY'] ) )
+            Meta::$FUNCTIONS['COPY'] = array();
 
-        Meta::FUNCTIONS['COPY'][$path] = $callback;
+        Meta::$FUNCTIONS['COPY'][$path] = $callback;
     }
 
     /**
@@ -239,19 +247,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function delete(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['DELETE'] ) )
-            Meta::FUNCTIONS_ARGS['DELETE'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['DELETE'] ) )
+            Meta::$FUNCTIONS_ARGS['DELETE'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('DELETE',$path,null,null,$reflection_method);
 
-        Meta::FUNCTIONS_ARGS['DELETE'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['DELETE'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['DELETE'] ) )
-            Meta::FUNCTIONS['DELETE'] = array();
+        if( !isset( Meta::$FUNCTIONS['DELETE'] ) )
+            Meta::$FUNCTIONS['DELETE'] = array();
 
-        Meta::FUNCTIONS['DELETE'][$path] = $callback;
+        Meta::$FUNCTIONS['DELETE'][$path] = $callback;
     }
 
     /**
@@ -260,19 +268,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function get(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['GET'] ) )
-            Meta::FUNCTIONS_ARGS['GET'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['GET'] ) )
+            Meta::$FUNCTIONS_ARGS['GET'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('GET',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['GET'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['GET'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['GET'] ) )
-            Meta::FUNCTIONS['GET'] = array();
+        if( !isset( Meta::$FUNCTIONS['GET'] ) )
+            Meta::$FUNCTIONS['GET'] = array();
 
-        Meta::FUNCTIONS['GET'][$path] = $callback;
+        Meta::$FUNCTIONS['GET'][$path] = $callback;
     }
 
     /**
@@ -281,19 +289,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function head(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['HEAD'] ) )
-            Meta::FUNCTIONS_ARGS['HEAD'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['HEAD'] ) )
+            Meta::$FUNCTIONS_ARGS['HEAD'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('HEAD',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['HEAD'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['HEAD'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['HEAD'] ) )
-            Meta::FUNCTIONS['HEAD'] = array();
+        if( !isset( Meta::$FUNCTIONS['HEAD'] ) )
+            Meta::$FUNCTIONS['HEAD'] = array();
 
-        Meta::FUNCTIONS['HEAD'][$path] = $callback;
+        Meta::$FUNCTIONS['HEAD'][$path] = $callback;
     }
     
     /**
@@ -302,19 +310,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function link(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['LINK'] ) )
-            Meta::FUNCTIONS_ARGS['LINK'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['LINK'] ) )
+            Meta::$FUNCTIONS_ARGS['LINK'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('LINK',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['LINK'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['LINK'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['LINK'] ) )
-            Meta::FUNCTIONS['LINK'] = array();
+        if( !isset( Meta::$FUNCTIONS['LINK'] ) )
+            Meta::$FUNCTIONS['LINK'] = array();
 
-        Meta::FUNCTIONS['LINK'][$path] = $callback;
+        Meta::$FUNCTIONS['LINK'][$path] = $callback;
     }
     
     /**
@@ -323,19 +331,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function lock(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['LOCK'] ) )
-            Meta::FUNCTIONS_ARGS['LOCK'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['LOCK'] ) )
+            Meta::$FUNCTIONS_ARGS['LOCK'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('LOCK',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['COPY'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['COPY'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['LOCK'] ) )
-            Meta::FUNCTIONS['LOCK'] = array();
+        if( !isset( Meta::$FUNCTIONS['LOCK'] ) )
+            Meta::$FUNCTIONS['LOCK'] = array();
 
-        Meta::FUNCTIONS['LOCK'][$path] = $callback;
+        Meta::$FUNCTIONS['LOCK'][$path] = $callback;
     }
     
     /**
@@ -344,19 +352,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function options(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['OPTIONS'] ) )
-            Meta::FUNCTIONS_ARGS['OPTIONS'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['OPTIONS'] ) )
+            Meta::$FUNCTIONS_ARGS['OPTIONS'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('OPTIONS',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['COPY'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['COPY'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['OPTIONS'] ) )
-            Meta::FUNCTIONS['OPTIONS'] = array();
+        if( !isset( Meta::$FUNCTIONS['OPTIONS'] ) )
+            Meta::$FUNCTIONS['OPTIONS'] = array();
 
-        Meta::FUNCTIONS['OPTIONS'][$path] = $callback;
+        Meta::$FUNCTIONS['OPTIONS'][$path] = $callback;
     }
     
     /**
@@ -365,19 +373,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function patch(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['PATCH'] ) )
-            Meta::FUNCTIONS_ARGS['PATCH'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['PATCH'] ) )
+            Meta::$FUNCTIONS_ARGS['PATCH'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('PATCH',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['PATCH'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['PATCH'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['PATCH'] ) )
-            Meta::FUNCTIONS['PATCH'] = array();
+        if( !isset( Meta::$FUNCTIONS['PATCH'] ) )
+            Meta::$FUNCTIONS['PATCH'] = array();
 
-        Meta::FUNCTIONS['PATCH'][$path] = $callback;
+        Meta::$FUNCTIONS['PATCH'][$path] = $callback;
     }
     
     /**
@@ -386,19 +394,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function post(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['POST'] ) )
-            Meta::FUNCTIONS_ARGS['POST'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['POST'] ) )
+            Meta::$FUNCTIONS_ARGS['POST'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('POST',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['POST'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['POST'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['POST'] ) )
-            Meta::FUNCTIONS['POST'] = array();
+        if( !isset( Meta::$FUNCTIONS['POST'] ) )
+            Meta::$FUNCTIONS['POST'] = array();
 
-        Meta::FUNCTIONS['POST'][$path] = $callback;
+        Meta::$FUNCTIONS['POST'][$path] = $callback;
     }
     
     /**
@@ -407,19 +415,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function propfind(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['PROPFIND'] ) )
-            Meta::FUNCTIONS_ARGS['PROPFIND'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['PROPFIND'] ) )
+            Meta::$FUNCTIONS_ARGS['PROPFIND'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('PROPFIND',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['PROPFIND'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['PROPFIND'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['PROPFIND'] ) )
-            Meta::FUNCTIONS['PROPFIND'] = array();
+        if( !isset( Meta::$FUNCTIONS['PROPFIND'] ) )
+            Meta::$FUNCTIONS['PROPFIND'] = array();
 
-        Meta::FUNCTIONS['PROPFIND'][$path] = $callback;
+        Meta::$FUNCTIONS['PROPFIND'][$path] = $callback;
     }
     
     /**
@@ -428,19 +436,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function purge(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['PURGE'] ) )
-            Meta::FUNCTIONS_ARGS['PURGE'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['PURGE'] ) )
+            Meta::$FUNCTIONS_ARGS['PURGE'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('PURGE',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['PURGE'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['PURGE'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['PURGE'] ) )
-            Meta::FUNCTIONS['PURGE'] = array();
+        if( !isset( Meta::$FUNCTIONS['PURGE'] ) )
+            Meta::$FUNCTIONS['PURGE'] = array();
 
-        Meta::FUNCTIONS['PURGE'][$path] = $callback;
+        Meta::$FUNCTIONS['PURGE'][$path] = $callback;
     }
     
     /**
@@ -449,19 +457,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function put(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['PUT'] ) )
-            Meta::FUNCTIONS_ARGS['PUT'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['PUT'] ) )
+            Meta::$FUNCTIONS_ARGS['PUT'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('PUT',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['PUT'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['PUT'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['PUT'] ) )
-            Meta::FUNCTIONS['PUT'] = array();
+        if( !isset( Meta::$FUNCTIONS['PUT'] ) )
+            Meta::$FUNCTIONS['PUT'] = array();
 
-        Meta::FUNCTIONS['PUT'][$path] = $callback;
+        Meta::$FUNCTIONS['PUT'][$path] = $callback;
     }
     
     /**
@@ -470,19 +478,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function unknown(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['UNKNOWN'] ) )
-            Meta::FUNCTIONS_ARGS['UNKNOWN'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['UNKNOWN'] ) )
+            Meta::$FUNCTIONS_ARGS['UNKNOWN'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('UNKNOWN',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['UNKNOWN'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['UNKNOWN'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['UNKNOWN'] ) )
-            Meta::FUNCTIONS['UNKNOWN'] = array();
+        if( !isset( Meta::$FUNCTIONS['UNKNOWN'] ) )
+            Meta::$FUNCTIONS['UNKNOWN'] = array();
 
-        Meta::FUNCTIONS['UNKNOWN'][$path] = $callback;
+        Meta::$FUNCTIONS['UNKNOWN'][$path] = $callback;
     }
     
     /**
@@ -491,19 +499,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function unlink(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['UNLINK'] ) )
-            Meta::FUNCTIONS_ARGS['UNLINK'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['UNLINK'] ) )
+            Meta::$FUNCTIONS_ARGS['UNLINK'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('UNLINK',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['UNLINK'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['UNLINK'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['UNLINK'] ) )
-            Meta::FUNCTIONS['UNLINK'] = array();
+        if( !isset( Meta::$FUNCTIONS['UNLINK'] ) )
+            Meta::$FUNCTIONS['UNLINK'] = array();
 
-        Meta::FUNCTIONS['UNLINK'][$path] = $callback;
+        Meta::$FUNCTIONS['UNLINK'][$path] = $callback;
     }
     
     /**
@@ -512,19 +520,19 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function unlock(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['UNLOCK'] ) )
-            Meta::FUNCTIONS_ARGS['UNLOCK'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['UNLOCK'] ) )
+            Meta::$FUNCTIONS_ARGS['UNLOCK'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('UNLOCK',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['UNLOCK'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['UNLOCK'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['UNLOCK'] ) )
-            Meta::FUNCTIONS['UNLOCK'] = array();
+        if( !isset( Meta::$FUNCTIONS['UNLOCK'] ) )
+            Meta::$FUNCTIONS['UNLOCK'] = array();
 
-        Meta::FUNCTIONS['UNLOCK'][$path] = $callback;
+        Meta::$FUNCTIONS['UNLOCK'][$path] = $callback;
     }
     
     /**
@@ -533,18 +541,18 @@ class Route{
      * @param \Closure $callback the callback to execute.
      */
     public static function view(string $path, \Closure $callback):void{
-        if( !isset( Meta::FUNCTIONS_ARGS['VIEW'] ) )
-            Meta::FUNCTIONS_ARGS['VIEW'] = array();
+        if( !isset( Meta::$FUNCTIONS_ARGS['VIEW'] ) )
+            Meta::$FUNCTIONS_ARGS['VIEW'] = array();
         
         $reflection_method = new \ReflectionFunction($callback);
         static::initialize('VIEW',$path,null,null,$reflection_method);
         
-        Meta::FUNCTIONS_ARGS['VIEW'][$path] = $reflection_method->getParameters();
+        Meta::$FUNCTIONS_ARGS['VIEW'][$path] = $reflection_method->getParameters();
 
         
-        if( !isset( Meta::FUNCTIONS['VIEW'] ) )
-            Meta::FUNCTIONS['VIEW'] = array();
+        if( !isset( Meta::$FUNCTIONS['VIEW'] ) )
+            Meta::$FUNCTIONS['VIEW'] = array();
 
-        Meta::FUNCTIONS['VIEW'][$path] = $callback;
+        Meta::$FUNCTIONS['VIEW'][$path] = $callback;
     }
 }

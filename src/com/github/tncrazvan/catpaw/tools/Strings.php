@@ -69,30 +69,6 @@ abstract class Strings{
             )
         );
     }
-    
-    /**
-    * Check if string starts with a substring
-    * @param haystack string to look into
-    * @param needle substring to look for
-    * @return bool true if string starts with $needle, otherwise false
-    */
-   public static function startsWith(string &$haystack, string $needle):bool{
-       return (substr($haystack, 0, strlen($needle)) === $needle);
-   }
-
-   /**
-    * Check if string ends with a substring
-    * @param haystack string to look into
-    * @param needle substring to look for
-    * @return bool true if string ends with $needle, otherwise false
-    */
-   public static function endsWith(string &$haystack, string $needle):bool{
-       $length = strlen($needle);
-       if ($length == 0) {
-           return true;
-       }
-       return (substr($haystack, -$length) === $needle);
-   }
 
     /**
      * Print an array as an ascii table (recursively).

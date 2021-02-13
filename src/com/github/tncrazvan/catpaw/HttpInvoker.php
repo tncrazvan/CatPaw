@@ -9,8 +9,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use com\github\tncrazvan\catpaw\tools\Status;
 use com\github\tncrazvan\catpaw\attributes\Produces;
 use com\github\tncrazvan\catpaw\tools\Caster;
-use com\github\tncrazvan\catpaw\tools\helpers\Factory;
-use com\github\tncrazvan\catpaw\tools\helpers\metadata\Meta;
+use com\github\tncrazvan\catpaw\attributes\helpers\Factory;
+use com\github\tncrazvan\catpaw\attributes\helpers\metadata\Meta;
 use com\github\tncrazvan\catpaw\tools\XMLSerializer;
 
 class HttpInvoker{
@@ -19,32 +19,48 @@ class HttpInvoker{
         ServerRequestInterface $request,
         string $http_method,
         string $http_path,
-        array $http_params,
+        array $http_params
    ):Response{
-        $__FUNCTION__ = Meta::FUNCTIONS[$http_method][$http_path];
+        $__FUNCTION__ = Meta::$FUNCTIONS[$http_method][$http_path]??null;
 
         if($__FUNCTION__)
-            $__ARGS__ = Meta::FUNCTIONS_ARGS[$http_method][$http_path];
+            $__ARGS__ = Meta::$FUNCTIONS_ARGS[$http_method][$http_path]??null;
         else
-            $__ARGS__ = Meta::METHODS_ARGS[$http_method][$http_path];
+            $__ARGS__ = Meta::$METHODS_ARGS[$http_method][$http_path]??null;
 
-            
-        $__PATH_PARAMS__ = Meta::PATH_PARAMS[$http_method][$http_path];
-        $__HEADERS__ = Meta::METHODS_ARGS_ATTRIBUTES[$http_method][$http_path][Headers::class];
-        $__STATUS__ = Meta::METHODS_ARGS_ATTRIBUTES[$http_method][$http_path][Status::class];
-        $__CONSUMES__ = $__FUNCTION__?null:Meta::METHODS_ATTRIBUTES[$http_method][$http_path][Consumes::class];
-        $__PRODUCES__ = $__FUNCTION__?null:Meta::METHODS_ATTRIBUTES[$http_method][$http_path][Produces::class];
+        $__ARGS_NAMES__ = [];
+
+        $__STATUS__ = null;
+        $__HEADERS__ = null;
+
+        
+
+        foreach(Meta::$METHODS_ARGS_NAMES[$http_method][$http_path] as &$__ARG_NAME__){
+            if(!$__STATUS__)
+                $__STATUS__ = Meta::$METHODS_ARGS_ATTRIBUTES[$http_method][$http_path][$__ARG_NAME__][Status::class]??null;
+            if(!$__HEADERS__)
+                $__HEADERS__ = Meta::$METHODS_ARGS_ATTRIBUTES[$http_method][$http_path][$__ARG_NAME__][Headers::class]??null;
+        }
+        
+
+        $__PATH_PARAMS__ = Meta::$PATH_PARAMS[$http_method][$http_path]??null;
+        $__CONSUMES__ = $__FUNCTION__?null:Meta::$METHODS_ATTRIBUTES[$http_method][$http_path][Consumes::class]??null;
+        $__PRODUCES__ = $__FUNCTION__?null:Meta::$METHODS_ATTRIBUTES[$http_method][$http_path][Produces::class]??null;
         
         if(!$__FUNCTION__){
-            $__CONSUMES__ = Meta::CLASS_ATTRIBUTES[$http_method][$http_path][Consumes::class];
-            $__PRODUCES__ = Meta::CLASS_ATTRIBUTES[$http_method][$http_path][Produces::class];
+            if(!$__PRODUCES__ && $__CLASS_PRODUCES__ = Meta::$CLASS_ATTRIBUTES[$http_method][$http_path][Produces::class]??null){
+                $__PRODUCES__ = $__CLASS_PRODUCES__;
+            }
+            if(!$__CONSUMES__ && $__CLASS_CONSUMES__ = Meta::$CLASS_ATTRIBUTES[$http_method][$http_path][Consumes::class]??null){
+                $__CONSUMES__ = $__CLASS_CONSUMES__;
+            }
         }
 
         $status = new Status();
         $http_headers = [];
         $params = array();
         if($__ARGS__)
-            foreach($__ARGS__ as $__ARG__){
+            foreach($__ARGS__ as &$__ARG__){
                 if($__ARG__ instanceof \ReflectionParameter){
                     static::inject(
                         $__PATH_PARAMS__,
@@ -59,14 +75,12 @@ class HttpInvoker{
                 }
             }
 
-        $__METHOD__ = isset(Meta::METHODS[$http_method][$http_path])?
-                             Meta::METHODS[$http_method][$http_path]:null;
+        $__METHOD__ = Meta::$METHODS[$http_method][$http_path]??null;
 
         if($__FUNCTION__){
             $body = (new \ReflectionFunction($__FUNCTION__))->invokeArgs($params);
         }else{
-            $__CLASS__ = isset(Meta::KLASS[$http_method][$http_path])?
-                                Meta::KLASS[$http_method][$http_path]:null;
+            $__CLASS__ = Meta::$KLASS[$http_method][$http_path]??null;
 
             $__METHOD__->setAccessible(true);
             $instance = Factory::make($__CLASS__->getName());
@@ -82,7 +96,7 @@ class HttpInvoker{
             $http_headers['Content-Type'] = $__PRODUCES__->getProducedContentTypes();
         }
 
-        $http_status = $http_status_wrapper->getCode();
+        $http_status = $status->getCode();
         $accepts = \explode(",",($request->getHeaderLine("Accept")));
         if($body === null)
             $body = '';
@@ -92,7 +106,9 @@ class HttpInvoker{
             $http_status,
             $http_headers,
             $accepts,
-            $body
+            $body,
+            $http_method,
+            $http_path
         );
 
         $response = new Response($http_status,$http_headers,$body?:'');
@@ -106,20 +122,26 @@ class HttpInvoker{
         array &$http_headers,
         array &$accepts,
         mixed &$body,
+        string $http_method,
+        string $http_path,
     ):void{
-        if( !isset( $http_headers['Content-Type'] ) )
+        if( $__PRODUCES__ && !isset( $http_headers['Content-Type'] ) )
             $produced = \preg_split( '/\s*,\s*/',$__PRODUCES__->getProducedContentTypes() );
         else
-            $produced = \preg_split( '/\s*,\s*/',$http_headers['Content-Type'] );
+            $produced = \preg_split( '/\s*,\s*/',$http_headers['Content-Type']??'' );
         
+        $cproduced = 0;
+        $produced = array_filter($produced,function($type) use(&$cproduced){
+            if(empty($type))
+                return false;
+            $cproduced++;
+            return true;
+        });
 
-        $produced = array_filter($produced,fn($type)=>!empty($type));
-
-        $cproduced = \count($produced);
-        if($cproduced === 0 || $produced[0] === ''){
+        if($cproduced === 0){
             $http_status = Status::NO_CONTENT;
-            $http_headers['Content-Type'] = 'text/plain';
-            $body = "This resource is not configured to produce any type of content.";
+            unset($http_headers['Content-Type']);
+            echo "The resource \"$http_method $http_path\" is not configured to produce any type of content.\n";
             return;
         }
 
@@ -186,8 +208,8 @@ class HttpInvoker{
 
     private static function inject(
         ?array $__PATH_PARAMS__,
-        ?array $__HEADERS__,
-        ?array $__STATUS__,
+        ?Headers $__HEADERS__,
+        ?Status $__STATUS__,
         \ReflectionParameter $__ARG__,
         Status &$status,
         array &$http_headers,
@@ -227,14 +249,12 @@ class HttpInvoker{
         else{
             switch($classname){
                 case 'array':
-                    if($__HEADERS__ && isset($__HEADERS__[$name])){
+                    if($__HEADERS__)
                         $args[] = &$http_headers;
-                    }
                     break;
                 case Status::class:
-                    if($__STATUS__ && isset($__STATUS__[$name])){
+                    if($__STATUS__)
                         $args[] = &$status;
-                    }
                     break;
                 default:
                     $args[] = null;

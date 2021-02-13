@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools\helpers;
 
-use io\github\tncrazvan\orm\tools\Entity;
+use com\github\tncrazvan\catpaw\qb\tools\Entity;
 
 class SimpleEntity extends Entity{
     private array $columns = [];

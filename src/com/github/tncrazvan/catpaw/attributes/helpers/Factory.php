@@ -1,7 +1,8 @@
 <?php
-namespace com\github\tncrazvan\catpaw\tools\helpers;
+namespace com\github\tncrazvan\catpaw\attributes\helpers;
 
 use Closure;
+use com\github\tncrazvan\catpaw\attributes\AttributeResolver;
 use com\github\tncrazvan\catpaw\attributes\database\Column;
 use com\github\tncrazvan\catpaw\attributes\database\Id;
 use com\github\tncrazvan\catpaw\attributes\Entity;
@@ -28,9 +29,9 @@ use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\attributes\Repository;
 use com\github\tncrazvan\catpaw\attributes\Service;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
-use com\github\tncrazvan\catpaw\tools\AttributeResolver;
-use com\github\tncrazvan\catpaw\tools\Strings;
-use PDO;
+use com\github\tncrazvan\catpaw\tools\helpers\Route;
+use com\github\tncrazvan\catpaw\tools\helpers\SimpleEntity;
+use com\github\tncrazvan\catpaw\tools\helpers\SimpleRepository;
 
 class Factory{
 
@@ -212,7 +213,7 @@ class Factory{
         });
 
         $base_path = \preg_replace('/\/+$/','', $path->getValue());
-        if(!Strings::startsWith($base_path,'/'))
+        if(!str_starts_with($base_path,'/'))
             $base_path = "/$base_path";
             
         if($singleton){

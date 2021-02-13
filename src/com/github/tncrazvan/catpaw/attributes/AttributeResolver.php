@@ -1,6 +1,6 @@
 <?php
 
-namespace com\github\tncrazvan\catpaw\tools;
+namespace com\github\tncrazvan\catpaw\attributes;
 
 use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
@@ -20,7 +20,7 @@ use com\github\tncrazvan\catpaw\attributes\http\methods\UNKNOWN;
 use com\github\tncrazvan\catpaw\attributes\http\methods\UNLINK;
 use com\github\tncrazvan\catpaw\attributes\http\methods\UNLOCK;
 use com\github\tncrazvan\catpaw\attributes\http\methods\VIEW;
-use com\github\tncrazvan\catpaw\tools\helpers\Factory;
+use com\github\tncrazvan\catpaw\attributes\helpers\Factory;
 
 class AttributeResolver{
     public static function getClassAttributeArguments(\ReflectionClass $reflection_class, string $attribute_name):?array{

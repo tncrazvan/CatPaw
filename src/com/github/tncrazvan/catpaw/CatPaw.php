@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw;
 
-use com\github\tncrazvan\catpaw\tools\helpers\metadata\Meta;
+use com\github\tncrazvan\catpaw\attributes\helpers\metadata\Meta;
 use React\Http\Message\Response;
 use com\github\tncrazvan\catpaw\tools\helpers\Route;
 
@@ -47,9 +47,9 @@ class CatPaw{
         $params = [];
 
         //check if request matches any axposed endpoint and extract parameters
-        $localPath = static::usingPath( $method,$path,$params,Meta::FUNCTIONS );
+        $localPath = static::usingPath( $method,$path,$params,Meta::$FUNCTIONS );
         if(!$localPath)
-            $localPath = static::usingPath( $method,$path,$params,Meta::METHODS );
+            $localPath = static::usingPath( $method,$path,$params,Meta::$METHODS );
 
         if($localPath === null)
             return HttpInvoker::invoke($request,$method,'@404',$params);
@@ -80,6 +80,7 @@ class CatPaw{
             foreach($localPieces as $index => &$localPiece){
                 if(\preg_match(static::PATTERN_PARAM,$localPiece,$matches) && $matches && isset($matches[0])){
                     $paramName = $matches[0];
+                    $paramsNames[] = $paramName;
                     $params[$paramName] = &$requestedPieces[$index];
                 }else if($localPiece !== $requestedPieces[$index]){
                     return null;

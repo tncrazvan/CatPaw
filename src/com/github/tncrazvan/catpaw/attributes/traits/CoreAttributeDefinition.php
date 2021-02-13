@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\attributes\traits;
 
-use com\github\tncrazvan\catpaw\tools\AttributeResolver;
+use com\github\tncrazvan\catpaw\attributes\AttributeResolver;
 
 trait CoreAttributeDefinition{
     public static function findByFunction(\ReflectionFunction $reflection_function):?static{

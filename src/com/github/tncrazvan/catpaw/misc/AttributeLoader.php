@@ -4,8 +4,7 @@ namespace com\github\tncrazvan\catpaw\misc;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
 use com\github\tncrazvan\catpaw\tools\actions\BooleanAction;
 use com\github\tncrazvan\catpaw\tools\helpers\ClassFinder;
-use com\github\tncrazvan\catpaw\tools\helpers\Factory;
-use com\github\tncrazvan\catpaw\tools\Strings;
+use com\github\tncrazvan\catpaw\attributes\helpers\Factory;
 
 #[Singleton]
 class AttributeLoader{
