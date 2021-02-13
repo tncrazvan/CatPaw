@@ -10,13 +10,6 @@ abstract class MainConfiguration{
     public string $uri = 'localhost:8080';
 
     /**
-     * This is the interface on which the server will bind to.
-     * For example a value of **localhost** will make it so the server will be accessible only through the local machine,
-     * meanwhile a value of **0.0.0.0** will make it so that the server can be accesed from any IPv4 interface.
-     */
-    public string $hostname = 'localhost';
-
-    /**
      * Middlewares to employ while processing requests.
      * @see https://reactphp.org/http/#server-usage
      */
