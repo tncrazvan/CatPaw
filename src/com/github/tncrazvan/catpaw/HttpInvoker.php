@@ -159,7 +159,10 @@ class HttpInvoker{
         }
 
         if($any){
-            $this->transform($body,$http_headers,$produced > 0?$produced[0]:'text/plain',$produced);
+            if($cproduced === 0)
+                $produced[0] = 'text/plain';
+                
+            $this->transform($body,$http_headers,$produced[0],$produced);
             return;
         }
 
