@@ -46,7 +46,10 @@ class CatPaw{
         $socket = new \React\Socket\Server($config->uri, $loop, $config->context);
         $server->listen($socket);
         
-        echo "Server running at {$socket->getAddress()}\n";
+        $address = \preg_replace('/(tcp|unix)/','http',$socket->getAddress(),1);
+        $address = \preg_replace('/tls/','https',$address);
+
+        echo "Server running at {$address}\n";
 
         $loop->run();
 
