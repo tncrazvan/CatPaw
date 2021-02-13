@@ -20,51 +20,58 @@ class Payload{
     public string $username;
 }
 
-#[\Attribute]
-class ConsumesJson extends Consumes{
-    public function __construct(){
-        parent::__construct("application/json");
-    }
-}
+// #[\Attribute]
+// class ConsumesJson extends Consumes{
+//     public function __construct(){
+//         parent::__construct("application/json");
+//     }
+// }
 
-#[Path("/user")]
-class User{
-    #[GET]
-    #[Path("/{username}")]
-    #[Produces("text/html")]
-    public function username(
-        #[PathParam] string $username,
-        #[Headers] array &$headers,
-        #[Session] ?array &$session
-    ):string{
-        $headers["test"] = "test";
-        $session["username"] = $username;
-        print_r($session);
-        return "hello $username!!";
-    }
+// #[Path("/user")]
+// class User{
+//     #[GET]
+//     #[Path("/{username}")]
+//     #[Produces("text/html")]
+//     public function username(
+//         #[PathParam] string $username,
+//         #[Headers] array &$headers,
+//         #[Session] ?array &$session
+//     ):string{
+//         $headers["test"] = "test";
+//         $session["username"] = $username;
+//         print_r($session);
+//         return "hello $username!!";
+//     }
 
-    #[POST]
-    #[Consumes("application/json")]
-    public function save(
-        Payload $user
-    ):string{
-        print_r($user);
-        return '';
-    }
-}
+//     #[POST]
+//     #[Consumes("application/json")]
+//     public function save(
+//         Payload $user
+//     ):string{
+//         print_r($user);
+//         return '';
+//     }
+// }
 
-Factory::make(User::class);
-
-
-Route::notFound(function(
-    #[Status] Status $status,
-    #[Headers] array &$headers
+Route::post("/asd", #[Consumes("application/json")] function(
+    #[Body] Payload $user
 ){
-
-    $headers["Content-Type"] = "text/plain";
-    $status->setCode(Status::NOT_FOUND);
-    return "Resource not found.";
+    print_r($user);
+    return '';
 });
+
+//Factory::make(User::class);
+
+
+// Route::notFound(function(
+//     #[Status] Status $status,
+//     #[Headers] array &$headers
+// ){
+
+//     $headers["Content-Type"] = "text/plain";
+//     $status->setCode(Status::NOT_FOUND);
+//     return "Resource not found.";
+// });
 
 $server = new CatPaw(new class extends MainConfiguration{
     public function __construct() {

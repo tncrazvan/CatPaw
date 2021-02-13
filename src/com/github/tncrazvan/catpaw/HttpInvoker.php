@@ -39,28 +39,29 @@ class HttpInvoker{
    ):Response{
         $ctype = $request->getHeaderLine("Content-Type");
         if(!$ctype || '' === $ctype){
-            throw new Exception("Bad request on \"$http_method $http_path\", no Content-Type specified.");
+            //throw new Exception("Bad request on \"$http_method $http_path\", no Content-Type specified.");
+            $ctype = '*/*';
         }
 
         $__FUNCTION__ = Meta::$FUNCTIONS[$http_method][$http_path]??null;
+
+        $__PATH_PARAMS__ = Meta::$PATH_PARAMS[$http_method][$http_path]??null;
 
         if($__FUNCTION__){
             $__ARGS__ = Meta::$FUNCTIONS_ARGS[$http_method][$http_path]??null;
             //$__ARGS_NAMES__ = Meta::$FUNCTIONS_ARGS_NAMES[$http_method][$http_path]??null;
             $__ARGS_ATTRIBUTES__ = Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$http_method][$http_path]??null;
+
+            $__CONSUMES__ = Meta::$FUNCTIONS_ATTRIBUTES[$http_method][$http_path][Consumes::class]??null;
+            $__PRODUCES__ = Meta::$FUNCTIONS_ATTRIBUTES[$http_method][$http_path][Produces::class]??null;
         }else{
             $__ARGS__ = Meta::$METHODS_ARGS[$http_method][$http_path]??null;
             //$__ARGS_NAMES__ = Meta::$METHODS_ARGS_NAMES[$http_method][$http_path]??null;
             $__ARGS_ATTRIBUTES__ = Meta::$METHODS_ARGS_ATTRIBUTES[$http_method][$http_path]??null;
-        }
-        
-
-        $__PATH_PARAMS__ = Meta::$PATH_PARAMS[$http_method][$http_path]??null;
-        $__CONSUMES__ = $__FUNCTION__?null:Meta::$METHODS_ATTRIBUTES[$http_method][$http_path][Consumes::class]??null;
-        $__PRODUCES__ = $__FUNCTION__?null:Meta::$METHODS_ATTRIBUTES[$http_method][$http_path][Produces::class]??null;
-        
-
-        if(!$__FUNCTION__){
+            
+            $__CONSUMES__ = Meta::$METHODS_ATTRIBUTES[$http_method][$http_path][Consumes::class]??null;
+            $__PRODUCES__ = Meta::$METHODS_ATTRIBUTES[$http_method][$http_path][Produces::class]??null;
+            
             if(!$__PRODUCES__ && $__CLASS_PRODUCES__ = Meta::$CLASS_ATTRIBUTES[$http_method][$http_path][Produces::class]??null){
                 $__PRODUCES__ = $__CLASS_PRODUCES__;
             }
@@ -68,6 +69,9 @@ class HttpInvoker{
                 $__CONSUMES__ = $__CLASS_CONSUMES__;
             }
         }
+        
+
+        
 
         if($__CONSUMES__){
             $cconsumed = 0;
@@ -430,7 +434,7 @@ class HttpInvoker{
                     $args[] = $request;
                     break;
                 default:
-                    if($__CONSUMES__){
+                    if( $__CONSUMES__ ){
                         if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
                             $b = $request->getBody()->getContents();
                             $args[] = BodyParser::parse($b,$ctype,$classname);
