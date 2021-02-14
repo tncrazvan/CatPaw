@@ -17,6 +17,10 @@ use com\github\tncrazvan\catpaw\sessions\SessionManager;
 use com\github\tncrazvan\catpaw\tools\helpers\parsing\BodyParser;
 use com\github\tncrazvan\catpaw\tools\XMLSerializer;
 use Payload;
+use Psr\Http\Message\ResponseInterface;
+use React\EventLoop\LoopInterface;
+use React\Promise\Promise;
+use React\Promise\PromiseInterface;
 
 class HttpInvoker{
 
@@ -31,12 +35,12 @@ class HttpInvoker{
             $this->bad_request_cant_consume = new Response(Status::BAD_REQUEST,[],'');
     }
 
-    public function &invoke(
+    public function invoke(
         ServerRequestInterface $request,
         string $http_method,
         string $http_path,
         array $http_params
-   ):Response{
+   ):mixed{
         $ctype = $request->getHeaderLine("Content-Type");
         if(!$ctype || '' === $ctype){
             //throw new Exception("Bad request on \"$http_method $http_path\", no Content-Type specified.");
@@ -135,7 +139,52 @@ class HttpInvoker{
 
         if($body instanceof Response)
             return $body;
+        
+        
+        
+        if($body instanceof Promise){
+            return $body->then(function($b) use(
+                &$http_method,
+                &$http_path,
+                &$__PRODUCES__,
+                &$http_headers,
+                &$status,
+                &$request,
+            ){
+                if($b instanceof Response)
+                    return $b;
+                return $this->reply(
+                    $http_method,
+                    $http_path,
+                    $__PRODUCES__,
+                    $http_headers,
+                    $status,
+                    $request,
+                    $b
+                );
+            });
+        }else{
+            return $this->reply(
+                $http_method,
+                $http_path,
+                $__PRODUCES__,
+                $http_headers,
+                $status,
+                $request,
+                $body
+            );
+        }
+    }
 
+    private function reply(
+        string &$http_method,
+        string &$http_path,
+        ?Produces $__PRODUCES__,
+        array &$http_headers,
+        ?Status $status,
+        ServerRequestInterface $request,
+        &$body
+    ):Response{
         if($__PRODUCES__ && $__PRODUCES__ instanceof Produces && !isset($http_headers['Content-Type'])){
             $http_headers['Content-Type'] = $__PRODUCES__->getContentType();
         }
@@ -155,9 +204,7 @@ class HttpInvoker{
             $http_path
         );
 
-        $response = new Response($http_status,$http_headers,$body?:'');
-
-        return $response;
+        return new Response($http_status,$http_headers,$body?:'');
     }
 
     private static function &filterConsumedContentType(
@@ -432,6 +479,14 @@ class HttpInvoker{
                     break;
                 case ServerRequestInterface::class:
                     $args[] = $request;
+                    break;
+                case LoopInterface::class:
+                    $loop = Factory::make(LoopInterface::class);
+                    if($loop){
+                        $args[] = $loop;
+                    }else{
+                        throw new Exception(static::__could_not_inject($name,$classname,"The loop onject doesn't seem to be set as an application singleton."));
+                    }
                     break;
                 default:
                     if( $__CONSUMES__ ){
