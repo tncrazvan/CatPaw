@@ -28,7 +28,7 @@ class Status implements AttributeInterface{
         PROCESSING = 102,
 
         //SUCCESS
-        SUCCESS = 200,
+        OK = 200,
         CREATED = 201,
         ACCEPTED = 202,
         NON_AUTHORITATIVE_INFORMATION = 203,
