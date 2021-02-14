@@ -15,6 +15,19 @@ use React\Promise\Promise;
 
 Singleton::$map[LoopInterface::class] = \React\EventLoop\Factory::create();
 
+#[Singleton]
+class App{
+
+    #[Entry]
+    public function main(
+        #[Inject] LoopInterface $loop
+    ):void{
+        $loop->addTimer(1,fn($r)=>$r("test test\n"));
+    }
+}
+
+Factory::make(App::class);
+
 Route::get("/asd", #[Produces("text/plain")] function(
     #[Inject] LoopInterface $loop
 ){

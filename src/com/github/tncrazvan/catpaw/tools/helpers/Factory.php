@@ -32,6 +32,7 @@ use com\github\tncrazvan\catpaw\attributes\Singleton;
 use com\github\tncrazvan\catpaw\tools\helpers\Route;
 use com\github\tncrazvan\catpaw\tools\helpers\SimpleEntity;
 use com\github\tncrazvan\catpaw\tools\helpers\SimpleRepository;
+use ReflectionMethod;
 
 class Factory{
 
@@ -232,18 +233,30 @@ class Factory{
         }
     }
 
-    private static function entry($methods,$instance,string &$classname):void{
+    private static function entry(array &$methods,mixed $instance,string &$classname):void{
         foreach($methods as $method){
+            
             $entry = Entry::findByMethod($method);
             if($entry){
-                if($method->isStatic()){
-                    $method->invoke(null,...[]);
-                }else{
-                    AttributeResolver::injectProperties($classname,$instance);
-                    $method->invoke($instance,...[]);
+                if($method instanceof \ReflectionMethod){
+                    $args = [];
+                    $i = 0;
+                    foreach($method->getParameters() as $parameter){
+                        if(Inject::findByParameter($parameter)) {
+                            $args[$i] = Factory::make($parameter->getType()->getname(),false);
+                        }
+                        $i++;
+                    }
+                    if($method->isStatic()){
+                        $method->invoke(null,...$args);
+                    }else{
+                        AttributeResolver::injectProperties($classname,$instance);
+                        $method->invoke($instance,...$args);
+                    }
+                    break;
                 }
-                break;
             }
+            
         }
     }
 
