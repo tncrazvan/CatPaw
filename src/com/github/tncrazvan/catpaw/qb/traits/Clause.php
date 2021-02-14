@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\qb\traits;
 
-use com\github\tncrazvan\catpaw\attributes\helpers\Factory;
+use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 use com\github\tncrazvan\catpaw\qb\tools\Binding;
 use com\github\tncrazvan\catpaw\qb\tools\Column;
 use com\github\tncrazvan\catpaw\qb\tools\columncallbacks\ColumnHelper;

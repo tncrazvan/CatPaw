@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw\attributes;
 
-use com\github\tncrazvan\catpaw\attributes\helpers\Factory;
+use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 use com\github\tncrazvan\catpaw\qb\tools\Entity;
 
 #[\Attribute]

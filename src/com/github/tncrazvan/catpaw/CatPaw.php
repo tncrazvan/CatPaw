@@ -1,7 +1,7 @@
 <?php
 namespace com\github\tncrazvan\catpaw;
 
-use com\github\tncrazvan\catpaw\attributes\helpers\metadata\Meta;
+use com\github\tncrazvan\catpaw\attributes\metadata\Meta;
 use com\github\tncrazvan\catpaw\config\MainConfiguration;
 use com\github\tncrazvan\catpaw\sessions\SessionManager;
 

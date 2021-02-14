@@ -11,7 +11,7 @@ use com\github\tncrazvan\catpaw\attributes\Produces;
 use com\github\tncrazvan\catpaw\attributes\Repository;
 use com\github\tncrazvan\catpaw\attributes\Service;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
-use com\github\tncrazvan\catpaw\attributes\helpers\metadata\Meta;
+use com\github\tncrazvan\catpaw\attributes\metadata\Meta;
 use com\github\tncrazvan\catpaw\attributes\sessions\Session;
 use com\github\tncrazvan\catpaw\tools\Status;
 

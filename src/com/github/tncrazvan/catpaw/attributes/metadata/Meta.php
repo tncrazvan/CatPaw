@@ -1,6 +1,6 @@
 <?php
 
-namespace com\github\tncrazvan\catpaw\attributes\helpers\metadata;
+namespace com\github\tncrazvan\catpaw\attributes\metadata;
 
 class Meta{
     public static $PATH_PARAMS = [];

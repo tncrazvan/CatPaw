@@ -1,5 +1,5 @@
 <?php
-namespace com\github\tncrazvan\catpaw\attributes\helpers;
+namespace com\github\tncrazvan\catpaw\tools\helpers;
 
 use Closure;
 use com\github\tncrazvan\catpaw\attributes\AttributeResolver;

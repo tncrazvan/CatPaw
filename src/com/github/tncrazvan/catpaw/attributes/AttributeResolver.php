@@ -20,7 +20,7 @@ use com\github\tncrazvan\catpaw\attributes\http\methods\UNKNOWN;
 use com\github\tncrazvan\catpaw\attributes\http\methods\UNLINK;
 use com\github\tncrazvan\catpaw\attributes\http\methods\UNLOCK;
 use com\github\tncrazvan\catpaw\attributes\http\methods\VIEW;
-use com\github\tncrazvan\catpaw\attributes\helpers\Factory;
+use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 
 class AttributeResolver{
     public static function getClassAttributeArguments(\ReflectionClass $reflection_class, string $attribute_name):?array{

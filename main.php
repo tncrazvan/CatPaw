@@ -3,7 +3,7 @@ require_once './vendor/autoload.php';
 
 use com\github\tncrazvan\catpaw\attributes\Body;
 use com\github\tncrazvan\catpaw\attributes\Consumes;
-use com\github\tncrazvan\catpaw\attributes\helpers\Factory;
+use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 use com\github\tncrazvan\catpaw\attributes\http\Headers;
 use com\github\tncrazvan\catpaw\attributes\http\methods\GET;
 use com\github\tncrazvan\catpaw\attributes\http\methods\POST;
