@@ -9,11 +9,12 @@ use com\github\tncrazvan\catpaw\CatPaw;
 use com\github\tncrazvan\catpaw\config\MainConfiguration;
 use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 use com\github\tncrazvan\catpaw\tools\helpers\Route;
-use React\EventLoop\Factory as EventLoopFactory;
 use React\EventLoop\LoopInterface;
 use React\Promise\Promise;
 
-Singleton::$map[LoopInterface::class] = \React\EventLoop\Factory::create();
+
+Factory::setObject(LoopInterface::class,\React\EventLoop\Factory::create());
+
 
 #[Singleton]
 class App{
@@ -22,7 +23,9 @@ class App{
     public function main(
         #[Inject] LoopInterface $loop
     ):void{
-        $loop->addTimer(1,fn($r)=>$r("test test\n"));
+        $loop->addTimer(1,function(){
+            
+        });
     }
 }
 

@@ -35,8 +35,19 @@ use com\github\tncrazvan\catpaw\tools\helpers\SimpleRepository;
 use ReflectionMethod;
 
 class Factory{
+    
+    private static array $singletons = [];
 
     private static array $args = [];
+
+    public static function isset(string $classname):bool{
+        return isset(static::$singletons[$classname]);
+    }
+
+    public static function setObject(string $classname, mixed $object):void{
+        static::$singletons[$classname] = $object;
+    }
+
     public static function setConstructorInjector(string $classname,?Closure $args=null):void{
         static::$args[$classname] = $args;
     }
@@ -115,8 +126,8 @@ class Factory{
      * @param string $classname full name name of the class
      */
     public static function make(string $classname, bool $lazy_paths = true):?object{
-        if(isset(Singleton::$map[$classname]))
-            return Singleton::$map[$classname];
+        if(isset(static::$singletons[$classname]))
+            return static::$singletons[$classname];
         
         $reflection_class = new \ReflectionClass($classname);
 
@@ -146,16 +157,16 @@ class Factory{
         //resolve other class attributes
         ############################################################################
         if($singleton || $service || $repository){
-            Singleton::$map[$classname] = new $classname(...$args);
+            static::$singletons[$classname] = new $classname(...$args);
             if($repository)
-                static::adaptToRepository(Singleton::$map[$classname],$repository);
+                static::adaptToRepository(static::$singletons[$classname],$repository);
         }
 
 
         $instance = 
             $singleton || $service || $repository ?
                     //then
-                    Singleton::$map[$classname]
+                    static::$singletons[$classname]
                 
                 :   //else
                 

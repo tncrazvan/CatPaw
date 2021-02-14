@@ -192,11 +192,14 @@ class AttributeResolver{
             || 'bool' === $classname
         ) return;
         $proptype = $prop->getType()->getName();
-        if(!isset(Singleton::$map[$proptype])){
+        if(!Factory::isset($proptype)){
+        //if(!isset(Singleton::$map[$proptype])){
             $obj = Factory::make($proptype);
             static::injectProperties($proptype,$obj);
-            Singleton::$map[$proptype] = $obj;
-        }
-        $prop->setValue($instance,Singleton::$map[$proptype]);
+            //Singleton::$map[$proptype] = $obj;
+            Factory::setObject($proptype,$obj);
+            $prop->setValue($instance,$obj);
+        }else
+            $prop->setValue($instance,null);
     }
 }
