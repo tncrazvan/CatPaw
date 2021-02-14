@@ -120,7 +120,6 @@ class CatPaw{
             $message = $this->config->show_exception?$e->getMessage():'';
             $trace = $this->config->show_exception && $this->config->show_stack_trace?"\n".$e->getTraceAsString():'';
             return new \React\Http\Message\Response( 500,[],$message.$trace );
-
         }
             
         

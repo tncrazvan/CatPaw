@@ -4,6 +4,7 @@ namespace com\github\tncrazvan\catpaw;
 use com\github\tncrazvan\catpaw\attributes\Body;
 use com\github\tncrazvan\catpaw\attributes\Consumes;
 use com\github\tncrazvan\catpaw\attributes\http\Headers;
+use com\github\tncrazvan\catpaw\attributes\Inject;
 use Exception;
 use React\Http\Message\Response;
 use Psr\Http\Message\ServerRequestInterface;
@@ -12,6 +13,7 @@ use com\github\tncrazvan\catpaw\attributes\Produces;
 use com\github\tncrazvan\catpaw\tools\Caster;
 use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 use com\github\tncrazvan\catpaw\attributes\metadata\Meta;
+use com\github\tncrazvan\catpaw\attributes\Request;
 use com\github\tncrazvan\catpaw\attributes\sessions\Session;
 use com\github\tncrazvan\catpaw\sessions\SessionManager;
 use com\github\tncrazvan\catpaw\tools\helpers\parsing\BodyParser;
@@ -430,14 +432,14 @@ class HttpInvoker{
                         }else
                             throw new Exception("Body could not be unserialized to type \"$classname\".");
                     else
-                        throw new Exception(static::__could_not_inject($name,$classname,"Could not find attribute any attribute on \"$name\"."));
+                        throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
                     break;
                 case 'string':
                     if( $__CONSUMES__ ) 
                         if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
                             $args[] = $request->getBody()->getContents();
                         }else
-                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find attribute any attribute on \"$name\"."));
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
                     else
                         throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
                     break;
@@ -451,7 +453,7 @@ class HttpInvoker{
                                 throw new Exception('Body was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
                             }
                         }else
-                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find attribute any attribute on \"$name\"."));
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
                     else
                         throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
                     break;
@@ -465,7 +467,7 @@ class HttpInvoker{
                                 throw new Exception('Body was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
                             }
                         }else
-                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find attribute any attribute on \"$name\"."));
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
                     else
                         throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
                     break;
@@ -475,10 +477,13 @@ class HttpInvoker{
                             $status = $__ARG__->getDefaultValue();
                         $args[] = &$status;
                     }else
-                        throw new Exception(static::__could_not_inject($name,$classname,"Could not find attribute any attribute on \"$name\"."));
+                        throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
                     break;
                 case ServerRequestInterface::class:
-                    $args[] = $request;
+                    if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Request::class]??false){
+                        $args[] = $request;
+                    }else
+                        throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
                     break;
                 case LoopInterface::class:
                     $loop = Factory::make(LoopInterface::class);
@@ -489,15 +494,23 @@ class HttpInvoker{
                     }
                     break;
                 default:
-                    if( $__CONSUMES__ ){
-                        if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
-                            $b = $request->getBody()->getContents();
-                            $args[] = BodyParser::parse($b,$ctype,$classname);
-                        }else{
-                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find attribute any attribute on \"$name\"."));
-                        }
-                    }else
-                        throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
+                    if($__ARGS_ATTRIBUTES__) 
+                        if($__ARGS_ATTRIBUTES__[$name][Body::class]??false){
+                            if( $__CONSUMES__ ){
+                                $b = $request->getBody()->getContents();
+                                $args[] = BodyParser::parse($b,$ctype,$classname);
+                            } else
+                                throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
+                        }else if($__ARGS_ATTRIBUTES__[$name][Inject::class]??false){
+                            $item = Factory::make($classname);
+                            if($item)
+                                $args[] = &$item;
+                            else
+                                throw new Exception(static::__could_not_inject($name,$classname));
+                        } else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
+                    else 
+                        throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
                 break;
             }
         }

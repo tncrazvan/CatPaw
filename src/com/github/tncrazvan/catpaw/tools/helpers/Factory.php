@@ -2,6 +2,7 @@
 namespace com\github\tncrazvan\catpaw\tools\helpers;
 
 use Closure;
+use com\github\tncrazvan\catpaw\attributes\ApplicationScoped;
 use com\github\tncrazvan\catpaw\attributes\AttributeResolver;
 use com\github\tncrazvan\catpaw\attributes\database\Column;
 use com\github\tncrazvan\catpaw\attributes\database\Id;
@@ -140,6 +141,7 @@ class Factory{
         $service = $entity?null:Service::findByClass($reflection_class);
         $repository = $service||$entity?null:Repository::findByClass($reflection_class);
         $singleton = $entity?null:Singleton::findByClass($reflection_class);
+        $scoped = $entity?null:ApplicationScoped::findByClass($reflection_class);
 
         $methods = $reflection_class->getMethods();
         $args = isset(static::$args[$classname])? static::$args[$classname]() : [];

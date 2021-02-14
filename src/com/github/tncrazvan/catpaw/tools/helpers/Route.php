@@ -7,11 +7,13 @@ use com\github\tncrazvan\catpaw\attributes\Entity;
 use com\github\tncrazvan\catpaw\attributes\http\Headers;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
 use com\github\tncrazvan\catpaw\attributes\http\PathParam;
+use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\attributes\Produces;
 use com\github\tncrazvan\catpaw\attributes\Repository;
 use com\github\tncrazvan\catpaw\attributes\Service;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
 use com\github\tncrazvan\catpaw\attributes\metadata\Meta;
+use com\github\tncrazvan\catpaw\attributes\Request;
 use com\github\tncrazvan\catpaw\attributes\sessions\Session;
 use com\github\tncrazvan\catpaw\tools\Status;
 
@@ -72,6 +74,8 @@ class Route{
                     Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
                     Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Session::class] = Session::findByParameter($param);
                     Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
+                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Request::class] = Request::findByParameter($param);
+                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Inject::class] = Inject::findByParameter($param);
                 }
             }else if($reflection_function){
                 Meta::$FUNCTIONS[$method][$path] = $reflection_method;
@@ -93,6 +97,8 @@ class Route{
                     Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
                     Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Session::class] = Session::findByParameter($param);
                     Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
+                    Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Request::class] = Request::findByParameter($param);
+                    Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Inject::class] = Inject::findByParameter($param);
                 }
             }
             
