@@ -92,7 +92,7 @@ trait Clause{
         }
 
         $this->add($columnName);
-        $cols = $columns = \array_merge($entity->getEntityColumns(),$entity->getEntityAliasColumns());
+        $cols = \array_merge($entity->getEntityColumns(),$entity->getEntityAliasColumns());
         $column = $cols[$columnName];
 
         $operation = $callback->run($column);

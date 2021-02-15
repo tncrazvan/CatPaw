@@ -1,8 +1,8 @@
 <?php
 namespace com\github\tncrazvan\catpaw\attributes;
 
+use com\github\tncrazvan\catpaw\tools\helpers\Entity;
 use com\github\tncrazvan\catpaw\tools\helpers\Factory;
-use com\github\tncrazvan\catpaw\qb\tools\Entity;
 
 #[\Attribute]
 class Repository extends Singleton{

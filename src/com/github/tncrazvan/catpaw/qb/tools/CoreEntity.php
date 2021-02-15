@@ -4,13 +4,13 @@ namespace com\github\tncrazvan\catpaw\qb\tools;
 use com\github\tncrazvan\catpaw\qb\tools\abstracts\EntityDefinition;
 use com\github\tncrazvan\catpaw\qb\traits\EntitySyncFromProps;
 
-abstract class Entity extends EntityDefinition{
+abstract class CoreEntity extends EntityDefinition{
     use EntitySyncFromProps;
 
     private array $savedColumns = [];
     private array $aliasColumns = [];
     public function __construct(){
-        static::_sync_entity_columns_from_props($this);
+        //static::_sync_entity_columns_from_props($this);
     }
     
     public function reset_columns():void{

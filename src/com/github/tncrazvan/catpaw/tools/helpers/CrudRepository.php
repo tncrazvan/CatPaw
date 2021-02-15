@@ -4,9 +4,8 @@ namespace com\github\tncrazvan\catpaw\tools\helpers;
 use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\tools\helpers\SimpleQueryBuilder;
 use com\github\tncrazvan\catpaw\qb\tools\Column;
-use com\github\tncrazvan\catpaw\qb\tools\Entity;
 
-class SimpleRepository{
+class CrudRepository{
     
     #[Inject]
     protected SimpleQueryBuilder $builder;
@@ -18,7 +17,7 @@ class SimpleRepository{
             ->fetchAssoc();
     }
 
-    public function findById(string $id):Entity{
+    public function findById(string $id):mixed{
         $b = 
         $this->builder
         ->select($this->classname)
@@ -45,10 +44,10 @@ class SimpleRepository{
         $b->execute(-1);
     }
 
-    public function save(Entity $entity):void{
+    public function save(object $object):void{
         $this
             ->builder
-            ->insert($this->classname, $entity)
+            ->insert($this->classname, $object)
             ->execute(-1);
     }
 }

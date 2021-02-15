@@ -37,9 +37,9 @@ class Column{
 
     //Keys
     protected bool $pk=false;
-    protected ?Entity $fk=null;
+    protected ?CoreEntity $fk=null;
 
-    public function __construct(string $name, int $type=\PDO::PARAM_STR, bool $nullable = false, bool $pk=false, ?Entity $fk=null, array $size = [0,0]){
+    public function __construct(string $name, int $type=\PDO::PARAM_STR, bool $nullable = false, bool $pk=false, ?CoreEntity $fk=null, array $size = [0,0]){
         $this->name = $name;
         $this->type = $type;
         $this->nullable = $nullable;
@@ -148,7 +148,7 @@ class Column{
      * @param Entity &$repository the pointer of a table to be set as a foreign key
      * @return void
      */
-    public function setForeignKey(Entity &$entity):void{
+    public function setForeignKey(CoreEntity &$entity):void{
         $this->fk = $entity;
     }
     /**
