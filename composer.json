@@ -2,7 +2,7 @@
 	"name": "tncrazvan/catpaw",
 	"description": "A Php Http & WebSocket server",
 	"type": "library",
-	"license": "MIT",
+	"license": "Apache-2.0",
 	"authors": [
 	{
 		"name": "Razvan Tanase",
@@ -10,16 +10,16 @@
 	}
 	],
 	"require": {
-		"php": ">=8.0",
-		"tncrazvan/asciitable": ">=1.0.1",
-		"react/react": ">=1.0.1"
+		"php": "^8.0",
+		"tncrazvan/asciitable": "^1.0.1",
+		"react/react": "^1.0.1"
 	},
 	"config": {
 		"preferred-install": "dist"
 	},
 	"autoload": {
 		"psr-4": {
-			"":["src","test"]
+			"com\\github\\tncrazvan\\catpaw\\":["src/com/github/tncrazvan/catpaw/"]
 		}
 	}
 }
