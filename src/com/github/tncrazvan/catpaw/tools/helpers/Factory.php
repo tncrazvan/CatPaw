@@ -6,7 +6,7 @@ use com\github\tncrazvan\catpaw\attributes\ApplicationScoped;
 use com\github\tncrazvan\catpaw\attributes\AttributeResolver;
 use com\github\tncrazvan\catpaw\attributes\database\Column;
 use com\github\tncrazvan\catpaw\attributes\database\Id;
-use com\github\tncrazvan\catpaw\attributes\Entity;
+use com\github\tncrazvan\catpaw\tools\helpers\Entity;
 use com\github\tncrazvan\catpaw\attributes\Entry;
 use com\github\tncrazvan\catpaw\attributes\Extend;
 use com\github\tncrazvan\catpaw\attributes\http\methods\COPY;
@@ -31,11 +31,10 @@ use com\github\tncrazvan\catpaw\attributes\Repository;
 use com\github\tncrazvan\catpaw\attributes\Service;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
 use com\github\tncrazvan\catpaw\tools\helpers\Route;
-use com\github\tncrazvan\catpaw\tools\helpers\SimpleEntity;
-use com\github\tncrazvan\catpaw\tools\helpers\SimpleRepository;
-use ReflectionMethod;
+use com\github\tncrazvan\catpaw\tools\helpers\CrudRepository;
 
 class Factory{
+    private static array $tables = [];
     
     private static array $singletons = [];
 
@@ -66,9 +65,10 @@ class Factory{
         return '';
     }
 
-    private static function adaptToEntity(\ReflectionClass $reflection_class, SimpleEntity $instance, Entity $entity):void{
-        $tableName = $entity->getTableName();
-        $instance->setTableName($tableName!==''?$tableName:\strtolower($reflection_class->getShortName()));
+    private static function adaptToEntity(\ReflectionClass $reflection_class, Entity $entity):void{
+        static::$singletons[$reflection_class->getName()] = $entity;
+        $tableName = $entity->tableName();
+        $entity->setTableName($tableName!==''?$tableName:\strtolower($reflection_class->getShortName()));
         $columns = [];
         $pks = [];
         foreach($reflection_class->getProperties() as $reflection_property){
@@ -113,8 +113,13 @@ class Factory{
                 }
             }
         }
+        
+        $entity->setColumns($columns);
+        $entity->setPrimaryKeys($pks);
+        
+        //Entity::_sync_entity_columns_from_props($entity,$object);
     }
-    private static function adaptToRepository(SimpleRepository $instance, Repository $repository):void{
+    private static function adaptToRepository(CrudRepository $instance, Repository $repository):void{
         $entity_classname = $repository->getEntityClassName();
         $entity_id = $repository->getEntityId();
         $instance->classname = $entity_classname;
@@ -138,6 +143,13 @@ class Factory{
         if(count($reflection_class->getAttributes()) === 0) return null;
 
         $entity = Entity::findByClass($reflection_class);
+
+        if($entity){
+            static::adaptToEntity($reflection_class,$entity);
+            return $entity;
+        }
+
+
         $service = $entity?null:Service::findByClass($reflection_class);
         $repository = $service||$entity?null:Repository::findByClass($reflection_class);
         $singleton = $entity?null:Singleton::findByClass($reflection_class);
@@ -175,8 +187,6 @@ class Factory{
                     new $classname(...$args)
                 
         ;
-        if($entity && $instance instanceof SimpleEntity)
-            static::adaptToEntity($reflection_class,$instance,$entity);
         
         ############################################################################
 

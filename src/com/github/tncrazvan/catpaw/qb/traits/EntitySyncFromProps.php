@@ -1,24 +1,24 @@
 <?php
 namespace com\github\tncrazvan\catpaw\qb\traits;
 
-use com\github\tncrazvan\catpaw\qb\tools\Entity;
+use com\github\tncrazvan\catpaw\qb\tools\CoreEntity;
 
 trait EntitySyncFromProps{
-    public static function _sync_entity_columns_from_props(Entity $entity):void{
+    public static function _sync_entity_columns_from_props(CoreEntity $entity, object $object):void{
         $entity->reset_columns();
         $columns = $entity->getEntityColumns();
         foreach($columns as &$column){
             $name = $column->getColumnName();
-            if(isset($entity->$name) && $entity->$name !== $column->getColumnValue()){
-                $column->setColumnValue($entity->$name);
+            if(isset($object->$name) && $object->$name !== $column->getColumnValue()){
+                $column->setColumnValue($object->$name);
             } else{
                 $mgname = 'get'.\ucfirst($name);
                 
-                if(method_exists($entity,$mgname) && ($v = $entity->$mgname()) !== $column->getColumnValue()){
+                if(method_exists($object,$mgname) && ($v = $object->$mgname()) !== $column->getColumnValue()){
                     $column->setColumnValue($v);
                 }else{
                     $miname = 'is'.\ucfirst($name);
-                    if(method_exists($entity,$miname) && ($v = $entity->$miname()) !== $column->getColumnValue()){
+                    if(method_exists($object,$miname) && ($v = $object->$miname()) !== $column->getColumnValue()){
                         $column->setColumnValue($v);
                     }
                 }

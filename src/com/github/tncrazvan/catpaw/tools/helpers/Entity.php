@@ -1,12 +1,20 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools\helpers;
 
-use com\github\tncrazvan\catpaw\qb\tools\Entity;
+use com\github\tncrazvan\catpaw\attributes\interfaces\AttributeInterface;
+use com\github\tncrazvan\catpaw\attributes\traits\CoreAttributeDefinition;
+use com\github\tncrazvan\catpaw\qb\tools\CoreEntity;
 
-class SimpleEntity extends Entity{
+#[\Attribute]
+class Entity extends CoreEntity implements AttributeInterface{
+    use CoreAttributeDefinition;
     private array $columns = [];
     private array $primaryKeys = [];
     private string $tableName = '';
+
+    public function __construct(string $tableName = '') {
+        $this->tableName = $tableName;
+    }
 
     public function columns():array{
         return $this->columns;

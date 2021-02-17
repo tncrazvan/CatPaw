@@ -5,22 +5,22 @@ namespace com\github\tncrazvan\catpaw\qb\traits;
 use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 use com\github\tncrazvan\catpaw\qb\tools\Binding;
 use com\github\tncrazvan\catpaw\qb\tools\Column;
-use com\github\tncrazvan\catpaw\qb\tools\Entity;
+use com\github\tncrazvan\catpaw\qb\tools\CoreEntity;
 use com\github\tncrazvan\catpaw\qb\tools\QueryBuilder;
 use com\github\tncrazvan\catpaw\qb\tools\QueryConst;
 
 trait Update{
-    public function update(string $classname, Entity $entity):QueryBuilder{
-        Entity::_sync_entity_columns_from_props($entity);
+    public function update(string $classname, object $object):QueryBuilder{
         $this->current_classname = $classname;
         $entity_r = Factory::make($classname);
+        CoreEntity::_sync_entity_columns_from_props($entity_r,$object);
         $this->reset();
         $random = '';
         $this->add(QueryConst::UPDATE);
         $this->add($entity_r->tableName());
         $this->add(QueryConst::SET);
         
-        $columns = \array_merge($entity->getEntityColumns(),$entity->getEntityAliasColumns());
+        $columns = \array_merge($entity_r->getEntityColumns(),$entity_r->getEntityAliasColumns());
         
         //$length = \count($columns);
 

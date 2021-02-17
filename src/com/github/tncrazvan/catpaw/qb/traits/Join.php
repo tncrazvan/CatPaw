@@ -4,7 +4,7 @@ namespace com\github\tncrazvan\catpaw\qb\traits;
 use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 use com\github\tncrazvan\catpaw\qb\tools\Column;
 use com\github\tncrazvan\catpaw\qb\tools\columncallbacks\ColumnHelper;
-use com\github\tncrazvan\catpaw\qb\tools\Entity;
+use com\github\tncrazvan\catpaw\qb\tools\CoreEntity;
 use com\github\tncrazvan\catpaw\qb\tools\Repository;
 use com\github\tncrazvan\catpaw\qb\tools\QueryConst;
 use com\github\tncrazvan\catpaw\qb\tools\QueryBuilder;
@@ -84,7 +84,7 @@ trait Join{
      *       ->run();
      * @return QueryBuilder the QueryBuilder
      */
-    public function on(Entity $entity, string $columnName,int $operationCode, ...$args):QueryBuilder{
+    public function on(CoreEntity $entity, string $columnName,int $operationCode, ...$args):QueryBuilder{
         return $this->on__($entity, false,$columnName,$operationCode, $args);
     }
 
@@ -92,11 +92,11 @@ trait Join{
      * Add another clause to the current "ON" group.
      * @return QueryBuilder the QueryBuilder
      */
-    public function andOn(Entity $entity, string $columnName,int $operationCode, ...$args):QueryBuilder{
+    public function andOn(CoreEntity $entity, string $columnName,int $operationCode, ...$args):QueryBuilder{
         return $this->on__($entity,true,$columnName,$operationCode, $args);
     }
 
-    private function on__(Entity &$entity, bool $and, string $columnName,int $operationCode, array $args):QueryBuilder{
+    private function on__(CoreEntity &$entity, bool $and, string $columnName,int $operationCode, array $args):QueryBuilder{
         switch($operationCode){
             case Column::EQUALS:
                 $callback = ColumnHelper::equals($args[0]);

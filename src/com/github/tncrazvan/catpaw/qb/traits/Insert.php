@@ -4,7 +4,7 @@ namespace com\github\tncrazvan\catpaw\qb\traits;
 use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 use com\github\tncrazvan\catpaw\qb\tools\Binding;
 use com\github\tncrazvan\catpaw\qb\tools\Column;
-use com\github\tncrazvan\catpaw\qb\tools\Entity;
+use com\github\tncrazvan\catpaw\qb\tools\CoreEntity;
 use com\github\tncrazvan\catpaw\qb\tools\QueryBuilder;
 use com\github\tncrazvan\catpaw\qb\tools\interfaces\IntoCallback;
 use com\github\tncrazvan\catpaw\qb\tools\QueryConst;
@@ -22,23 +22,24 @@ trait Insert{
      * in which case the whole array will be inserted to the database.
      * @return QueryBuilder the QueryBuilder
      */
-    public function insert(string $classname, Entity $entity, IntoCallback $callback=null):QueryBuilder{
+    public function insert(string $classname, object $object, IntoCallback $callback=null):QueryBuilder{
         $this->reset();
         $this->current_classname = $classname;
-        Entity::_sync_entity_columns_from_props($entity);
+        $entity = Factory::make($classname);
+        CoreEntity::_sync_entity_columns_from_props($entity,$object);
         $this->add(QueryConst::INSERT);
         $cloning = true;
         if($callback === null){
             $cloning = false;
             if($this->default_into_callback === null)
                 $this->default_into_callback = new class implements IntoCallback{
-                    public function run(?Entity $entity){
-                        return $entity;
+                    public function run(?object $object){
+                        return $object;
                     }
                 };
             $callback = $this->default_into_callback;
         }
-        $this->into($classname,$entity,$callback,$cloning);
+        $this->into($classname,$object,$callback,$cloning);
         return $this;
     }
 
@@ -46,16 +47,16 @@ trait Insert{
      * Specify to which table the data should be inserted to
      * @return QueryBuilder the QueryBuilder
      */
-    private function into(string &$classname, Entity $entity, IntoCallback &$callback, bool $cloning=true):QueryBuilder{
+    private function into(string &$classname, object $object, IntoCallback &$callback, bool $cloning=true):QueryBuilder{
         $entity_r = Factory::make($classname);
         $this->add(QueryConst::INTO);
         $this->add($entity_r->tableName());
         $this->mapColumns($entity_r->getEntityColumns());
         if($cloning){
-            $clone = clone($entity);
+            $clone = clone($object);
             $results = $callback->run($clone);
         }else{
-            $results = $callback->run($entity);
+            $results = $callback->run($object);
         }
         if(\is_array($results)){
             $this->add(QueryConst::VALUES);
@@ -63,11 +64,11 @@ trait Insert{
             for($i=0;$i<$length;$i++){
                 if($i>0) 
                     $this->add(QueryConst::COMMA);
-                $this->value($results[$i]);
+                $this->value($entity_r,$results[$i]);
             }
         }else{
             $this->add(QueryConst::VALUE);
-            $this->value($results);
+            $this->value($entity_r,$results);
         }
         return $this;
     }
@@ -95,13 +96,13 @@ trait Insert{
      * that the values can be bound to the statement later (before the statement execute)
      * @return QueryBuilder the QueryBuilder
      */
-    private function value(Entity &$entity):QueryBuilder{
+    private function value(CoreEntity $entity, object &$object):QueryBuilder{
         $columns = &$entity->getEntityColumns();
         $random = '';
         $vname = '';
         $this->add(QueryConst::PARENTHESIS_LEFT);
         $first = true;
-        foreach($columns as $name => &$object){
+        foreach($columns as $name => &$o){
             if($first) $first = false;
             else $this->add(QueryConst::COMMA);
             $random = \uniqid();
