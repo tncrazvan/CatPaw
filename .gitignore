@@ -3,3 +3,4 @@ vendor/
 composer.lock
 .sessions
 .credentials
+.login

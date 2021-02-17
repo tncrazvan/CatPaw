@@ -10,12 +10,16 @@ use React\EventLoop\LoopInterface;
 
 Factory::setObject(LoopInterface::class,\React\EventLoop\Factory::create());
 
-$credentials = require_once './.credentials/database.php';
+$credentials = require_once './.login/database.php';
 
 Factory::setConstructorInjector(
     SimpleQueryBuilder::class,
     fn()=>[
-        new \PDO("{$credentials['driver']}:dbname={$credentials['dbname']};host={$credentials['host']}",$credentials['username'],$credentials['password']), //provide database login
+        new \PDO(
+            "{$credentials['driver']}:dbname={$credentials['dbname']};host={$credentials['host']}",
+            $credentials['username'],
+            $credentials['password']
+        ), //provide database login
         Factory::make(LoopInterface::class) //provide main loop
     ]
 );
