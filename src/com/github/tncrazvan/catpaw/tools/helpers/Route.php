@@ -3,7 +3,7 @@ namespace com\github\tncrazvan\catpaw\tools\helpers;
 
 use com\github\tncrazvan\catpaw\attributes\Body;
 use com\github\tncrazvan\catpaw\attributes\Consumes;
-use com\github\tncrazvan\catpaw\tools\helpers\Entity;
+use com\github\tncrazvan\catpaw\attributes\Entity;
 use com\github\tncrazvan\catpaw\attributes\http\Headers;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
 use com\github\tncrazvan\catpaw\attributes\http\PathParam;
@@ -65,6 +65,8 @@ class Route{
                 Meta::$METHODS_ATTRIBUTES[$method][$path][Path::class] = Path::findByMethod($reflection_method);
                 Meta::$METHODS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByMethod($reflection_method);
                 Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByMethod($reflection_method);
+                if(!Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class])
+                    Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class] = new Produces("text/plain");
                 
                 $params = $reflection_method->getParameters();
                 foreach($params as $param){
@@ -88,6 +90,8 @@ class Route{
                 //Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Path::class] = Path::findByFunction($reflection_function);
                 Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByFunction($reflection_function);
                 Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByFunction($reflection_function);
+                if(!Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class])
+                    Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class] = new Produces("text/plain");
                 
                 $params = $reflection_function->getParameters();
                 foreach($params as $param){
