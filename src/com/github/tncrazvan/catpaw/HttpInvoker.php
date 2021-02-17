@@ -429,7 +429,9 @@ class HttpInvoker{
                         else if($__CONSUMES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
                             $b = $request->getBody()->getContents();
                             $args[] = BodyParser::parse($b,$ctype,null,true);
-                        }else
+                        }else if( !$__CONSUMES__ )
+                            throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
+                        else
                             throw new Exception("Body could not be unserialized to type \"$classname\".");
                     else
                         throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
