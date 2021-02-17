@@ -8,10 +8,6 @@ use com\github\tncrazvan\catpaw\attributes\Repository;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
 use com\github\tncrazvan\catpaw\tools\helpers\Entity;
 use com\github\tncrazvan\catpaw\tools\helpers\CrudRepository;
-use com\github\tncrazvan\catpaw\tools\helpers\Factory;
-use com\github\tncrazvan\catpaw\tools\helpers\SimpleQueryBuilder;
-
-Factory::setConstructorInjector(SimpleQueryBuilder::class,fn()=>[new PDO("mysql:dbname=razshare;host=127.0.0.1","razshare","razshare")]);
 
 #[Entity]
 class Article {
@@ -31,7 +27,11 @@ class App{
     public function main(
         #[Inject] ArticleRepository $repo
     ):void{
-        
-        print_r($repo->findAll());
+
+        $repo->findAll()->then(function($result){
+            print_r($result);
+        });
+        echo "hello world!!!!\n";
+
     }
 }

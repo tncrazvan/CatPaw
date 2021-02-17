@@ -4,20 +4,21 @@ namespace com\github\tncrazvan\catpaw\tools\helpers;
 use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\tools\helpers\SimpleQueryBuilder;
 use com\github\tncrazvan\catpaw\qb\tools\Column;
+use React\Promise\Promise;
 
 class CrudRepository{
     
     #[Inject]
     protected SimpleQueryBuilder $builder;
 
-    public function findAll():array{
+    public function findAll():Promise{
         return $this
             ->builder
             ->select($this->classname)
             ->fetchAssoc();
     }
 
-    public function findById(string $id):mixed{
+    public function findById(string $id):Promise{
         $b = 
         $this->builder
         ->select($this->classname)

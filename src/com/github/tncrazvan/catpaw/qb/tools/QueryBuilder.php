@@ -12,6 +12,8 @@ use com\github\tncrazvan\catpaw\qb\traits\Delete;
 use com\github\tncrazvan\catpaw\qb\traits\Insert;
 use com\github\tncrazvan\catpaw\qb\traits\Select;
 use com\github\tncrazvan\catpaw\qb\traits\Update;
+use React\EventLoop\LoopInterface;
+use React\Promise\Promise;
 
 class QueryBuilder implements QueryConst{
     use From;
@@ -23,14 +25,17 @@ class QueryBuilder implements QueryConst{
     use Update;
     use Delete;
     
-    private $database;
+    //private $database;
     private $query = "";
     private $selections = null;
     private $bindings;
     private $alias = [];
     protected $current_classname = '';
-    public function __construct(\PDO $database){
-        $this->database = $database;
+    public function __construct(
+        private \PDO $database,
+        private LoopInterface $loop
+    ){
+        //$this->database = $database;
         $this->bindings = [];
     }
 
@@ -74,7 +79,7 @@ class QueryBuilder implements QueryConst{
      * Execute the prepared statement.
      * @return mixed the first result of the statement as class $classname
      */
-    public function fetchObject(string $classname){
+    public function fetchObject(string $classname):Promise{
         return $this->execute(\PDO::FETCH_CLASS,$classname);
     }
 
@@ -82,20 +87,30 @@ class QueryBuilder implements QueryConst{
      * Execute the prepared statement.
      * @return array the results of the statement.
      */
-    public function fetchAssoc(){
+    public function fetchAssoc():Promise{
         return $this->execute(\PDO::FETCH_ASSOC);
     }
 
-    
+    private function fetch(\PDOStatement $stm,array &$result, &$resolve):void{
+        $this->loop->futureTick(function() use(&$stm,&$resolve,&$result){
+            $item = $stm->fetch();
+            if(!$item) {
+                $resolve($result);
+                return;
+            }
+            $result[] = $item;
+            $this->fetch($stm,$result,$resolve);
+        });
+    }
 
     /**
      * Execute the prepared statement.
      * @return mixed the result of the statement.
      */
-    public function execute(int $fetch_style = -1, $fetch_argument = null){
+    public function execute(int $fetch_style = -1, $fetch_argument = null):Promise{
         $results = [];
 
-        $stm = $this->database->prepare($this->query);
+        $stm = $this->database->prepare($this->query,array(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => false));
         foreach($this->bindings as $key => &$binding){
             $value = $binding->getValue();
             $type = $binding->getType();
@@ -107,20 +122,35 @@ class QueryBuilder implements QueryConst{
                 throw new \Exception(json_encode($stm->errorInfo()));
             
             if($fetch_style >= 0)
-            if($fetch_argument === null)
-                $results = $stm->fetchAll($fetch_style);
-            else
+            if($fetch_argument === null){
+                //results = $stm->fetchAll($fetch_style);
+                return new Promise(function($resolve) use(&$stm,&$fetch_style){
+                    $result = [];
+                    $stm->setFetchMode($fetch_style);
+                    $this->fetch($stm,$result,$resolve);
+                });
+            }else
                 if($fetch_style === \PDO::FETCH_CLASS){
-                    $results = $stm->fetchObject($fetch_argument);
-                    return !$results?null:$results;
-                }else
+                    return new Promise(function($resolve) use(&$stm,&$fetch_argument){
+                        $results = $stm->fetchObject($fetch_argument);
+                        $resolve(!$results?null:$results);
+                    });
+                }else{
                     $results = $stm->fetchAll($fetch_style,$fetch_argument);
+                    return new Promise(function($resolve) use(&$stm,&$fetch_style,&$fetch_argument){
+                        $stm->setFetchMode($fetch_style,$fetch_argument);
+                        $this->fetch($stm,$result,$resolve);
+                    });
+                }
         }catch(\Throwable $e){
-            echo "{$e->getMessage()}\n{$e->getTraceAsString()}\n";
-            return false;
+            return new Promise(function($resolve,$rejected) use(&$e){
+                $rejected($e);
+            });
         }
         
-        return $results;
+        return new Promise(function($resolve) use(&$results){
+            $resolve($results);
+        });
     }
 
     

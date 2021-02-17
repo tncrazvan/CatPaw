@@ -1,4 +1,5 @@
 SESSION/
 vendor/
 composer.lock
-@sessions
+.sessions
+.credentials
