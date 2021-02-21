@@ -140,8 +140,9 @@ class CatPaw{
                     $paramName = $matches[0];
                     $paramsNames[] = $paramName;
                     $params[$paramName] = &$requestedPieces[$index];
-                }else if($localPiece !== $requestedPieces[$index]){
-                    return null;
+                }
+                else if($localPiece !== $requestedPieces[$index]){
+                    continue;
                 }
                 $c++;
             }

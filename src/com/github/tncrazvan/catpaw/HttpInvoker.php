@@ -50,6 +50,7 @@ class HttpInvoker{
         }
 
         $__FUNCTION__ = Meta::$FUNCTIONS[$http_method][$http_path]??null;
+        $__METHOD__ = Meta::$METHODS[$http_method][$http_path]??null;
 
         $__PATH_PARAMS__ = Meta::$PATH_PARAMS[$http_method][$http_path]??null;
 
@@ -122,7 +123,6 @@ class HttpInvoker{
                 }
             }
 
-        $__METHOD__ = Meta::$METHODS[$http_method][$http_path]??null;
 
         if($__FUNCTION__){
             $body = (new \ReflectionFunction($__FUNCTION__))->invokeArgs($params);
