@@ -12,6 +12,35 @@ abstract class Strings{
     const PATTERN_JS_ESCAPE_RIGHT_START2 = "(?<=\\&lt\\;script).*\\s*>";
     const PATTERN_JS_ESCAPE_RIGHT_END = "(?<=&lt;\\/script)>";
 
+
+    public static function readLineSilent(string $prompt):?string{
+        if (preg_match('/^win/i', PHP_OS)) {
+            $vbscript = sys_get_temp_dir() . 'prompt_password.vbs';
+            file_put_contents(
+              $vbscript, 'wscript.echo(InputBox("'
+              . addslashes($prompt)
+              . '", "", "password here"))');
+            $command = "cscript //nologo " . escapeshellarg($vbscript);
+            $password = rtrim(shell_exec($command));
+            unlink($vbscript);
+            return $password;
+          } else {
+            $command = "/usr/bin/env bash -c 'echo OK'";
+            if (rtrim(shell_exec($command)) !== 'OK') {
+              trigger_error("Can't invoke bash");
+              return null;
+            }
+            $command = "/usr/bin/env bash -c 'read -s -p \""
+              . addslashes($prompt)
+              . "\" mypassword && echo \$mypassword'";
+            $password = rtrim(shell_exec($command));
+            echo "\n";
+            return $password;
+          }
+          return null;
+    }
+
+
     /**
      * @param data The data to encode.
      * @param level The level of compression. Can be given as 0 for no compression 
