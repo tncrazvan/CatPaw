@@ -31,7 +31,7 @@ class CrudRepository{
         return $b->fetchObject($this->classname);
     }
 
-    public function deleteById(string $id):void{
+    public function deleteById(mixed $id):void{
         $b = 
         $this
             ->builder
