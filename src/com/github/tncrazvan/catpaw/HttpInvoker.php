@@ -193,8 +193,6 @@ class HttpInvoker{
 
         $http_status = $status->getCode();
         $accepts = \explode(",",($request->getHeaderLine("Accept")));
-        if($body === null)
-            $body = '';
             
         $this->adaptResponse(
             $__PRODUCES__,
