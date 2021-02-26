@@ -141,7 +141,7 @@ class CatPaw{
                     $paramsNames[] = $paramName;
                     $params[$paramName] = &$requestedPieces[$index];
                 }
-                else if($localPiece !== $requestedPieces[$index]){
+                else if($max <= $index || $localPiece !== $requestedPieces[$index]){
                     continue;
                 }
                 $c++;
