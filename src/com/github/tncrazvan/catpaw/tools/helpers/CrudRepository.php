@@ -18,7 +18,7 @@ class CrudRepository{
             ->fetchAssoc();
     }
 
-    public function findById(string $id):Promise{
+    public function findById(mixed $id):Promise{
         $b = 
         $this->builder
         ->select($this->classname)
