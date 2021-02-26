@@ -116,6 +116,7 @@ class Factory{
         
         $entity->setColumns($columns);
         $entity->setPrimaryKeys($pks);
+        $entity->reset_columns();
         
         //Entity::_sync_entity_columns_from_props($entity,$object);
     }
