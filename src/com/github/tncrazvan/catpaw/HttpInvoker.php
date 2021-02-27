@@ -81,7 +81,7 @@ class HttpInvoker{
                     return $result;
             }
         }
-
+        
         $__FUNCTION__ = Meta::$FUNCTIONS[$http_method][$http_path]??null;
         $__METHOD__ = Meta::$METHODS[$http_method][$http_path]??null;
 
