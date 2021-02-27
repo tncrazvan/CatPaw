@@ -34,6 +34,8 @@ use com\github\tncrazvan\catpaw\attributes\Service;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
 use com\github\tncrazvan\catpaw\tools\helpers\Route;
 use com\github\tncrazvan\catpaw\tools\helpers\CrudRepository;
+use Exception;
+use React\EventLoop\LoopInterface;
 
 class Factory{
     private static array $tables = [];
@@ -275,10 +277,18 @@ class Factory{
                         $i++;
                     }
                     if($method->isStatic()){
-                        $method->invoke(null,...$args);
+                        $result = $method->invoke(null,...$args);
                     }else{
                         AttributeResolver::injectProperties($classname,$instance);
-                        $method->invoke($instance,...$args);
+                        $result = $method->invoke($instance,...$args);
+                    }
+
+                    if($result instanceof \Generator){
+                        if(!isset(static::$singletons[LoopInterface::class])){
+                            throw new Exception("Entry of class $classname could not be executed because it returns a Generator and no main loop singleton has been registered.");
+                        }
+                        $loop = static::$singletons[LoopInterface::class];
+                        Yielder::toPromise($loop,$result);
                     }
                     break;
                 }

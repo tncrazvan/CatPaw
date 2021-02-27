@@ -10,6 +10,7 @@ Factory::setObject(LoopInterface::class,\React\EventLoop\Factory::create());
 
 Factory::make(\app\Server::class);
 Factory::make(\app\YieldTest::class);
+Factory::make(\app\Starter::class);
 
 $server = new CatPaw(new class extends MainConfiguration{
     public function __construct() {

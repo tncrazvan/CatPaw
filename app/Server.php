@@ -12,7 +12,7 @@ use com\github\tncrazvan\catpaw\attributes\Produces;
 use com\github\tncrazvan\catpaw\attributes\sessions\Session;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
 use com\github\tncrazvan\catpaw\tools\Status;
-
+use React\Promise\Promise;
 
 #[FilterItem]                                   //#[FilterItem] is an alis for #[Singleton] atm.
                                                 //More options to come in the future.

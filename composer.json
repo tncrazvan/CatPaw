@@ -19,7 +19,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"com\\github\\tncrazvan\\catpaw\\":["src/com/github/tncrazvan/catpaw/"],
+			"com\\github\\tncrazvan\\catpaw\\":["src/"],
 			"app\\":["app/"]
 		}
 	}
