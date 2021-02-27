@@ -30,4 +30,34 @@ class Meta{
 
     public static array $KLASS = [];
     public static array $CLASS_ATTRIBUTES = [];
+
+    public static function reset():void{
+        static::$PATH_PARAMS = [];
+
+        static::$METHODS = [];
+        static::$METHODS_ATTRIBUTES = [];
+
+        static::$METHODS_ARGS = [];
+        static::$METHODS_ARGS_NAMES = [];
+        static::$METHODS_ARGS_ATTRIBUTES = [];
+
+        static::$FUNCTIONS = [];
+        static::$FUNCTIONS_ATTRIBUTES = [];
+
+        static::$FUNCTIONS_ARGS = [];
+        static::$FUNCTIONS_ARGS_NAMES = [];
+        static::$FUNCTIONS_ARGS_ATTRIBUTES = [];
+
+
+        static::$FILTERS = [];
+        static::$FILTERS_ATTRIBUTES = [];
+
+        static::$FILTERS_ARGS = [];
+        static::$FILTERS_ARGS_NAMES = [];
+        static::$FILTERS_ARGS_ATTRIBUTES = [];
+
+
+        static::$KLASS = [];
+        static::$CLASS_ATTRIBUTES = [];
+    }
 }

@@ -200,6 +200,6 @@ class AttributeResolver{
             Factory::setObject($proptype,$obj);
             $prop->setValue($instance,$obj);
         }else
-            $prop->setValue($instance,null);
+            $prop->setValue($instance,Factory::make($proptype));
     }
 }

@@ -12,6 +12,7 @@ use React\EventLoop\LoopInterface;
 
 class CatPaw{
     private array $_map = [];
+    private \React\Socket\Server $socket;
     public function __construct(
         private MainConfiguration $config,
         private ?\Closure $listen = null,
@@ -73,7 +74,7 @@ class CatPaw{
             $event = function( \Psr\Http\Message\ServerRequestInterface $request ) use(&$invoker,&$last,$listen) {
                 $now = microtime(true) * 1000;
                 if($now - $last > 100){
-                    $listen();
+                    $listen($this);
                     $last = $now;
                 }
                 
@@ -85,16 +86,21 @@ class CatPaw{
         
         $server = new \React\Http\Server($loop,...[...$config->middlewares,$event]);
 
-        $socket = new \React\Socket\Server($config->uri, $loop, $config->context);
-        $server->listen($socket);
-        
-        $address = \preg_replace('/(tcp|unix)/','http',$socket->getAddress(),1);
+        $this->socket = new \React\Socket\Server($config->uri, $loop, $config->context);
+        $server->listen($this->socket);
+
+        $address = \preg_replace('/(tcp|unix)/','http',$this->socket->getAddress(),1);
         $address = \preg_replace('/tls/','https',$address);
 
         echo "Server running at {$address}\n";
 
         $loop->run();
 
+    }
+
+    public function stop():void{
+        $this->socket->close();
+        $this->loop->stop();
     }
 
     private function serve( \Psr\Http\Message\ServerRequestInterface $request, HttpInvoker $invoker ):mixed{
@@ -136,12 +142,19 @@ class CatPaw{
             $max = \count($requestedPieces);
             $c = 0;
             foreach($localPieces as $index => &$localPiece){
+                if($max <= $index) {
+                    if($c === $max)
+                        return null;
+                    continue;
+                }
+
+                $requestedPiece = $requestedPieces[$index];
+
                 if(\preg_match(static::PATTERN_PARAM,$localPiece,$matches) && $matches && isset($matches[0])){
                     $paramName = $matches[0];
                     $paramsNames[] = $paramName;
-                    $params[$paramName] = &$requestedPieces[$index];
-                }
-                else if($max <= $index || $localPiece !== $requestedPieces[$index]){
+                    $params[$paramName] = $requestedPiece;
+                }else if($localPiece !== $requestedPiece){
                     continue;
                 }
                 $c++;

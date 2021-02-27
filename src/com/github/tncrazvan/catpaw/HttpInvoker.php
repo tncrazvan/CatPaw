@@ -160,6 +160,7 @@ class HttpInvoker{
 
         $cookies = $request->getCookieParams();
         $sessionId = $cookies['sessionId']??null;
+        $usingSession = false;
         $status = new Status();
         $http_headers = [];
         $params = array();
@@ -177,7 +178,8 @@ class HttpInvoker{
                         $http_headers,
                         $http_params,
                         $params,
-                        $sessionId
+                        $sessionId,
+                        $usingSession
                     );
                 }
             }
@@ -199,7 +201,7 @@ class HttpInvoker{
             $__METHOD__->setAccessible(false);
         }
 
-        if($sessionId)
+        if($usingSession && $sessionId)
             $this->sm->saveSession($this->sm->getSession($sessionId));
 
         if($body instanceof Response)
@@ -418,7 +420,8 @@ class HttpInvoker{
         array &$http_headers,
         array &$http_params,
         array &$args,
-        ?string &$sessionId
+        ?string &$sessionId,
+        bool &$usingSession
    ):void{
         $optional = $__ARG__->isOptional();
         $name = $__ARG__->getName();
@@ -483,9 +486,10 @@ class HttpInvoker{
                             if($optional)
                                 $http_headers = $__ARG__->getDefaultValue();
                             $args[] = &$http_headers;
-                        }else if($__ARGS_ATTRIBUTES__[$name][Session::class]??false)
-                            $args[] = &$this->session($http_headers,$sessionId);
-                        else if($__CONSUMES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
+                        }else if($__ARGS_ATTRIBUTES__[$name][Session::class]??false) {
+                            $usingSession = true;
+                            $args[] = &$this->session($http_headers, $sessionId);
+                        }else if($__CONSUMES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
                             $b = $request->getBody()->getContents();
                             $args[] = BodyParser::parse($b,$ctype,null,true);
                         }else if( !$__CONSUMES__ )
