@@ -15,14 +15,13 @@ class ClassFinder {
         $classes = array_map(function($file) use (&$namespace,&$onSubDir,&$dir){
             if($onSubDir !== null && $file !== '.' && $file !== '..' && is_dir($dir.'/'.$file))
                 $onSubDir($file);
-            
-
             return $namespace . '\\' . str_replace('.php', '', $file);
         }, $files);
 
-        return array_filter($classes, function(string $possibleClass){
+        $res = array_filter($classes, function(string $possibleClass){
             return class_exists($possibleClass);
         });
+        return $res;
     }
 
     private function getDefinedNamespaces():array{

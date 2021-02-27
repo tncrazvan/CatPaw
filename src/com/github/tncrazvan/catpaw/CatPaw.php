@@ -15,10 +15,8 @@ class CatPaw{
     private \React\Socket\Server $socket;
     public function __construct(
         private MainConfiguration $config,
-        private ?\Closure $listen = null,
-        private array $events = [],
-        private ?\React\EventLoop\LoopInterface $loop = null,
-        private ?\React\Http\Server $server = null
+        private \React\EventLoop\LoopInterface $loop,
+        private array $events = []
     ){
         $sm = new SessionManager($config);
         $invoker = new HttpInvoker($sm);
@@ -31,11 +29,7 @@ class CatPaw{
             }
         }
 
-        $loop = Factory::make(LoopInterface::class);
-        if(!$loop){
-            $loop = \React\EventLoop\Factory::create();
-
-
+        if(!Factory::isset(LoopInterface::class)){
             $code = new AsciiTable(["width" => 70]);
             $import1 = Singleton::class;
             $import2 = LoopInterface::class;
@@ -66,27 +60,14 @@ class CatPaw{
             );
             
             echo $table->toString()."\n\n";
-            
         }
-
-        $last = microtime(true) * 1000;
-        if($listen)
-            $event = function( \Psr\Http\Message\ServerRequestInterface $request ) use(&$invoker,&$last,$listen) {
-                $now = microtime(true) * 1000;
-                if($now - $last > 100){
-                    $listen($this);
-                    $last = $now;
-                }
-                
-                return $this->serve( $request, $invoker );
-            };
-        else
-            $event = fn( \Psr\Http\Message\ServerRequestInterface $request ) => $this->serve( $request, $invoker );
+        
+        $event = fn( \Psr\Http\Message\ServerRequestInterface $request ) => $this->serve( $request, $invoker );
         
         
-        $server = new \React\Http\Server($loop,...[...$config->middlewares,$event]);
+        $server = new \React\Http\Server($this->loop,...[...$config->middlewares,$event]);
 
-        $this->socket = new \React\Socket\Server($config->uri, $loop, $config->context);
+        $this->socket = new \React\Socket\Server($config->uri, $this->loop, $config->context);
         $server->listen($this->socket);
 
         $address = \preg_replace('/(tcp|unix)/','http',$this->socket->getAddress(),1);
@@ -94,13 +75,7 @@ class CatPaw{
 
         echo "Server running at {$address}\n";
 
-        $loop->run();
-
-    }
-
-    public function stop():void{
-        $this->socket->close();
-        $this->loop->stop();
+        $this->loop->run();
     }
 
     private function serve( \Psr\Http\Message\ServerRequestInterface $request, HttpInvoker $invoker ):mixed{
