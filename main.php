@@ -9,10 +9,11 @@ use React\EventLoop\LoopInterface;
 Factory::setObject(LoopInterface::class,\React\EventLoop\Factory::create());
 
 Factory::make(\app\Server::class);
+Factory::make(\app\YieldTest::class);
 
 $server = new CatPaw(new class extends MainConfiguration{
     public function __construct() {
         $this->show_exception = true;
         $this->show_stack_trace = false;
     }
-});
+},Factory::make(LoopInterface::class));

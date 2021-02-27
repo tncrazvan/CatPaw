@@ -19,7 +19,6 @@ class CatPaw{
         private array $events = []
     ){
         $sm = new SessionManager($config);
-        $invoker = new HttpInvoker($sm);
 
         foreach ( $this->events as $key => $event ) {
             if( $event instanceof HttpEvent ){
@@ -62,6 +61,8 @@ class CatPaw{
             echo $table->toString()."\n\n";
         }
         
+        $invoker = new HttpInvoker($this->loop,$sm);
+
         $event = fn( \Psr\Http\Message\ServerRequestInterface $request ) => $this->serve( $request, $invoker );
         
         

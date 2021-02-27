@@ -19,8 +19,6 @@ use com\github\tncrazvan\catpaw\attributes\sessions\Session;
 use com\github\tncrazvan\catpaw\sessions\SessionManager;
 use com\github\tncrazvan\catpaw\tools\helpers\parsing\BodyParser;
 use com\github\tncrazvan\catpaw\tools\XMLSerializer;
-use Payload;
-use Psr\Http\Message\ResponseInterface;
 use React\EventLoop\LoopInterface;
 use React\Promise\Promise;
 use React\Promise\PromiseInterface;
@@ -28,6 +26,7 @@ use React\Promise\PromiseInterface;
 class HttpInvoker{
 
     public function __construct(
+        private LoopInterface $loop,
         private SessionManager $sm,
         private ?Response $bad_request_no_content_type = null,
         private ?Response $bad_request_cant_consume = null,
@@ -204,10 +203,13 @@ class HttpInvoker{
         if($usingSession && $sessionId)
             $this->sm->saveSession($this->sm->getSession($sessionId));
 
+        if($body instanceof \Generator)
+            $body = $this->_yield_to_promise($body);
+
         if($body instanceof Response)
             return $body;
 
-        if($body instanceof Promise){
+        if($body instanceof PromiseInterface){
             return $body->then(function($b) use(
                 &$http_method,
                 &$http_path,
@@ -239,6 +241,42 @@ class HttpInvoker{
                 $body
             );
         }
+    }
+
+    private function await(\Generator $value, PromiseInterface $promise,mixed $r){
+        $promise->then(function($result) use(&$r,&$value){
+            $this->loop->futureTick(function() use(&$r,&$result,&$value){
+                if($result instanceof PromiseInterface){
+                    $this->await($value,$result,$r);
+                }else{
+                    $value->send($result);
+                    $this->loop->futureTick(fn()=>$this->yielder($value,$r));
+                }
+            });
+        });
+    }
+
+    private function yielder(\Generator $value,mixed $r):void{
+        $this->loop->futureTick(function() use(&$value,&$r){
+            if($value->valid()){ //cycle all generators until end of callback is reached
+                $item = $value->current();
+                if($item instanceof PromiseInterface){
+                    $this->await($value,$item,$r);
+                }else{
+                    $value->send($item);
+                    $this->loop->futureTick(fn()=>$this->yielder($value,$r));
+                }
+            }else{  //end of callback is reached
+                $return = $value->getReturn();
+                $r($return); //http reply here
+            }
+        });
+    }
+
+    private function _yield_to_promise(\Generator $value):PromiseInterface{
+        return new Promise(function($r) use(&$value){
+            $this->yielder($value,$r);
+        });
     }
 
     private function reply(
