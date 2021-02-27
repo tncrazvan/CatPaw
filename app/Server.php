@@ -18,7 +18,7 @@ use com\github\tncrazvan\catpaw\tools\Status;
                                                 //More options to come in the future.
 class TestFilter{
 
-    #[Entry]                                    //#[Entry] specifies this is something that must be executed.
+    #[Entry]                                    //#[Entry] specifies that this is the entry point of this filter item.
     #[Produces("text/html")]                    //Specifies the produced content-type.
                                                 //All normal web attributes can be used here except for Path and method names such as [GET],[POST] etc..
     public function test(
