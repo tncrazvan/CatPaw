@@ -13,22 +13,26 @@ use com\github\tncrazvan\catpaw\attributes\sessions\Session;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
 use com\github\tncrazvan\catpaw\tools\Status;
 
-#[FilterItem]
+
+#[FilterItem]                                   //#[FilterItem] is an alis for #[Singleton] atm.
+                                                //More options to come in the future.
 class TestFilter{
 
-    #[Entry]
-    #[Produces("text/html")]
+    #[Entry]                                    //#[Entry] specifies this is something that must be executed.
+    #[Produces("text/html")]                    //Specifies the produced content-type.
+                                                //All normal web attributes can be used here except for Path and method names such as [GET],[POST] etc..
     public function test(
-        #[Session] array &$session,
-        #[Status] Status $status
+        #[Session] array &$session,             //Starts a session or grabs an existing one.
+        #[Status] Status $status                //Specifies the response status.
+                                                //All web attributes are available here including injections.
     ):mixed{
         $username = $session["username"]??null;
         if(!$username){
             $status->setCode(Status::UNAUTHORIZED);
             $session["username"] = "tncrazvan";
-            return "Please login.";
+            return "Please login.";                     //if this function returns anything else than <null>, the request is blocked and the returned value is served.
         }
-        return null;
+        return null;                                    //if this method returns null then it means the request went through the filter
     }
 }
 
@@ -56,7 +60,10 @@ class Server{
 
     #[GET]
     #[Produces("application/json")]
-    #[Filter(TestFilter::class,TestFilter2::class)]
+    #[Filter(TestFilter::class,TestFilter2::class)]     //Adds the 2 filters TestFilter and TestFilter2.
+                                                        //this method will be executed only if the request passes through both filters.
+                                                        //Filter executions are ordered, so TestFilter will be executed first
+                                                        //then TestFilter2 will be executed, but only if TestFilter lets the request through.
     public function test():array{
         return [
             "username" => "jotey",
