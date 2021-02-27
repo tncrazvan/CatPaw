@@ -9,6 +9,8 @@ use com\github\tncrazvan\catpaw\attributes\database\Id;
 use com\github\tncrazvan\catpaw\tools\helpers\Entity;
 use com\github\tncrazvan\catpaw\attributes\Entry;
 use com\github\tncrazvan\catpaw\attributes\Extend;
+use com\github\tncrazvan\catpaw\attributes\Filter;
+use com\github\tncrazvan\catpaw\attributes\FilterItem;
 use com\github\tncrazvan\catpaw\attributes\http\methods\COPY;
 use com\github\tncrazvan\catpaw\attributes\http\methods\DELETE;
 use com\github\tncrazvan\catpaw\attributes\http\methods\GET;
@@ -154,6 +156,7 @@ class Factory{
         $service = $entity?null:Service::findByClass($reflection_class);
         $repository = $service||$entity?null:Repository::findByClass($reflection_class);
         $singleton = $entity?null:Singleton::findByClass($reflection_class);
+        $filter_item = $entity?null:FilterItem::findByClass($reflection_class);
         $scoped = $entity?null:ApplicationScoped::findByClass($reflection_class);
 
         $methods = $reflection_class->getMethods();
@@ -171,7 +174,7 @@ class Factory{
 
         //resolve other class attributes
         ############################################################################
-        if($singleton || $service || $repository){
+        if($singleton || $service || $repository || $filter_item){
             static::$singletons[$classname] = new $classname(...$args);
             if($repository)
                 static::adaptToRepository(static::$singletons[$classname],$repository);
@@ -179,7 +182,7 @@ class Factory{
 
 
         $instance = 
-            $singleton || $service || $repository ?
+            $singleton || $service || $repository || $filter_item ?
                     //then
                     static::$singletons[$classname]
                 
@@ -209,8 +212,8 @@ class Factory{
         }else
             AttributeResolver::injectProperties($classname,$instance);
         
-
-        static::entry($methods,$instance,$classname);
+        if($scoped)
+            static::entry($methods,$instance,$classname);
 
         return $instance;
     }

@@ -3,6 +3,7 @@ namespace com\github\tncrazvan\catpaw\tools\helpers;
 
 use com\github\tncrazvan\catpaw\attributes\Body;
 use com\github\tncrazvan\catpaw\attributes\Consumes;
+use com\github\tncrazvan\catpaw\attributes\Filter;
 use com\github\tncrazvan\catpaw\attributes\http\Headers;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
 use com\github\tncrazvan\catpaw\attributes\http\PathParam;
@@ -45,6 +46,119 @@ class Route{
         }
     }
 
+    private static function initialize_method(
+        string &$method, 
+        string &$path, 
+        ?\ReflectionMethod $reflection_method, 
+        ?Filter &$filter = null
+    ):void{
+        Meta::$METHODS[$method][$path] = $reflection_method;
+        $params = $reflection_method->getParameters();
+        Meta::$METHODS_ARGS[$method][$path] = $params;
+
+        foreach(Meta::$METHODS_ARGS[$method][$path] as &$param){
+            Meta::$METHODS_ARGS_NAMES[$method][$path][] = $param->getName();
+        }
+
+        Meta::$METHODS_ATTRIBUTES[$method][$path][Filter::class] = Filter::findByMethod($reflection_method);
+        $filter = Meta::$METHODS_ATTRIBUTES[$method][$path][Filter::class];
+        Meta::$METHODS_ATTRIBUTES[$method][$path][Path::class] = Path::findByMethod($reflection_method);
+        Meta::$METHODS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByMethod($reflection_method);
+        Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByMethod($reflection_method);
+        if(!Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class])
+            Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class] = new Produces("text/plain");
+        
+        foreach($params as $param){
+            $path_param = PathParam::findByParameter($param);
+            Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
+            Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
+            Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
+            Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Session::class] = Session::findByParameter($param);
+            Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
+            Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Request::class] = Request::findByParameter($param);
+            Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Inject::class] = Inject::findByParameter($param);
+        }
+    }
+    private static function initialize_function(
+        string &$method, 
+        string &$path, 
+        ?\ReflectionFunction $reflection_function,
+        ?Filter &$filter = null
+    ):void{
+        Meta::$FUNCTIONS[$method][$path] = $reflection_function;
+        $params = $reflection_function->getParameters();
+        Meta::$FUNCTIONS_ARGS[$method][$path] = $params;
+
+        foreach(Meta::$FUNCTIONS_ARGS[$method][$path] as &$param){
+            Meta::$FUNCTIONS_ARGS_NAMES[$method][$path][] = $param->getName();
+        }
+
+        //Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Path::class] = Path::findByFunction($reflection_function);
+        Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Filter::class] = Filter::findByFunction($reflection_function);
+        $filter = Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Filter::class];
+        Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByFunction($reflection_function);
+        Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByFunction($reflection_function);
+        if(!Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class])
+            Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class] = new Produces("text/plain");
+        
+        foreach($params as $param){
+            $path_param = PathParam::findByParameter($param);
+            Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
+            Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
+            Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
+            Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Session::class] = Session::findByParameter($param);
+            Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
+            Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Request::class] = Request::findByParameter($param);
+            Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Inject::class] = Inject::findByParameter($param);
+        }
+    }
+    private static function initialize_class(
+        string &$method, 
+        string &$path, 
+        ?\ReflectionClass $reflection_class, 
+        ?Filter &$filter = null
+    ):void{
+        if(!$filter){
+            Meta::$CLASS_ATTRIBUTES[$method][$path][Filter::class] = Filter::findByClass($reflection_class);
+            $filter = Meta::$CLASS_ATTRIBUTES[$method][$path][Filter::class];
+        }
+        Meta::$KLASS[$method][$path] = $reflection_class;
+        Meta::$CLASS_ATTRIBUTES[$method][$path][Service::class] = Service::findByClass($reflection_class);
+        Meta::$CLASS_ATTRIBUTES[$method][$path][Singleton::class] = Singleton::findByClass($reflection_class);
+        Meta::$CLASS_ATTRIBUTES[$method][$path][Repository::class] = Repository::findByClass($reflection_class);
+        Meta::$CLASS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByClass($reflection_class);
+        Meta::$CLASS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByClass($reflection_class);
+        Meta::$CLASS_ATTRIBUTES[$method][$path][Path::class] = Path::findByClass($reflection_class);
+    }
+    private static function initialize_filter(
+        string $method,
+        string &$path,
+        string &$classname,
+        \Closure &$filter_item_callback
+    ):void{
+        $reflection_function = new \ReflectionFunction($filter_item_callback);
+
+        Meta::$FILTERS[$method][$path][$classname] = $reflection_function;  //normaly this is a method, but this time it's a function
+        $params = $reflection_function->getParameters();
+        Meta::$FILTERS_ARGS[$method][$path][$classname] = $params;
+
+        foreach(Meta::$FILTERS_ARGS[$method][$path][$classname] as &$param){
+            Meta::$FILTERS_ARGS_NAMES[$method][$path][$classname][] = $param->getName();
+        }
+        Meta::$FILTERS_ATTRIBUTES[$method][$path][$classname][Consumes::class] = Consumes::findByFunction($reflection_function);
+        Meta::$FILTERS_ATTRIBUTES[$method][$path][$classname][Produces::class] = Produces::findByFunction($reflection_function);
+        if(!Meta::$FILTERS_ATTRIBUTES[$method][$path][$classname][Produces::class])
+            Meta::$FILTERS_ATTRIBUTES[$method][$path][$classname][Produces::class] = new Produces("text/plain");
+
+        foreach($params as $param){
+            Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Headers::class] = Headers::findByParameter($param);
+            Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Status::class] = Status::findByParameter($param);
+            Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Session::class] = Session::findByParameter($param);
+            Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Body::class] = Body::findByParameter($param);
+            Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Request::class] = Request::findByParameter($param);
+            Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Inject::class] = Inject::findByParameter($param);
+        }
+    }
     private static function initialize(
         string $method, 
         string &$path, 
@@ -52,67 +166,22 @@ class Route{
         ?\ReflectionMethod $reflection_method,
         ?\ReflectionFunction $reflection_function
     ):void{
+        $filter = null;
         if(!isset(static::$initialized_attributes[$method][$path]) || !static::$initialized_attributes[$method][$path]){
             if($reflection_method){
-                Meta::$METHODS[$method][$path] = $reflection_method;
-                Meta::$METHODS_ARGS[$method][$path] = $reflection_method->getParameters();
-
-                foreach(Meta::$METHODS_ARGS[$method][$path] as &$param){
-                    Meta::$METHODS_ARGS_NAMES[$method][$path][] = $param->getName();
-                }
-
-                Meta::$METHODS_ATTRIBUTES[$method][$path][Path::class] = Path::findByMethod($reflection_method);
-                Meta::$METHODS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByMethod($reflection_method);
-                Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByMethod($reflection_method);
-                if(!Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class])
-                    Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class] = new Produces("text/plain");
-                
-                $params = $reflection_method->getParameters();
-                foreach($params as $param){
-                    $path_param = PathParam::findByParameter($param);
-                    Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
-                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
-                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
-                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Session::class] = Session::findByParameter($param);
-                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
-                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Request::class] = Request::findByParameter($param);
-                    Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Inject::class] = Inject::findByParameter($param);
-                }
+                static::initialize_method($method,$path,$reflection_method,$filter);
             }else if($reflection_function){
-                Meta::$FUNCTIONS[$method][$path] = $reflection_method;
-                Meta::$FUNCTIONS_ARGS[$method][$path] = $reflection_function->getParameters();
-
-                foreach(Meta::$FUNCTIONS_ARGS[$method][$path] as &$param){
-                    Meta::$FUNCTIONS_ARGS_NAMES[$method][$path][] = $param->getName();
-                }
-
-                //Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Path::class] = Path::findByFunction($reflection_function);
-                Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByFunction($reflection_function);
-                Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByFunction($reflection_function);
-                if(!Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class])
-                    Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class] = new Produces("text/plain");
-                
-                $params = $reflection_function->getParameters();
-                foreach($params as $param){
-                    $path_param = PathParam::findByParameter($param);
-                    Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
-                    Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
-                    Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
-                    Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Session::class] = Session::findByParameter($param);
-                    Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
-                    Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Request::class] = Request::findByParameter($param);
-                    Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Inject::class] = Inject::findByParameter($param);
-                }
+                static::initialize_function($method,$path,$reflection_function,$reflection_method,$filter);
             }
             
             if($reflection_class){
-                Meta::$KLASS[$method][$path] = $reflection_class;
-                Meta::$CLASS_ATTRIBUTES[$method][$path][Service::class] = Service::findByClass($reflection_class);
-                Meta::$CLASS_ATTRIBUTES[$method][$path][Singleton::class] = Singleton::findByClass($reflection_class);
-                Meta::$CLASS_ATTRIBUTES[$method][$path][Repository::class] = Repository::findByClass($reflection_class);
-                Meta::$CLASS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByClass($reflection_class);
-                Meta::$CLASS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByClass($reflection_class);
-                Meta::$CLASS_ATTRIBUTES[$method][$path][Path::class] = Path::findByClass($reflection_class);
+                static::initialize_class($method,$path,$reflection_class,$filter);
+            }
+
+            if($filter){
+                foreach($filter->getCallbacks() as $classname => $filter_item_callback){
+                    static::initialize_filter($method,$path,$classname,$filter_item_callback);
+                }
             }
 
             static::$initialized_attributes[$method][$path] = true;

@@ -3,6 +3,7 @@ namespace com\github\tncrazvan\catpaw;
 
 use com\github\tncrazvan\catpaw\attributes\Body;
 use com\github\tncrazvan\catpaw\attributes\Consumes;
+use com\github\tncrazvan\catpaw\attributes\Filter;
 use com\github\tncrazvan\catpaw\attributes\http\Headers;
 use com\github\tncrazvan\catpaw\attributes\Inject;
 use Exception;
@@ -49,10 +50,40 @@ class HttpInvoker{
             $ctype = '*/*';
         }
 
+        $__PATH_PARAMS__ = Meta::$PATH_PARAMS[$http_method][$http_path]??null;
+
+        $__FILTER__ = Meta::$FILTERS[$http_method][$http_path]??null;
+
+        if($__FILTER__){
+            foreach($__FILTER__ as $classname => &$filter_item_function){
+                $__ARGS__ = Meta::$FILTERS_ARGS[$http_method][$http_path][$classname]??null;
+                //$__ARGS_NAMES__ = Meta::$FUNCTIONS_ARGS_NAMES[$http_method][$http_path]??null;
+                $__ARGS_ATTRIBUTES__ = Meta::$FILTERS_ARGS_ATTRIBUTES[$http_method][$http_path][$classname]??null;
+
+                $__CONSUMES__ = Meta::$FILTERS_ATTRIBUTES[$http_method][$http_path][$classname][Consumes::class]??null;
+                $__PRODUCES__ = Meta::$FILTERS_ATTRIBUTES[$http_method][$http_path][$classname][Produces::class]??null;
+                $result = $this->next(
+                    $http_method,
+                    $http_path,
+                    $http_params,
+                    $ctype,
+                    $request,
+                    $__CONSUMES__,
+                    $__PRODUCES__,
+                    $__ARGS__,
+                    $__PATH_PARAMS__,
+                    $__ARGS_ATTRIBUTES__,
+                    $filter_item_function,
+                    null,
+                    null
+                );
+                if($result !== null)
+                    return $result;
+            }
+        }
+
         $__FUNCTION__ = Meta::$FUNCTIONS[$http_method][$http_path]??null;
         $__METHOD__ = Meta::$METHODS[$http_method][$http_path]??null;
-
-        $__PATH_PARAMS__ = Meta::$PATH_PARAMS[$http_method][$http_path]??null;
 
         if($__FUNCTION__){
             $__ARGS__ = Meta::$FUNCTIONS_ARGS[$http_method][$http_path]??null;
@@ -78,12 +109,41 @@ class HttpInvoker{
         }
         
 
-        
+        return $this->next(
+            $http_method,
+            $http_path,
+            $http_params,
+            $ctype,
+            $request,
+            $__CONSUMES__,
+            $__PRODUCES__,
+            $__ARGS__,
+            $__PATH_PARAMS__,
+            $__ARGS_ATTRIBUTES__,
+            null,
+            $__FUNCTION__,
+            $__METHOD__
+        );
+    }
 
+    private function next(
+        string &$http_method,
+        string &$http_path,
+        array &$http_params,
+        string &$ctype,
+        ServerRequestInterface $request,
+        ?Consumes $__CONSUMES__,
+        ?Produces $__PRODUCES__,
+        ?array $__ARGS__,
+        ?array $__PATH_PARAMS__,
+        ?array $__ARGS_ATTRIBUTES__,
+        ?\ReflectionFunction $__FILTER__,
+        ?\ReflectionFunction $__FUNCTION__,
+        ?\ReflectionMethod $__METHOD__,
+    ):mixed{
         if($__CONSUMES__){
             $cconsumed = 0;
             $consumed = static::filterConsumedContentType($__CONSUMES__,$ctype,$cconsumed);
-            
 
             $can_consumes = false;
             foreach($consumed as &$consumes_item){
@@ -96,7 +156,6 @@ class HttpInvoker{
                 $consumes_glued = \implode(',',$consumed);
                 throw new Exception("Bad request on \"$http_method $http_path\", can only consume Content-Type \"$consumes_glued\"; provided \"$ctype\".");
             }
-
         }
 
         $cookies = $request->getCookieParams();
@@ -124,8 +183,12 @@ class HttpInvoker{
             }
 
 
-        if($__FUNCTION__){
-            $body = (new \ReflectionFunction($__FUNCTION__))->invokeArgs($params);
+        if($__FILTER__){
+            $body = $__FILTER__->invokeArgs($params);
+            if($body == null) 
+                return null;
+        }else if($__FUNCTION__){
+            $body = $__FUNCTION__->invokeArgs($params);
         }else{
             $__CLASS__ = Meta::$KLASS[$http_method][$http_path]??null;
 
@@ -135,15 +198,13 @@ class HttpInvoker{
             $body =  $__METHOD__->invokeArgs($instance,$params);
             $__METHOD__->setAccessible(false);
         }
-        
+
         if($sessionId)
             $this->sm->saveSession($this->sm->getSession($sessionId));
 
         if($body instanceof Response)
             return $body;
-        
-        
-        
+
         if($body instanceof Promise){
             return $body->then(function($b) use(
                 &$http_method,

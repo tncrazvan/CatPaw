@@ -19,6 +19,15 @@ class Meta{
     public static array $FUNCTIONS_ARGS_NAMES = [];
     public static array $FUNCTIONS_ARGS_ATTRIBUTES = [];
 
+
+    public static array $FILTERS = [];
+    public static array $FILTERS_ATTRIBUTES = [];
+
+    public static array $FILTERS_ARGS = [];
+    public static array $FILTERS_ARGS_NAMES = [];
+    public static array $FILTERS_ARGS_ATTRIBUTES = [];
+
+
     public static array $KLASS = [];
     public static array $CLASS_ATTRIBUTES = [];
 }
