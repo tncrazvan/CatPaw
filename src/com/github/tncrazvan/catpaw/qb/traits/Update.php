@@ -8,19 +8,20 @@ use com\github\tncrazvan\catpaw\qb\tools\Column;
 use com\github\tncrazvan\catpaw\qb\tools\CoreEntity;
 use com\github\tncrazvan\catpaw\qb\tools\QueryBuilder;
 use com\github\tncrazvan\catpaw\qb\tools\QueryConst;
+use com\github\tncrazvan\catpaw\tools\helpers\Entity;
 
 trait Update{
-    public function update(string $classname, object $object):QueryBuilder{
-        $this->current_classname = $classname;
+    public function update(string $classname, object $object):QueryBuilder{  
         $entity_r = Factory::make($classname);
         CoreEntity::_sync_entity_columns_from_props($entity_r,$object);
         $this->reset();
+        $this->current_classname = $classname;
         $random = '';
         $this->add(QueryConst::UPDATE);
         $this->add($entity_r->tableName());
         $this->add(QueryConst::SET);
         
-        $columns = \array_merge($entity_r->getEntityColumns(),$entity_r->getEntityAliasColumns());
+        $columns = \array_merge($entity_r->getEntityColumns(Entity::FOR_UPDATE),$entity_r->getEntityAliasColumns(Entity::FOR_UPDATE));
         
         //$length = \count($columns);
 

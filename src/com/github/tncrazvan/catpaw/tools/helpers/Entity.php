@@ -3,22 +3,39 @@ namespace com\github\tncrazvan\catpaw\tools\helpers;
 
 use com\github\tncrazvan\catpaw\attributes\interfaces\AttributeInterface;
 use com\github\tncrazvan\catpaw\attributes\traits\CoreAttributeDefinition;
+use com\github\tncrazvan\catpaw\qb\tools\Column;
 use com\github\tncrazvan\catpaw\qb\tools\CoreEntity;
 
 #[\Attribute]
 class Entity extends CoreEntity implements AttributeInterface{
     use CoreAttributeDefinition;
     private array $columns = [];
+    private array $columnsForInsert = [];
+    private array $columnsForUpdate = [];
+    private array $columnsForSelect = [];
     private array $primaryKeys = [];
     private string $tableName = '';
+    public const ALL = 0;
+    public const FOR_INSERT = 1;
+    public const FOR_UPDATE = 2;
+    public const FOR_SELECT = 3;
 
     public function __construct(string $tableName = '') {
         $this->tableName = $tableName;
     }
 
-    public function columns():array{
+    public function columns(int $domain = 0):array{
+        switch($domain){
+            case static::FOR_INSERT:
+                return $this->columnsForInsert;
+            case static::FOR_UPDATE:
+                return $this->columnsForUpdate;
+            case static::FOR_SELECT:
+                return $this->columnsForSelect;
+        }
         return $this->columns;
     }
+
     public function primaryKeys():array{
         return $this->primaryKeys;
     }
@@ -29,6 +46,15 @@ class Entity extends CoreEntity implements AttributeInterface{
     public function setColumns(array $columns):void{
         $this->columns = $columns;
     }
+    public function setColumnsForInsert(array $columns):void{
+        $this->columnsForInsert = $columns;
+    }
+    public function setColumnsForUpdate(array $columns):void{
+        $this->columnsForUpdate = $columns;
+    }
+    public function setColumnsForSelect(array $columns):void{
+        $this->columnsForSelect = $columns;
+    }
 
     public function setPrimaryKeys(array $primaryKeys):void{
         $this->primaryKeys = $primaryKeys;
@@ -36,5 +62,16 @@ class Entity extends CoreEntity implements AttributeInterface{
 
     public function setTableName(string $tableName):void{
         $this->tableName = $tableName;
+    }
+
+    public function ignoreColumnForDomain(string $colName, int $domain):void{
+        switch($domain){
+            case static::FOR_INSERT:
+                unset($this->columnsForInsert[$colName]);
+            break;
+            case static::FOR_UPDATE:
+                unset($this->columnsForInsert[$colName]);
+            break;
+        }
     }
 }

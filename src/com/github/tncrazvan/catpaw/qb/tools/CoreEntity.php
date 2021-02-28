@@ -7,14 +7,15 @@ use com\github\tncrazvan\catpaw\qb\traits\EntitySyncFromProps;
 abstract class CoreEntity extends EntityDefinition{
     use EntitySyncFromProps;
 
-    private array $savedColumns = [];
-    private array $aliasColumns = [];
+    protected array $savedColumns = [];
+    protected array $aliasColumns = [];
+    
     public function __construct(){
         //static::_sync_entity_columns_from_props($this);
     }
     
-    public function reset_columns():void{
-        foreach($this->columns() as $name => &$type){
+    public function reset_columns(int $domain = 0):void{
+        foreach($this->columns($domain) as $name => &$type){
             $this->savedColumns[$name] = new Column($name,$type,false,(\in_array($name,$this->primaryKeys()))?true:false);
             $this->config($this->savedColumns[$name]);
         }
@@ -26,16 +27,26 @@ abstract class CoreEntity extends EntityDefinition{
      * Get the columns of this entity
      * @return array an array of Column objects
      */
-    public function &getEntityColumns():array{
-        return $this->savedColumns;
+    public function &getEntityColumns(int $domain = 0):array{
+        $columns = [];
+        foreach($this->columns($domain) as $name => &$column){
+            if(isset($this->savedColumns[$name]))
+                $columns[$name] = $this->savedColumns[$name];
+        }
+        return $columns;
     }
 
     /**
      * Get the columns of this entity
      * @return array an array of Column objects
      */
-    public function &getEntityAliasColumns():array{
-        return $this->aliasColumns;
+    public function &getEntityAliasColumns(int $domain = 0):array{
+        $columns = [];
+        foreach($this->columns($domain) as $name => &$column){
+            if(isset($this->aliasColumns[$name]))
+                $columns[$name] = $this->aliasColumns[$name];
+        }
+        return $columns;
     }
 
     /**
