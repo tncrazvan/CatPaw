@@ -1,5 +1,5 @@
 <?php
-namespace app;
+namespace examples;
 
 use com\github\tncrazvan\catpaw\attributes\Entry;
 use com\github\tncrazvan\catpaw\attributes\Filter;

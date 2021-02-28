@@ -8,6 +8,7 @@ use com\github\tncrazvan\catpaw\qb\tools\CoreEntity;
 use com\github\tncrazvan\catpaw\qb\tools\Repository;
 use com\github\tncrazvan\catpaw\qb\tools\QueryConst;
 use com\github\tncrazvan\catpaw\qb\tools\QueryBuilder;
+use com\github\tncrazvan\catpaw\tools\helpers\Entity;
 
 trait Join{
     //private $joins = [];
@@ -27,7 +28,7 @@ trait Join{
         if($as !== null){
             $this->add(QueryConst::AS);
             $this->add($as);
-            $columnsRef = &$entity->getEntityAliasColumns();
+            $columnsRef = &$entity->getEntityAliasColumns(Entity::FOR_SELECT);
             $columns = $columnsRef;
             foreach($columns as $key => &$column){
                 $columnsRef[$as.QueryConst::PERIOD.$key] = $column; 
@@ -123,7 +124,7 @@ trait Join{
 
         if(!$and) $this->add(QueryConst::ON);
         $this->add($columnName);
-        $operation = $callback->run($entity->getEntityColumns()[$columnName]);
+        $operation = $callback->run($entity->getEntityColumns(Entity::FOR_SELECT)[$columnName]);
         $this->add($operation->toString());
         return $this;
     }

@@ -8,6 +8,7 @@ use com\github\tncrazvan\catpaw\qb\tools\CoreEntity;
 use com\github\tncrazvan\catpaw\qb\tools\QueryBuilder;
 use com\github\tncrazvan\catpaw\qb\tools\interfaces\IntoCallback;
 use com\github\tncrazvan\catpaw\qb\tools\QueryConst;
+use com\github\tncrazvan\catpaw\tools\helpers\Entity;
 
 trait Insert{
     private ?IntoCallback $default_into_callback = null;
@@ -51,7 +52,7 @@ trait Insert{
         $entity_r = Factory::make($classname);
         $this->add(QueryConst::INTO);
         $this->add($entity_r->tableName());
-        $this->mapColumns($entity_r->getEntityColumns());
+        $this->mapColumns($entity_r->getEntityColumns(Entity::FOR_INSERT));
         if($cloning){
             $clone = clone($object);
             $results = $callback->run($clone);
@@ -97,7 +98,7 @@ trait Insert{
      * @return QueryBuilder the QueryBuilder
      */
     private function value(CoreEntity $entity, object &$object):QueryBuilder{
-        $columns = &$entity->getEntityColumns();
+        $columns = &$entity->getEntityColumns(Entity::FOR_INSERT);
         $random = '';
         $vname = '';
         $this->add(QueryConst::PARENTHESIS_LEFT);

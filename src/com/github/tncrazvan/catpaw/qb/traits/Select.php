@@ -5,6 +5,7 @@ namespace com\github\tncrazvan\catpaw\qb\traits;
 use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 use com\github\tncrazvan\catpaw\qb\tools\QueryBuilder;
 use com\github\tncrazvan\catpaw\qb\tools\QueryConst;
+use com\github\tncrazvan\catpaw\tools\helpers\Entity;
 
 trait Select{
 
@@ -15,7 +16,7 @@ trait Select{
      */
     public function select(string $classname):QueryBuilder{
         $entity_r = Factory::make($classname);
-        $this->selectColumns(...\array_keys($entity_r->columns()));
+        $this->selectColumns(...\array_keys($entity_r->columns(Entity::FOR_SELECT)));
         $this->from($classname);
         return $this;
     }

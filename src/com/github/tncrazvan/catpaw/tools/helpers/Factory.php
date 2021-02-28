@@ -6,6 +6,9 @@ use com\github\tncrazvan\catpaw\attributes\ApplicationScoped;
 use com\github\tncrazvan\catpaw\attributes\AttributeResolver;
 use com\github\tncrazvan\catpaw\attributes\database\Column;
 use com\github\tncrazvan\catpaw\attributes\database\Id;
+use com\github\tncrazvan\catpaw\attributes\database\IgnoreInsert;
+use com\github\tncrazvan\catpaw\attributes\database\IgnoreSelect;
+use com\github\tncrazvan\catpaw\attributes\database\IgnoreUpdate;
 use com\github\tncrazvan\catpaw\tools\helpers\Entity;
 use com\github\tncrazvan\catpaw\attributes\Entry;
 use com\github\tncrazvan\catpaw\attributes\Extend;
@@ -74,6 +77,9 @@ class Factory{
         $tableName = $entity->tableName();
         $entity->setTableName($tableName!==''?$tableName:\strtolower($reflection_class->getShortName()));
         $columns = [];
+        $columnsForInsert = [];
+        $columnsForUpdate = [];
+        $columnsForSelect = [];
         $pks = [];
         foreach($reflection_class->getProperties() as $reflection_property){
             $id = Id::findByProperty($reflection_property);
@@ -95,6 +101,14 @@ class Factory{
                 }
                 $columns[$colName] = $colType;
                 $pks[] = $colName;
+                $ignoreInsert = IgnoreInsert::findByProperty($reflection_property);
+                $ignoreUpdate = IgnoreUpdate::findByProperty($reflection_property);
+                $ignoreSelect = IgnoreSelect::findByProperty($reflection_property);
+                
+                if(!$ignoreInsert) $columnsForInsert[$colName] = $columns[$colName];
+                if(!$ignoreUpdate) $columnsForUpdate[$colName] = $columns[$colName];
+                if(!$ignoreSelect) $columnsForSelect[$colName] = $columns[$colName];
+                
             }else{
                 $column = Column::findByProperty($reflection_property);
                 if($column){
@@ -114,11 +128,21 @@ class Factory{
                         }
                     }
                     $columns[$colName] = $colType;
+                    $ignoreInsert = IgnoreInsert::findByProperty($reflection_property);
+                    $ignoreUpdate = IgnoreUpdate::findByProperty($reflection_property);
+                    $ignoreSelect = IgnoreSelect::findByProperty($reflection_property);
+                    
+                    if(!$ignoreInsert) $columnsForInsert[$colName] = $columns[$colName];
+                    if(!$ignoreUpdate) $columnsForUpdate[$colName] = $columns[$colName];
+                    if(!$ignoreSelect) $columnsForSelect[$colName] = $columns[$colName];
                 }
             }
         }
         
         $entity->setColumns($columns);
+        $entity->setColumnsForInsert($columnsForInsert);
+        $entity->setColumnsForUpdate($columnsForUpdate);
+        $entity->setColumnsForSelect($columnsForSelect);
         $entity->setPrimaryKeys($pks);
         $entity->reset_columns();
         

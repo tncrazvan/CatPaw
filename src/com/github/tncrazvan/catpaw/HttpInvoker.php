@@ -53,7 +53,7 @@ class HttpInvoker{
         $__PATH_PARAMS__ = Meta::$PATH_PARAMS[$http_method][$http_path]??null;
 
         $__FILTER__ = Meta::$FILTERS[$http_method][$http_path]??null;
-
+        $_recovered_body = null;
         if($__FILTER__){
             foreach($__FILTER__ as $classname => &$filter_item_function){
                 $__ARGS__ = Meta::$FILTERS_ARGS[$http_method][$http_path][$classname]??null;
@@ -67,6 +67,7 @@ class HttpInvoker{
                     $http_path,
                     $http_params,
                     $ctype,
+                    $_recovered_body,
                     $request,
                     $__CONSUMES__,
                     $__PRODUCES__,
@@ -114,6 +115,7 @@ class HttpInvoker{
             $http_path,
             $http_params,
             $ctype,
+            $_recovered_body,
             $request,
             $__CONSUMES__,
             $__PRODUCES__,
@@ -131,6 +133,7 @@ class HttpInvoker{
         string &$http_path,
         array &$http_params,
         string &$ctype,
+        mixed &$_recovered_body,
         ServerRequestInterface $request,
         ?Consumes $__CONSUMES__,
         ?Produces $__PRODUCES__,
@@ -169,6 +172,7 @@ class HttpInvoker{
                 if($__ARG__ instanceof \ReflectionParameter){
                     $this->inject(
                         $request,
+                        $_recovered_body,
                         $__CONSUMES__,
                         $ctype,
                         $__PATH_PARAMS__,
@@ -414,6 +418,7 @@ class HttpInvoker{
 
     private function inject(
         ServerRequestInterface $request,
+        mixed &$_recovered_body,
         ?Consumes $__CONSUMES__,
         string &$ctype,
         ?array $__PATH_PARAMS__,
@@ -493,8 +498,10 @@ class HttpInvoker{
                             $usingSession = true;
                             $args[] = &$this->session($http_headers, $sessionId);
                         }else if($__CONSUMES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
-                            $b = $request->getBody()->getContents();
-                            $args[] = BodyParser::parse($b,$ctype,null,true);
+                            if($_recovered_body === null)
+                                $_recovered_body = $request->getBody()->getContents();
+                                
+                            $args[] = BodyParser::parse($_recovered_body,$ctype,null,true);
                         }else if( !$__CONSUMES__ )
                             throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
                         else
@@ -505,7 +512,10 @@ class HttpInvoker{
                 case 'string':
                     if( $__CONSUMES__ ) 
                         if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
-                            $args[] = $request->getBody()->getContents();
+                            if($_recovered_body === null)
+                                $_recovered_body = $request->getBody()->getContents();
+
+                            $args[] = &$_recovered_body;
                         }else
                             throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
                     else
@@ -514,10 +524,11 @@ class HttpInvoker{
                 case 'int':
                     if( $__CONSUMES__ ) 
                         if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
-                            $b = $request->getBody()->getContents();
-                            if(\is_numeric($b))
-                                $args[] = (int) $b;
-                            else{
+                            if($_recovered_body === null)
+                                $_recovered_body = $request->getBody()->getContents();
+                            if(\is_numeric($_recovered_body)){
+                                $args[] = (int) $_recovered_body;
+                            }else{
                                 throw new Exception('Body was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
                             }
                         }else
@@ -528,10 +539,11 @@ class HttpInvoker{
                 case 'float':
                     if( $__CONSUMES__ ) 
                         if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
-                            $b = $request->getBody()->getContents();
-                            if(\is_numeric($b))
-                                $args[] = (float) $b;
-                            else{
+                            if($_recovered_body === null)
+                                $_recovered_body = $request->getBody()->getContents();
+                            if(\is_numeric($_recovered_body)){
+                                $args[] = (float) $_recovered_body;
+                            }else{
                                 throw new Exception('Body was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
                             }
                         }else
@@ -565,8 +577,10 @@ class HttpInvoker{
                     if($__ARGS_ATTRIBUTES__) 
                         if($__ARGS_ATTRIBUTES__[$name][Body::class]??false){
                             if( $__CONSUMES__ ){
-                                $b = $request->getBody()->getContents();
-                                $args[] = BodyParser::parse($b,$ctype,$classname);
+                                if($_recovered_body === null)
+                                    $_recovered_body = $request->getBody()->getContents();
+
+                                $args[] = BodyParser::parse($_recovered_body,$ctype,$classname);
                             } else
                                 throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
                         }else if($__ARGS_ATTRIBUTES__[$name][Inject::class]??false){
