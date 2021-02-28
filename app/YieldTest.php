@@ -9,9 +9,7 @@ use React\Promise\Promise;
 class YieldTest{
     #[GET]
     public function test():\Generator|string{
-        $user = yield new Promise(function($r){
-            $r("my cool username");
-        });
+        $user = yield new Promise(fn($r)=>$r("my cool username"));
         return $user;
     }
 }
