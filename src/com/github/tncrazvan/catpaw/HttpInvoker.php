@@ -4,7 +4,8 @@ namespace com\github\tncrazvan\catpaw;
 use com\github\tncrazvan\catpaw\attributes\Body;
 use com\github\tncrazvan\catpaw\attributes\Consumes;
 use com\github\tncrazvan\catpaw\attributes\Filter;
-use com\github\tncrazvan\catpaw\attributes\http\Headers;
+use com\github\tncrazvan\catpaw\attributes\http\RequestHeaders;
+use com\github\tncrazvan\catpaw\attributes\http\ResponseHeaders;
 use com\github\tncrazvan\catpaw\attributes\Inject;
 use Exception;
 use React\Http\Message\Response;
@@ -490,10 +491,12 @@ class HttpInvoker{
             switch($classname){
                 case 'array':
                     if($__ARGS_ATTRIBUTES__)
-                        if($__ARGS_ATTRIBUTES__[$name][Headers::class]??false){
+                        if($__ARGS_ATTRIBUTES__[$name][ResponseHeaders::class]??false){
                             if($optional)
                                 $http_headers = $__ARG__->getDefaultValue();
                             $args[] = &$http_headers;
+                        }else if($__ARGS_ATTRIBUTES__[$name][RequestHeaders::class]??false){
+                            $args[] = $request->getHeaders();
                         }else if($__ARGS_ATTRIBUTES__[$name][Session::class]??false) {
                             $usingSession = true;
                             $args[] = &$this->session($http_headers, $sessionId);
@@ -505,7 +508,7 @@ class HttpInvoker{
                         }else if( !$__CONSUMES__ )
                             throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
                         else
-                            throw new Exception("Body could not be unserialized to type \"$classname\".");
+                            throw new Exception("Parameter \"$name\" could not be unserialized to type \"$classname\".");
                     else
                         throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
                     break;

@@ -5,6 +5,8 @@ use com\github\tncrazvan\catpaw\attributes\Body;
 use com\github\tncrazvan\catpaw\attributes\Consumes;
 use com\github\tncrazvan\catpaw\attributes\Entry;
 use com\github\tncrazvan\catpaw\attributes\FilterItem;
+use com\github\tncrazvan\catpaw\attributes\http\RequestHeaders;
+use com\github\tncrazvan\catpaw\attributes\http\ResponseHeaders;
 use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\tools\Status;
 use examples\models\Task;
@@ -20,7 +22,7 @@ class AssertTaskExists{
         #[Status] Status $status,
         #[Inject] TaskRepository $repo
     ){
-        $dbtask = $repo->findById($task->id);   
+        $dbtask = $repo->findById($task->id);
         if(!$dbtask){
             $status->setCode(Status::PRECONDITION_FAILED);
             return "Task {$task->id} does not exist.";

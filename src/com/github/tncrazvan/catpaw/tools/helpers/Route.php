@@ -4,9 +4,10 @@ namespace com\github\tncrazvan\catpaw\tools\helpers;
 use com\github\tncrazvan\catpaw\attributes\Body;
 use com\github\tncrazvan\catpaw\attributes\Consumes;
 use com\github\tncrazvan\catpaw\attributes\Filter;
-use com\github\tncrazvan\catpaw\attributes\http\Headers;
+use com\github\tncrazvan\catpaw\attributes\http\ResponseHeaders;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
 use com\github\tncrazvan\catpaw\attributes\http\PathParam;
+use com\github\tncrazvan\catpaw\attributes\http\RequestHeaders;
 use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\attributes\Produces;
 use com\github\tncrazvan\catpaw\attributes\Repository;
@@ -88,7 +89,8 @@ class Route{
         foreach($params as $param){
             $path_param = PathParam::findByParameter($param);
             Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
-            Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
+            Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][ResponseHeaders::class] = ResponseHeaders::findByParameter($param);
+            Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][RequestHeaders::class] = RequestHeaders::findByParameter($param);
             Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
             Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Session::class] = Session::findByParameter($param);
             Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
@@ -123,7 +125,8 @@ class Route{
         foreach($params as $param){
             $path_param = PathParam::findByParameter($param);
             Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
-            Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Headers::class] = Headers::findByParameter($param);
+            Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][ResponseHeaders::class] = ResponseHeaders::findByParameter($param);
+            Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][RequestHeaders::class] = RequestHeaders::findByParameter($param);
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Status::class] = Status::findByParameter($param);
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Session::class] = Session::findByParameter($param);
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
@@ -150,7 +153,8 @@ class Route{
             Meta::$FILTERS_ATTRIBUTES[$method][$path][$classname][Produces::class] = new Produces("text/plain");
 
         foreach($params as $param){
-            Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Headers::class] = Headers::findByParameter($param);
+            Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][ResponseHeaders::class] = ResponseHeaders::findByParameter($param);
+            Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][RequestHeaders::class] = RequestHeaders::findByParameter($param);
             Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Status::class] = Status::findByParameter($param);
             Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Session::class] = Session::findByParameter($param);
             Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Body::class] = Body::findByParameter($param);
