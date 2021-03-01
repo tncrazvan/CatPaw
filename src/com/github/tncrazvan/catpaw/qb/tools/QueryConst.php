@@ -33,6 +33,7 @@ interface QueryConst{
         LESSER_THAN_EQUAL = '<=',
         EQUALS = '=',
         LIKE = 'like',
-        BETWEEN = 'between'
+        BETWEEN = 'between',
+        LIMIT = 'limit'
     ;
 }

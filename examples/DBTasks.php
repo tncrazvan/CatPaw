@@ -8,8 +8,10 @@ use com\github\tncrazvan\catpaw\attributes\http\methods\GET;
 use com\github\tncrazvan\catpaw\attributes\http\methods\POST;
 use com\github\tncrazvan\catpaw\attributes\http\methods\PUT;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
+use com\github\tncrazvan\catpaw\attributes\http\PathParam;
 use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\attributes\Produces;
+use com\github\tncrazvan\catpaw\qb\tools\Page;
 use com\github\tncrazvan\catpaw\tools\Status;
 use examples\filters\AssertTaskExists;
 use examples\filters\CheckTaskTitleLength;
@@ -63,7 +65,7 @@ class DBTasks{
     ):string{
         $task->id = null;                   //make sure the `id` is null so that mysql
                                             //will provide this value instead.
-        $repo->save($task);
+        $repo->insert($task);
         $status->setCode(Status::CREATED);
         return "Task added.";
     }
@@ -90,5 +92,29 @@ class DBTasks{
         $task->updated = time();
         $repo->update($task);           //update task
         return "Task updated.";
+    }
+
+
+
+    #[GET]
+    #[Path("/{id}")]
+    #[Produces("application/json")]
+    public function findById(
+        #[Inject] TaskRepository $repo,
+        #[PathParam] int $id
+    ):Generator|Task{
+        $task = yield $repo->findById($id);
+        return $task;
+    }
+
+    #[GET]
+    #[Path("/page/{offset}")]
+    #[Produces("application/json")]
+    public function findTasksPage(
+        #[Inject] TaskRepository $repo,
+        #[PathParam] int $offset
+    ):Generator|array{
+        $tasks = yield $repo->findAll(Page::of($offset,3));
+        return $tasks;
     }
 }

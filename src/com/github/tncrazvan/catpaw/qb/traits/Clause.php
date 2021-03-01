@@ -98,7 +98,7 @@ trait Clause{
         $operation = $callback->run($column);
         $value = $operation->getValue();
         $length = count($value);
-        $random = \uniqid();
+        $random = \uniqid().'c';
 
         //clean "." in binding name because
         //the "." character in binding a name triggers a SQL syntax error
