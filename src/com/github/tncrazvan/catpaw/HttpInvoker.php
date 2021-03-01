@@ -446,7 +446,7 @@ class HttpInvoker{
                     $args[] = \filter_var($http_params[$name] || false, FILTER_VALIDATE_BOOLEAN);
                 break;
                 case 'string':
-                    if(!$http_params[$name]){
+                    if(!isset($http_params[$name])){
                         if($optional)
                             $args[] = $__ARG__->getDefaultValue();
                         else
@@ -455,7 +455,7 @@ class HttpInvoker{
                         $args[] = &$http_params[$name];
                 break;
                 case 'int':
-                    if(!$http_params[$name]){
+                    if(!isset($http_params[$name])){
                         if($optional)
                             $args[] = $__ARG__->getDefaultValue();
                         else
@@ -469,7 +469,7 @@ class HttpInvoker{
                     }
                 break;
                 case 'float':
-                    if(!$http_params[$name]){
+                    if(!isset($http_params[$name])){
                         if($optional)
                             $args[] = $__ARG__->getDefaultValue();
                         else

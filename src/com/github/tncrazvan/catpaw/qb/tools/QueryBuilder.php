@@ -12,6 +12,7 @@ use com\github\tncrazvan\catpaw\qb\traits\Delete;
 use com\github\tncrazvan\catpaw\qb\traits\Insert;
 use com\github\tncrazvan\catpaw\qb\traits\Select;
 use com\github\tncrazvan\catpaw\qb\traits\Update;
+use com\github\tncrazvan\catpaw\qb\traits\Limit;
 use React\EventLoop\LoopInterface;
 use React\Promise\Promise;
 
@@ -24,6 +25,7 @@ class QueryBuilder implements QueryConst{
     use Insert;
     use Update;
     use Delete;
+    use Limit;
     
     //private $database;
     private $query = "";

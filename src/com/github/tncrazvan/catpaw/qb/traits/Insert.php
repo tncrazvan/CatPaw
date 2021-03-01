@@ -106,7 +106,7 @@ trait Insert{
         foreach($columns as $name => &$o){
             if($first) $first = false;
             else $this->add(QueryConst::COMMA);
-            $random = \uniqid();
+            $random = \uniqid().'i';
             $this->add(QueryConst::VARIABLE_SYMBOL.$name.$random);
             $type = $columns[$name]->getColumnType();
             switch($type){

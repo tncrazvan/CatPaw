@@ -35,7 +35,7 @@ trait Update{
             }
             $this->add($name);
             $this->add(QueryConst::EQUALS);
-            $random = \uniqid();
+            $random = \uniqid().'u';
             $this->add(QueryConst::VARIABLE_SYMBOL.$name.$random);
             $type = $columns[$name]->getColumnType();
             switch($type){

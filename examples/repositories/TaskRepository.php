@@ -2,10 +2,11 @@
 namespace examples\repositories;
 
 use com\github\tncrazvan\catpaw\attributes\Repository;
-use com\github\tncrazvan\catpaw\qb\operations\Operation;
 use com\github\tncrazvan\catpaw\qb\tools\Column;
+use com\github\tncrazvan\catpaw\qb\tools\Page;
 use com\github\tncrazvan\catpaw\tools\helpers\CrudRepository;
 use examples\models\Task;
+use React\Promise\Promise;
 
 #[Repository(Task::class)]          //specify that this is a repository for the `Todo` model.
                                     //this way the repository knows whic tables to query and what
