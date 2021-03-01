@@ -20,7 +20,7 @@ class AssertTaskExists{
         #[Status] Status $status,
         #[Inject] TaskRepository $repo
     ){
-        $dbtask = $repo->findById($task->id);   
+        $dbtask = $repo->findById($task->id);
         if(!$dbtask){
             $status->setCode(Status::PRECONDITION_FAILED);
             return "Task {$task->id} does not exist.";

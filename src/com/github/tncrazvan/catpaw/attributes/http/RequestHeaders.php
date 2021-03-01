@@ -5,6 +5,6 @@ use com\github\tncrazvan\catpaw\attributes\interfaces\AttributeInterface;
 use com\github\tncrazvan\catpaw\attributes\traits\CoreAttributeDefinition;
 
 #[\Attribute]
-class Headers implements AttributeInterface{
+class RequestHeaders implements AttributeInterface{
     use CoreAttributeDefinition;
 }

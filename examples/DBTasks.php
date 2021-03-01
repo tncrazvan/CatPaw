@@ -9,6 +9,7 @@ use com\github\tncrazvan\catpaw\attributes\http\methods\POST;
 use com\github\tncrazvan\catpaw\attributes\http\methods\PUT;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
 use com\github\tncrazvan\catpaw\attributes\http\PathParam;
+use com\github\tncrazvan\catpaw\attributes\http\RequestHeaders;
 use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\attributes\Produces;
 use com\github\tncrazvan\catpaw\qb\tools\Page;
