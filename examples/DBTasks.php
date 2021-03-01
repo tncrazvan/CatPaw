@@ -4,7 +4,6 @@ namespace examples;
 use com\github\tncrazvan\catpaw\attributes\Body;
 use com\github\tncrazvan\catpaw\attributes\Consumes;
 use com\github\tncrazvan\catpaw\attributes\Filter;
-use com\github\tncrazvan\catpaw\attributes\http\ResponseHeaders;
 use com\github\tncrazvan\catpaw\attributes\http\methods\GET;
 use com\github\tncrazvan\catpaw\attributes\http\methods\POST;
 use com\github\tncrazvan\catpaw\attributes\http\methods\PUT;
