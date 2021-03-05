@@ -1,7 +1,6 @@
 <?php
 namespace com\github\tncrazvan\catpaw\tools\helpers;
 
-use Closure;
 use com\github\tncrazvan\catpaw\attributes\ApplicationScoped;
 use com\github\tncrazvan\catpaw\attributes\AttributeResolver;
 use com\github\tncrazvan\catpaw\attributes\database\Column;
@@ -12,7 +11,6 @@ use com\github\tncrazvan\catpaw\attributes\database\IgnoreUpdate;
 use com\github\tncrazvan\catpaw\tools\helpers\Entity;
 use com\github\tncrazvan\catpaw\attributes\Entry;
 use com\github\tncrazvan\catpaw\attributes\Extend;
-use com\github\tncrazvan\catpaw\attributes\Filter;
 use com\github\tncrazvan\catpaw\attributes\FilterItem;
 use com\github\tncrazvan\catpaw\attributes\http\methods\COPY;
 use com\github\tncrazvan\catpaw\attributes\http\methods\DELETE;
@@ -40,9 +38,7 @@ use com\github\tncrazvan\catpaw\tools\helpers\CrudRepository;
 use Exception;
 use React\EventLoop\LoopInterface;
 
-class Factory{
-    private static array $tables = [];
-    
+class Factory{    
     private static array $singletons = [];
 
     private static array $args = [];
@@ -55,11 +51,11 @@ class Factory{
         static::$singletons[$classname] = $object;
     }
 
-    public static function setConstructorInjector(string $classname,?Closure $args=null):void{
+    public static function setConstructorInjector(string $classname,?\Closure $args=null):void{
         static::$args[$classname] = $args;
     }
 
-    public static function getConstructorInjector(string $classname):Closure{
+    public static function getConstructorInjector(string $classname):\Closure{
         if(!isset(static::$args[$classname])) return fn()=>[];
         return static::$args[$classname];
     }
@@ -166,7 +162,7 @@ class Factory{
         
         $reflection_class = new \ReflectionClass($classname);
 
-        if($reflection_class->isInterface())
+        if($reflection_class->isInterface() || AttributeResolver::issetClassAttribute($reflection_class,\Attribute::class))
             return null;
 
         if(count($reflection_class->getAttributes()) === 0) return null;
@@ -179,11 +175,11 @@ class Factory{
         }
 
 
-        $service = $entity?null:Service::findByClass($reflection_class);
-        $repository = $service||$entity?null:Repository::findByClass($reflection_class);
-        $singleton = $entity?null:Singleton::findByClass($reflection_class);
-        $filter_item = $entity?null:FilterItem::findByClass($reflection_class);
-        $scoped = $entity?null:ApplicationScoped::findByClass($reflection_class);
+        $service = Service::findByClass($reflection_class);
+        $repository = $service?null:Repository::findByClass($reflection_class);
+        $singleton = Singleton::findByClass($reflection_class);
+        $filter_item = FilterItem::findByClass($reflection_class);
+        $scoped = ApplicationScoped::findByClass($reflection_class);
 
         $methods = $reflection_class->getMethods();
         $args = isset(static::$args[$classname])? static::$args[$classname]() : [];

@@ -3,6 +3,8 @@ namespace com\github\tncrazvan\catpaw\config;
 
 abstract class MainConfiguration{
 
+
+    public string $webroot = __DIR__.'/public';
     /**
      * Full uri in the form of **{scheme?}{hostname}:{port}** the server should use.
      * For example **127.0.0.1:8080** or **tcp://127.0.0.1:8080**.
