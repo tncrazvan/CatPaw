@@ -23,6 +23,7 @@ use com\github\tncrazvan\catpaw\attributes\http\methods\VIEW;
 use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 
 class AttributeResolver{
+
     public static function getClassAttributeArguments(\ReflectionClass $reflection_class, string $attribute_name):?array{
         $attributes = $reflection_class->getAttributes();
         foreach($attributes as &$attribute){
@@ -33,11 +34,11 @@ class AttributeResolver{
         return null;
     }
 
-    public static function issetClassAttribute(\ReflectionClass $reflection_class, string ...$attribute_names):bool{
+    public static function issetClassAttribute(\ReflectionClass $reflection_class, string $attribute_name):bool{
         $attributes = $reflection_class->getAttributes();
         foreach($attributes as &$attribute){
-            $classname = $attribute->getName();
-            if(in_array($classname,$attribute_names,true))
+            $local_attribute_name = $attribute->getName();
+            if($local_attribute_name === $attribute_name)
                 return true;
             
         }

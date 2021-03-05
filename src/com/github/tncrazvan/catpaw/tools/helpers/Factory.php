@@ -30,6 +30,7 @@ use com\github\tncrazvan\catpaw\attributes\http\methods\UNLOCK;
 use com\github\tncrazvan\catpaw\attributes\http\methods\VIEW;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
 use com\github\tncrazvan\catpaw\attributes\Inject;
+use com\github\tncrazvan\catpaw\attributes\metadata\Meta;
 use com\github\tncrazvan\catpaw\attributes\Repository;
 use com\github\tncrazvan\catpaw\attributes\Service;
 use com\github\tncrazvan\catpaw\attributes\Singleton;
@@ -236,7 +237,7 @@ class Factory{
         
         if($scoped)
             static::entry($methods,$instance,$classname);
-
+        
         return $instance;
     }
 

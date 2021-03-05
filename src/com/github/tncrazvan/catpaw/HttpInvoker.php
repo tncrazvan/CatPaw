@@ -3,10 +3,10 @@ namespace com\github\tncrazvan\catpaw;
 
 use com\github\tncrazvan\catpaw\attributes\Body;
 use com\github\tncrazvan\catpaw\attributes\Consumes;
+use com\github\tncrazvan\catpaw\attributes\Filter;
 use com\github\tncrazvan\catpaw\attributes\http\RequestHeaders;
 use com\github\tncrazvan\catpaw\attributes\http\ResponseHeaders;
 use com\github\tncrazvan\catpaw\attributes\Inject;
-use com\github\tncrazvan\catpaw\attributes\metadata\CustomAttribute;
 use Exception;
 use React\Http\Message\Response;
 use Psr\Http\Message\ServerRequestInterface;
@@ -17,12 +17,12 @@ use com\github\tncrazvan\catpaw\tools\helpers\Factory;
 use com\github\tncrazvan\catpaw\attributes\metadata\Meta;
 use com\github\tncrazvan\catpaw\attributes\Request;
 use com\github\tncrazvan\catpaw\attributes\sessions\Session;
-use com\github\tncrazvan\catpaw\attributes\templates\Twig;
 use com\github\tncrazvan\catpaw\sessions\SessionManager;
 use com\github\tncrazvan\catpaw\tools\helpers\parsing\BodyParser;
 use com\github\tncrazvan\catpaw\tools\helpers\Yielder;
 use com\github\tncrazvan\catpaw\tools\XMLSerializer;
 use React\EventLoop\LoopInterface;
+use React\Promise\Promise;
 use React\Promise\PromiseInterface;
 
 class HttpInvoker{
@@ -61,11 +61,6 @@ class HttpInvoker{
                 //$__ARGS_NAMES__ = Meta::$FUNCTIONS_ARGS_NAMES[$http_method][$http_path]??null;
                 $__ARGS_ATTRIBUTES__ = Meta::$FILTERS_ARGS_ATTRIBUTES[$http_method][$http_path][$classname]??null;
 
-                if($__ARGS_ATTRIBUTES__)
-                    $__TWIG__ = $__ARGS_ATTRIBUTES__[Twig::class];
-                else 
-                    $__TWIG__ = null;
-
                 $__CONSUMES__ = Meta::$FILTERS_ATTRIBUTES[$http_method][$http_path][$classname][Consumes::class]??null;
                 $__PRODUCES__ = Meta::$FILTERS_ATTRIBUTES[$http_method][$http_path][$classname][Produces::class]??null;
                 $result = $this->next(
@@ -82,8 +77,7 @@ class HttpInvoker{
                     $__ARGS_ATTRIBUTES__,
                     $filter_item_function,
                     null,
-                    null,
-                    $__TWIG__
+                    null
                 );
                 if($result !== null)
                     return $result;
@@ -116,10 +110,6 @@ class HttpInvoker{
             }
         }
         
-        if($__ARGS_ATTRIBUTES__)
-            $__TWIG__ = $__ARGS_ATTRIBUTES__[Twig::class];
-        else 
-            $__TWIG__ = null;
 
         return $this->next(
             $http_method,
@@ -135,8 +125,7 @@ class HttpInvoker{
             $__ARGS_ATTRIBUTES__,
             null,
             $__FUNCTION__,
-            $__METHOD__,
-            $__TWIG__
+            $__METHOD__
         );
     }
 
@@ -155,7 +144,6 @@ class HttpInvoker{
         ?\ReflectionFunction $__FILTER__,
         ?\ReflectionFunction $__FUNCTION__,
         ?\ReflectionMethod $__METHOD__,
-        ?Twig $__TWIG__
     ):mixed{
         if($__CONSUMES__){
             $cconsumed = 0;
@@ -180,16 +168,13 @@ class HttpInvoker{
         $status = new Status();
         $http_headers = [];
         $params = array();
-
         if($__ARGS__)
             foreach($__ARGS__ as &$__ARG__){
                 if($__ARG__ instanceof \ReflectionParameter){
-                    $param = null;
                     $this->inject(
                         $request,
                         $_recovered_body,
                         $__CONSUMES__,
-                        $__PRODUCES__,
                         $ctype,
                         $__PATH_PARAMS__,
                         $__ARG__,
@@ -197,12 +182,10 @@ class HttpInvoker{
                         $status,
                         $http_headers,
                         $http_params,
-                        $param,
+                        $params,
                         $sessionId,
-                        $usingSession,
-                        $__TWIG__
+                        $usingSession
                     );
-                    $params[] = &$param;
                 }
             }
 
@@ -215,6 +198,7 @@ class HttpInvoker{
             $body = $__FUNCTION__->invokeArgs($params);
         }else{
             $__CLASS__ = Meta::$KLASS[$http_method][$http_path]??null;
+
             $__METHOD__->setAccessible(true);
             $instance = Factory::make($__CLASS__->getName());
             //$fname = $reflection_http_method->getName();
@@ -437,7 +421,6 @@ class HttpInvoker{
         ServerRequestInterface $request,
         mixed &$_recovered_body,
         ?Consumes $__CONSUMES__,
-        ?Produces $__PRODUCES__,
         string &$ctype,
         ?array $__PATH_PARAMS__,
         \ReflectionParameter $__ARG__,
@@ -445,41 +428,42 @@ class HttpInvoker{
         Status &$status,
         array &$http_headers,
         array &$http_params,
-        mixed &$param,
+        array &$args,
         ?string &$sessionId,
-        bool &$usingSession,
-        ?Twig $__TWIG__
+        bool &$usingSession
    ):void{
         $optional = $__ARG__->isOptional();
         $name = $__ARG__->getName();
         $type = $__ARG__->getType();
-        if(!$type)
+        if(!$type){
+            $args[] = null;
             return;
-        
+        }
         $classname = $type->getName();
+        static $param = null;
         if($__PATH_PARAMS__ && isset($__PATH_PARAMS__[$name])){
             switch($classname){
                 case 'bool':
-                    $param = \filter_var($http_params[$name] || false, FILTER_VALIDATE_BOOLEAN);
+                    $args[] = \filter_var($http_params[$name] || false, FILTER_VALIDATE_BOOLEAN);
                 break;
                 case 'string':
                     if(!isset($http_params[$name])){
                         if($optional)
-                            $param = $__ARG__->getDefaultValue();
+                            $args[] = $__ARG__->getDefaultValue();
                         else
                             throw new Exception(static::__could_not_inject($name,$classname,"Name \"$name\" does not math with any path parameter."));
                     }else
-                        $param = &$http_params[$name];
+                        $args[] = &$http_params[$name];
                 break;
                 case 'int':
                     if(!isset($http_params[$name])){
                         if($optional)
-                            $param = $__ARG__->getDefaultValue();
+                            $args[] = $__ARG__->getDefaultValue();
                         else
                             throw new Exception(static::__could_not_inject($name,$classname,"Name \"$name\" does not math with any path parameter."));
                     }else{
                         if(\is_numeric($http_params[$name]))
-                            $param = (int) $http_params[$name];
+                            $args[] = (int) $http_params[$name];
                         else{
                             throw new Exception('Parameter {'.$name.'} was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
                         }
@@ -488,12 +472,12 @@ class HttpInvoker{
                 case 'float':
                     if(!isset($http_params[$name])){
                         if($optional)
-                            $param = $__ARG__->getDefaultValue();
+                            $args[] = $__ARG__->getDefaultValue();
                         else
                             throw new Exception(static::__could_not_inject($name,$classname,"Name \"$name\" does not math with any path parameter."));
                     }else{
                         if(\is_numeric($http_params[$name]))
-                            $param = (float) $http_params[$name];
+                            $args[] = (float) $http_params[$name];
                         else{
                             throw new Exception('Parameter {'.$name.'} was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
                         }
@@ -510,17 +494,17 @@ class HttpInvoker{
                         if($__ARGS_ATTRIBUTES__[$name][ResponseHeaders::class]??false){
                             if($optional)
                                 $http_headers = $__ARG__->getDefaultValue();
-                            $param = &$http_headers;
+                            $args[] = &$http_headers;
                         }else if($__ARGS_ATTRIBUTES__[$name][RequestHeaders::class]??false){
-                            $param = $request->getHeaders();
+                            $args[] = $request->getHeaders();
                         }else if($__ARGS_ATTRIBUTES__[$name][Session::class]??false) {
                             $usingSession = true;
-                            $param = &$this->session($http_headers, $sessionId);
+                            $args[] = &$this->session($http_headers, $sessionId);
                         }else if($__CONSUMES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
                             if($_recovered_body === null)
                                 $_recovered_body = $request->getBody()->getContents();
                                 
-                            $param = BodyParser::parse($_recovered_body,$ctype,null,true);
+                            $args[] = BodyParser::parse($_recovered_body,$ctype,null,true);
                         }else if( !$__CONSUMES__ )
                             throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
                         else
@@ -534,7 +518,7 @@ class HttpInvoker{
                             if($_recovered_body === null)
                                 $_recovered_body = $request->getBody()->getContents();
 
-                            $param = &$_recovered_body;
+                            $args[] = &$_recovered_body;
                         }else
                             throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
                     else
@@ -546,7 +530,7 @@ class HttpInvoker{
                             if($_recovered_body === null)
                                 $_recovered_body = $request->getBody()->getContents();
                             if(\is_numeric($_recovered_body)){
-                                $param = (int) $_recovered_body;
+                                $args[] = (int) $_recovered_body;
                             }else{
                                 throw new Exception('Body was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
                             }
@@ -561,7 +545,7 @@ class HttpInvoker{
                             if($_recovered_body === null)
                                 $_recovered_body = $request->getBody()->getContents();
                             if(\is_numeric($_recovered_body)){
-                                $param = (float) $_recovered_body;
+                                $args[] = (float) $_recovered_body;
                             }else{
                                 throw new Exception('Body was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
                             }
@@ -574,56 +558,43 @@ class HttpInvoker{
                     if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Status::class]??false){
                         if($optional)
                             $status = $__ARG__->getDefaultValue();
-                        $param = &$status;
+                        $args[] = &$status;
                     }else
                         throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
                     break;
                 case ServerRequestInterface::class:
                     if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Request::class]??false){
-                        $param = $request;
+                        $args[] = $request;
                     }else
                         throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
                     break;
                 case LoopInterface::class:
                     $loop = Factory::make(LoopInterface::class);
                     if($loop){
-                        $param = $loop;
+                        $args[] = $loop;
                     }else{
                         throw new Exception(static::__could_not_inject($name,$classname,"The loop onject doesn't seem to be set as an application singleton."));
                     }
                     break;
                 default:
-                    $i = 0;
-                    if($__TWIG__){
-                        if( $__PRODUCES__ ){
-                            $__TWIG__->setContext($http_params);
-                            $param = $__TWIG__;
-                            $i++;
-                        } else
-                            throw new Exception(static::__could_not_inject($name,$classname,'When using Twig, you need to specify a Content-Type to produce.'));
-                    }
-                    if($__ARGS_ATTRIBUTES__){
+                    if($__ARGS_ATTRIBUTES__) 
                         if($__ARGS_ATTRIBUTES__[$name][Body::class]??false){
                             if( $__CONSUMES__ ){
                                 if($_recovered_body === null)
                                     $_recovered_body = $request->getBody()->getContents();
 
-                                $param = BodyParser::parse($_recovered_body,$ctype,$classname);
-                                $i++;
+                                $args[] = BodyParser::parse($_recovered_body,$ctype,$classname);
                             } else
                                 throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
-                        }
-                        if($__ARGS_ATTRIBUTES__[$name][Inject::class]??false){
+                        }else if($__ARGS_ATTRIBUTES__[$name][Inject::class]??false){
                             $item = Factory::make($classname);
-                            if($item){
-                                $param = &$item;
-                                $i++;
-                            }else
+                            if($item)
+                                $args[] = &$item;
+                            else
                                 throw new Exception(static::__could_not_inject($name,$classname));
-                        }
-                        if($i === 0)
-                            throw new Exception(static::__could_not_inject($name,$classname,"None of the attributes on \"$name\" seem to have any effect."));
-                    }else 
+                        } else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
+                    else 
                         throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
                 break;
             }
