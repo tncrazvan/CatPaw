@@ -85,8 +85,8 @@ class Route{
             $attributes = $reflection_param->getAttributes();
             foreach($attributes as &$attribute){
                 $paramName = $attribute->getName();
-                $instance = new $classname(...$attribute->getArguments());
-                if(PathParam::class === $classname){
+                $instance = new $paramName(...$attribute->getArguments());
+                if(PathParam::class === $paramName){
                     Meta::$PATH_PARAMS[$method][$path][$paramName] = $instance;
                 }else{
                     Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$paramName] = $instance;
@@ -173,7 +173,7 @@ class Route{
             $attributes = $reflection_param->getAttributes();
             foreach($attributes as &$attribute){
                 $paramName = $attribute->getName();
-                $instance = new $classname(...$attribute->getArguments());
+                $instance = new $paramName(...$attribute->getArguments());
                 Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$paramName] = $instance;
                 
             }
