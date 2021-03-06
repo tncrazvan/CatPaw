@@ -22,7 +22,6 @@ use com\github\tncrazvan\catpaw\tools\helpers\parsing\BodyParser;
 use com\github\tncrazvan\catpaw\tools\helpers\Yielder;
 use com\github\tncrazvan\catpaw\tools\XMLSerializer;
 use React\EventLoop\LoopInterface;
-use React\Promise\Promise;
 use React\Promise\PromiseInterface;
 
 class HttpInvoker{
