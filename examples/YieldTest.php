@@ -48,6 +48,6 @@ class YieldTest{
                 yield fn() =>
                     yield fn() => "!!!!!";
                     
-        return "This works the same as the /yield/2 endpoint except that is uses the \"yield fn()=>...\" sugar syntax$t";
+        return "This works the same as the /yield/2 endpoint except that it uses the \"yield fn()=>...\" sugar syntax$t";
     }
 }
