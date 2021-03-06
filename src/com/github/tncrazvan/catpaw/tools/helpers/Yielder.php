@@ -18,7 +18,7 @@ class Yielder{
         }else if($result instanceof \Generator){
             static::await($loop,$value,static::toPromise($loop,$result),$r);
         }else if($result instanceof \Closure){
-            $result = $result($loop);
+            $result = $result();
             static::next($result,$loop,$value,$r);
         }else{
             $value->send($result);
