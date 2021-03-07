@@ -215,26 +215,26 @@ class HttpInvoker{
             return $body;
 
         if($body instanceof PromiseInterface){
-            return $body->then(function($b) use(
-                &$http_method,
-                &$http_path,
-                &$__PRODUCES__,
-                &$http_headers,
-                &$status,
-                &$request,
-            ){
-                if($b instanceof Response)
-                    return $b;
-                return $this->reply(
+            return $body->then(
+                fn(&$b)=>$this->resolve(
+                    $b,
                     $http_method,
                     $http_path,
                     $__PRODUCES__,
                     $http_headers,
                     $status,
-                    $request,
-                    $b
-                );
-            });
+                    $request
+                ),
+                fn(&$b)=>$this->resolve(
+                    $b,
+                    $http_method,
+                    $http_path,
+                    $__PRODUCES__,
+                    $http_headers,
+                    $status,
+                    $request
+                )
+            );
         }else{
             return $this->reply(
                 $http_method,
@@ -246,6 +246,28 @@ class HttpInvoker{
                 $body
             );
         }
+    }
+
+    private function resolve(
+        mixed &$b,
+        string &$http_method,
+        string &$http_path,
+        Produces &$__PRODUCES__,
+        array &$http_headers,
+        Status &$status,
+        ServerRequestInterface &$request
+    ){
+        if($b instanceof Response)
+            return $b;
+        return $this->reply(
+            $http_method,
+            $http_path,
+            $__PRODUCES__,
+            $http_headers,
+            $status,
+            $request,
+            $b
+        );
     }
 
     private function reply(

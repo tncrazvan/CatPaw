@@ -119,7 +119,7 @@ class QueryBuilder implements QueryConst{
             $stm->bindValue(self::VARIABLE_SYMBOL.$key,$value,$type);
         }
         //echo "\n\nQUERY: {$this->query}\n\n\n";
-        try{
+        // try{
             if (!$stm->execute()) 
                 throw new \Exception(json_encode($stm->errorInfo()));
             
@@ -144,11 +144,11 @@ class QueryBuilder implements QueryConst{
                         $this->fetch($stm,$result,$resolve);
                     });
                 }
-        }catch(\Throwable $e){
-            return new Promise(function($resolve,$rejected) use(&$e){
-                $rejected($e);
-            });
-        }
+        // }catch(\Throwable $e){
+        //     return new Promise(function($resolve,$rejected) use(&$e){
+        //         $rejected($e);
+        //     });
+        // }
         
         return new Promise(function($resolve) use(&$results){
             $resolve($results);
