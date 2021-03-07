@@ -50,6 +50,7 @@ class QueryBuilder implements QueryConst{
         $this->alias = [];
         $this->firstMatch = true;
         $this->current_classname = '';
+        $this->ordered = 0;
     }
 
     /**
