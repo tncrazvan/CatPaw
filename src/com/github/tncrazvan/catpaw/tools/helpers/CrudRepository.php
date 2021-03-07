@@ -58,7 +58,7 @@ class CrudRepository{
         return $query->fetchObject($this->classname);
     }
 
-    public function delete(object $object):void{
+    public function delete(object $object):Promise{
         $query = 
         $this
             ->builder
@@ -67,11 +67,11 @@ class CrudRepository{
 
         $this->match_pks($query,$object);
         
-        $query->execute(-1);
+        return $query->execute(-1);
     }
 
-    public function insert(object $object):void{
-        $this
+    public function insert(object $object):Promise{
+        return $this
             ->builder
             ->insert($this->classname, $object)
             ->execute(-1);
