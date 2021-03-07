@@ -63,10 +63,10 @@ class DBTasks{
         #[Inject] TaskRepository $repo,
         #[Status] Status $status,
         #[Body] Task $task                  //cast the data into a `Task` object.
-    ):string{
+    ):Generator|string{
         $task->id = null;                   //make sure the `id` is null so that mysql
                                             //will provide this value instead.
-        $repo->insert($task);
+        yield $repo->insert($task);
         $status->setCode(Status::CREATED);
         return "Task added.";
     }
@@ -91,7 +91,7 @@ class DBTasks{
         #[Body] Task $task
     ):Generator|string{
         $task->updated = time();
-        $repo->update($task);           //update task
+        yield $repo->update($task);           //update task
         return "Task updated.";
     }
 
