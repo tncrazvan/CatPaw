@@ -27,6 +27,12 @@ class TaskRepository
                 ;
         }
 
+        public function findById(int $id):Promise{
+            $task = new Task();
+            $task->id = $id;
+            return $this->find($task);
+        }
+
         //nothing else to do here, this repository already has the basic
         //functionalities of CRUD because of `extends CrudRepository`.
 }
