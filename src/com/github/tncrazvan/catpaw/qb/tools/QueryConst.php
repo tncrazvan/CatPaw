@@ -34,6 +34,9 @@ interface QueryConst{
         EQUALS = '=',
         LIKE = 'like',
         BETWEEN = 'between',
-        LIMIT = 'limit'
+        LIMIT = 'limit',
+        ORDER_BY = 'order by',
+        DESC = 'desc',
+        ASC = 'asc'
     ;
 }
