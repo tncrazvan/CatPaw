@@ -27,11 +27,18 @@ class Yielder{
     }
 
     private static function await(LoopInterface $loop, \Generator $value, PromiseInterface $promise, \Closure $r):void{
-        $promise->then(function($result) use(&$loop,&$r,&$value){
-            $loop->futureTick(function() use(&$loop,&$r,&$value,&$result){
-                static::next($result,$loop,$value,$r);
-            });
-        });
+        $promise->then(
+            fn($result)=> $loop->futureTick(    //resolve
+                fn()=>static::next(
+                    $result,$loop,$value,$r
+                )
+            ),
+            fn($result)=> $loop->futureTick(    //reject
+                fn()=>static::next(
+                    $result,$loop,$value,$r
+                )
+            )
+        );
     }
 
 
