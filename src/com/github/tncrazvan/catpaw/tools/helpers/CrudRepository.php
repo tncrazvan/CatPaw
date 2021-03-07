@@ -29,9 +29,11 @@ class CrudRepository{
             $this->builder
             ->select($this->classname)
             ->where();
-
+        $j = 0;
         foreach($this->id as &$i){
+            if($j > 0) $query->and();
             $query->column($i, Column::EQUALS, $id);
+            $j++;
         }
 
         if($page)
@@ -46,9 +48,11 @@ class CrudRepository{
             ->builder
             ->delete($this->classname)
             ->where();
-
+        $j = 0;
         foreach($this->id as &$i){
+            if($j > 0) $query->and();
             $query->column($i, Column::EQUALS, $id);
+            $j++;
         }
         
         $query->execute(-1);
