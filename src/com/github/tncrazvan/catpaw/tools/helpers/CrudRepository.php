@@ -65,7 +65,7 @@ class CrudRepository{
             ->delete($this->classname)
             ->where();
 
-        $this->match_pks($query,$model);
+        $this->match_pks($query,$object);
         
         $query->execute(-1);
     }
