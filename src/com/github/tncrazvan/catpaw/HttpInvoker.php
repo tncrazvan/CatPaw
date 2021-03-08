@@ -4,6 +4,7 @@ namespace com\github\tncrazvan\catpaw;
 use com\github\tncrazvan\catpaw\attributes\Body;
 use com\github\tncrazvan\catpaw\attributes\Consumes;
 use com\github\tncrazvan\catpaw\attributes\Filter;
+use com\github\tncrazvan\catpaw\attributes\http\Query;
 use com\github\tncrazvan\catpaw\attributes\http\RequestHeaders;
 use com\github\tncrazvan\catpaw\attributes\http\ResponseHeaders;
 use com\github\tncrazvan\catpaw\attributes\Inject;
@@ -461,7 +462,6 @@ class HttpInvoker{
             return;
         }
         $classname = $type->getName();
-        static $param = null;
         if($__PATH_PARAMS__ && isset($__PATH_PARAMS__[$name])){
             switch($classname){
                 case 'bool':
@@ -509,116 +509,135 @@ class HttpInvoker{
                 break;
             }
         }else{
-            switch($classname){
-                case 'array':
-                    if($__ARGS_ATTRIBUTES__)
-                        if($__ARGS_ATTRIBUTES__[$name][ResponseHeaders::class]??false){
+            if($__ARGS_ATTRIBUTES__ && ($attributes = $__ARGS_ATTRIBUTES__[$name]??false)){
+                switch($classname){
+                    case 'array':
+                        if($attributes[ResponseHeaders::class]??false){
                             if($optional)
                                 $http_headers = $__ARG__->getDefaultValue();
                             $args[] = &$http_headers;
-                        }else if($__ARGS_ATTRIBUTES__[$name][RequestHeaders::class]??false){
+                        }else if($attributes[RequestHeaders::class]??false){
                             $args[] = $request->getHeaders();
-                        }else if($__ARGS_ATTRIBUTES__[$name][Session::class]??false) {
+                        }else if($attributes[Session::class]??false) {
                             $usingSession = true;
                             $args[] = &$this->session($http_headers, $sessionId);
-                        }else if($__CONSUMES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
-                            if($_recovered_body === null)
-                                $_recovered_body = $request->getBody()->getContents();
-                                
-                            $args[] = BodyParser::parse($_recovered_body,$ctype,null,true);
-                        }else if( !$__CONSUMES__ )
-                            throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
-                        else
-                            throw new Exception("Parameter \"$name\" could not be unserialized to type \"$classname\".");
-                    else
-                        throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
-                    break;
-                case 'string':
-                    if( $__CONSUMES__ ) 
-                        if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
-                            if($_recovered_body === null)
-                                $_recovered_body = $request->getBody()->getContents();
-
-                            $args[] = &$_recovered_body;
-                        }else
-                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
-                    else
-                        throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
-                    break;
-                case 'int':
-                    if( $__CONSUMES__ ) 
-                        if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
-                            if($_recovered_body === null)
-                                $_recovered_body = $request->getBody()->getContents();
-                            if(\is_numeric($_recovered_body)){
-                                $args[] = (int) $_recovered_body;
-                            }else{
-                                throw new Exception('Body was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
-                            }
-                        }else
-                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
-                    else
-                        throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
-                    break;
-                case 'float':
-                    if( $__CONSUMES__ ) 
-                        if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Body::class]??false){
-                            if($_recovered_body === null)
-                                $_recovered_body = $request->getBody()->getContents();
-                            if(\is_numeric($_recovered_body)){
-                                $args[] = (float) $_recovered_body;
-                            }else{
-                                throw new Exception('Body was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
-                            }
-                        }else
-                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
-                    else
-                        throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
-                    break;
-                case Status::class:
-                    if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Status::class]??false){
-                        if($optional)
-                            $status = $__ARG__->getDefaultValue();
-                        $args[] = &$status;
-                    }else
-                        throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
-                    break;
-                case ServerRequestInterface::class:
-                    if($__ARGS_ATTRIBUTES__ && $__ARGS_ATTRIBUTES__[$name][Request::class]??false){
-                        $args[] = $request;
-                    }else
-                        throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
-                    break;
-                case LoopInterface::class:
-                    $loop = Factory::make(LoopInterface::class);
-                    if($loop){
-                        $args[] = $loop;
-                    }else{
-                        throw new Exception(static::__could_not_inject($name,$classname,"The loop onject doesn't seem to be set as an application singleton."));
-                    }
-                    break;
-                default:
-                    if($__ARGS_ATTRIBUTES__) 
-                        if($__ARGS_ATTRIBUTES__[$name][Body::class]??false){
+                        }else if($attributes[Body::class]??false){
                             if( $__CONSUMES__ ){
                                 if($_recovered_body === null)
                                     $_recovered_body = $request->getBody()->getContents();
-
+                                    
+                                $args[] = BodyParser::parse($_recovered_body,$ctype,null,true);
+                            }else
+                                throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
+                        }else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any valid attribute on \"$name\"."));
+                    break;
+                    case 'string':
+                        if($attributes[Body::class]??false){
+                            if( $__CONSUMES__ ){
+                                if($_recovered_body === null)
+                                    $_recovered_body = $request->getBody()->getContents();
+    
+                                $args[] = &$_recovered_body;
+                            }else
+                                throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
+                        }else if(($query = $attributes[Query::class])){
+                            $args[] = $request->getQueryParams()[$query->getName()];
+                        }else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any valid attribute on \"$name\"."));
+                    break;
+                    case 'int':
+                        if($attributes[Body::class]??false){
+                            if( $__CONSUMES__ ){
+                                if($_recovered_body === null)
+                                    $_recovered_body = $request->getBody()->getContents();
+                                if(\is_numeric($_recovered_body)){
+                                    $args[] = (int) $_recovered_body;
+                                }else{
+                                    throw new Exception('Body was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
+                                }
+                            }else
+                                throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
+                        }else if(($query = $attributes[Query::class])){
+                            $value = $request->getQueryParams()[$query->getName()];
+                            if(\is_numeric($value))
+                                $args[] = $value;
+                            else
+                                throw new Exception("Query $name was expected to be numeric, but non numeric value has been provided instead:$value");
+                        }else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any valid attribute on \"$name\"."));
+                    break;
+                    case 'bool':
+                        if(($query = $attributes[Query::class]??false)){
+                            $value = \filter_var($request->getQueryParams()[$query->getName()] || false, FILTER_VALIDATE_BOOLEAN);
+                            $args[] = $value;
+                        }else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any valid attribute on \"$name\"."));
+                    break;
+                    case 'float':
+                        if($attributes[Body::class]??false){
+                            if( $__CONSUMES__ ){
+                                if($_recovered_body === null)
+                                    $_recovered_body = $request->getBody()->getContents();
+                                if(\is_numeric($_recovered_body)){
+                                    $args[] = (float) $_recovered_body;
+                                }else{
+                                    throw new Exception('Body was expected to be numeric, but non numeric value has been provided instead:'.$http_params[$name]);
+                                }
+                            }else
+                                throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));                            
+                        }else if(($query = $attributes[Query::class])){
+                            $value = $request->getQueryParams()[$query->getName()];
+                            if(\is_numeric($value))
+                                $args[] = $value;
+                            else
+                                throw new Exception("Query $name was expected to be numeric, but non numeric value has been provided instead:$value");
+                        }else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any valid attribute on \"$name\"."));
+                    break;
+                    case Status::class:
+                        if($attributes[Status::class]??false){
+                            if($optional)
+                                $status = $__ARG__->getDefaultValue();
+                            $args[] = &$status;
+                        }else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any valid attribute on \"$name\"."));
+                        break;
+                    case ServerRequestInterface::class:
+                        if($attributes[Request::class]??false){
+                            $args[] = $request;
+                        }else
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any valid attribute on \"$name\"."));
+                    break;
+                    case LoopInterface::class:
+                        $loop = Factory::make(LoopInterface::class);
+                        if($loop){
+                            $args[] = $loop;
+                        }else{
+                            throw new Exception(static::__could_not_inject($name,$classname,"The loop onject doesn't seem to be set as an application singleton."));
+                        }
+                    break;
+                    default:
+                        if($attributes[Body::class]??false){
+                            if( $__CONSUMES__ ){
+                                if($_recovered_body === null)
+                                    $_recovered_body = $request->getBody()->getContents();
+    
                                 $args[] = BodyParser::parse($_recovered_body,$ctype,$classname);
                             } else
                                 throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
-                        }else if($__ARGS_ATTRIBUTES__[$name][Inject::class]??false){
+                        }else if($attributes[Inject::class]??false){
                             $item = Factory::make($classname);
                             if($item)
                                 $args[] = &$item;
                             else
                                 throw new Exception(static::__could_not_inject($name,$classname));
                         } else
-                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
-                    else 
-                        throw new Exception(static::__could_not_inject($name,$classname,"Could not find any attribute on \"$name\"."));
-                break;
-            }
+                            throw new Exception(static::__could_not_inject($name,$classname,"Could not find any valid attribute on \"$name\"."));
+                    break;
+                }
+            }else
+                throw new Exception(static::__could_not_inject($name,$classname,"Could not find any valid attribute on \"$name\"."));
         }
     }
 

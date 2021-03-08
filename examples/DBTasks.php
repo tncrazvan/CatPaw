@@ -9,6 +9,7 @@ use com\github\tncrazvan\catpaw\attributes\http\methods\POST;
 use com\github\tncrazvan\catpaw\attributes\http\methods\PUT;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
 use com\github\tncrazvan\catpaw\attributes\http\PathParam;
+use com\github\tncrazvan\catpaw\attributes\http\Query;
 use com\github\tncrazvan\catpaw\attributes\http\RequestHeaders;
 use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\attributes\Produces;
@@ -109,11 +110,11 @@ class DBTasks{
     }
 
     #[GET]
-    #[Path("/page/{offset}")]
+    #[Path("/page")]
     #[Produces("application/json")]
     public function findTasksPage(
         #[Inject] TaskRepository $repo,
-        #[PathParam] int $offset
+        #[Query("offset")] int $offset
     ):Generator|array{
         $tasks = yield $repo->page(Page::of($offset,3))->findAll(Task::class);
         return $tasks;
