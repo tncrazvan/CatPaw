@@ -210,8 +210,45 @@ class HttpInvoker{
             $this->sm->saveSession($this->sm->getSession($sessionId));
 
         if($body instanceof \Generator)
-            $body = Yielder::toPromise($this->loop,$body);
+            return Yielder::toPromise($this->loop,$body)->then(function($result) use(
+                &$http_method,
+                &$http_path,
+                &$__PRODUCES__,
+                &$http_headers,
+                &$status,
+                &$request
+            ){
+                return $this->generateResponse(
+                    $result,
+                    $http_method,
+                    $http_path,
+                    $__PRODUCES__,
+                    $http_headers,
+                    $status,
+                    $request
+                );
+            });
 
+        return $this->generateResponse(
+            $body,
+            $http_method,
+            $http_path,
+            $__PRODUCES__,
+            $http_headers,
+            $status,
+            $request
+        );
+    }
+
+    private function generateResponse(
+        &$body,
+        &$http_method,
+        &$http_path,
+        &$__PRODUCES__,
+        &$http_headers,
+        &$status,
+        &$request
+    ):mixed{
         if($body instanceof Response)
             return $body;
 
@@ -306,18 +343,18 @@ class HttpInvoker{
         int &$len
     ):array{
         if( $__CONSUMES__ )
-            $produced = \preg_split( '/\s*,\s*/',$__CONSUMES__->getContentType() );
+            $consumed = \preg_split( '/\s*,\s*/',$__CONSUMES__->getContentType() );
         else
-            $produced = [];
+            $consumed = [];
         
         $len = 0;
-        $produced = array_filter($produced,function($type) use(&$len){
+        $consumed = array_filter($consumed,function($type) use(&$len){
             if(empty($type))
                 return false;
             $len++;
             return true;
         });
-        return $produced;
+        return $consumed;
     }
 
     private static function &filterProducedContentType(
@@ -325,10 +362,10 @@ class HttpInvoker{
         ?string $ctype,
         int &$len
     ):array{
-        if( $__PRODUCES__ && !$ctype )
+        if( $__PRODUCES__ && (!$ctype || $ctype === '') )
             $produced = \preg_split( '/\s*,\s*/',$__PRODUCES__->getContentType() );
         else
-            $produced = \preg_split( '/\s*,\s*/',$ctype??'' );
+            $produced = \preg_split( '/\s*,\s*/',$ctype??'text/plain' );
         
         $len = 0;
         $produced = array_filter($produced,function($type) use(&$len){
