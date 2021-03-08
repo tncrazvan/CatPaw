@@ -6,14 +6,14 @@ use com\github\tncrazvan\catpaw\tools\helpers\SimpleQueryBuilder;
 use com\github\tncrazvan\catpaw\qb\tools\Column;
 use com\github\tncrazvan\catpaw\qb\tools\Page;
 use com\github\tncrazvan\catpaw\qb\tools\QueryBuilder;
-use React\Promise\Promise;
+use React\Promise\PromiseInterface;
 
 class CrudRepository{
     private ?Page $pg = null;
     #[Inject]
     protected SimpleQueryBuilder $builder;
 
-    public function findAll(string $classname = ''):Promise{
+    public function findAll(string $classname = ''):PromiseInterface{
         $query = 
                 $this
                 ->builder
@@ -41,7 +41,7 @@ class CrudRepository{
         return $this;
     }
 
-    public function find(object $object):Promise{
+    public function find(object $object):PromiseInterface{
         $query = 
             $this->builder
             ->select($this->classname)
@@ -58,7 +58,7 @@ class CrudRepository{
         return $query->fetchObjects($this->classname)->then(fn($items)=>$items[0]??null);
     }
 
-    public function delete(object $object):Promise{
+    public function delete(object $object):PromiseInterface{
         $query = 
         $this
             ->builder
@@ -70,10 +70,11 @@ class CrudRepository{
         return $query->execute(-1);
     }
 
-    public function insert(object $object):Promise{
+    public function insert(object $object):PromiseInterface{
         return $this
             ->builder
             ->insert($this->classname, $object)
-            ->execute(-1);
+            ->execute(-1)
+            ->then(fn()=>$this->builder->getDatabase()->lastInsertId());
     }
 }
