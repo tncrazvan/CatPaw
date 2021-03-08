@@ -542,7 +542,12 @@ class HttpInvoker{
                             }else
                                 throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
                         }else if(($query = $attributes[Query::class])){
-                            $args[] = $request->getQueryParams()[$query->getName()];
+                            $key = $query->getName();
+                            $queries = $request->getQueryParams();
+                            if(!isset($queries[$key]) && $optional)
+                                $queries[$key] = $__ARG__->getDefaultValue();
+                                
+                            $args[] = &$queries[$key];
                         }else
                             throw new Exception(static::__could_not_inject($name,$classname,"Could not find any valid attribute on \"$name\"."));
                     break;
@@ -559,18 +564,30 @@ class HttpInvoker{
                             }else
                                 throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));
                         }else if(($query = $attributes[Query::class])){
-                            $value = $request->getQueryParams()[$query->getName()];
+                            $key = $query->getName();
+                            $queries = $request->getQueryParams();
+                            if(!isset($queries[$key]) && $optional)
+                                $queries[$key] = $__ARG__->getDefaultValue();
+
+                            $value = &$queries[$key];
                             if(\is_numeric($value))
-                                $args[] = $value;
+                                $args[] = (int) $value;
                             else
                                 throw new Exception("Query $name was expected to be numeric, but non numeric value has been provided instead:$value");
+                            
                         }else
                             throw new Exception(static::__could_not_inject($name,$classname,"Could not find any valid attribute on \"$name\"."));
                     break;
                     case 'bool':
                         if(($query = $attributes[Query::class]??false)){
-                            $value = \filter_var($request->getQueryParams()[$query->getName()] || false, FILTER_VALIDATE_BOOLEAN);
+                            $key = $query->getName();
+                            $queries = $request->getQueryParams();
+                            if(!isset($queries[$key]) && $optional)
+                                $queries[$key] = $__ARG__->getDefaultValue();
+
+                            $value = \filter_var($queries[$key] || false, FILTER_VALIDATE_BOOLEAN);
                             $args[] = $value;
+                            
                         }else
                             throw new Exception(static::__could_not_inject($name,$classname,"Could not find any valid attribute on \"$name\"."));
                     break;
@@ -587,11 +604,17 @@ class HttpInvoker{
                             }else
                                 throw new Exception(static::__could_not_inject($name,$classname,'Specify a Content-Type to consume.'));                            
                         }else if(($query = $attributes[Query::class])){
-                            $value = $request->getQueryParams()[$query->getName()];
+                            $key = $query->getName();
+                            $queries = $request->getQueryParams();
+                            if(!isset($queries[$key]) && $optional)
+                                $queries[$key] = $__ARG__->getDefaultValue();
+                            
+                            $value = &$queries[$key];
                             if(\is_numeric($value))
-                                $args[] = $value;
+                                $args[] = (float) $value;
                             else
                                 throw new Exception("Query $name was expected to be numeric, but non numeric value has been provided instead:$value");
+                            
                         }else
                             throw new Exception(static::__could_not_inject($name,$classname,"Could not find any valid attribute on \"$name\"."));
                     break;

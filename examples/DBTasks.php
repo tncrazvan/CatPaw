@@ -114,7 +114,7 @@ class DBTasks{
     #[Produces("application/json")]
     public function findTasksPage(
         #[Inject] TaskRepository $repo,
-        #[Query("offset")] int $offset
+        #[Query("offset")] int $offset = 0
     ):Generator|array{
         $tasks = yield $repo->page(Page::of($offset,3))->findAll(Task::class);
         return $tasks;
