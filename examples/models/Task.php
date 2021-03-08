@@ -1,10 +1,10 @@
 <?php
 namespace examples\models;
 
-use com\github\tncrazvan\catpaw\attributes\database\Column;
-use com\github\tncrazvan\catpaw\attributes\database\Id;
-use com\github\tncrazvan\catpaw\attributes\database\IgnoreUpdate;
-use com\github\tncrazvan\catpaw\tools\helpers\Entity;
+use net\razshare\catpaw\attributes\database\Column;
+use net\razshare\catpaw\attributes\database\Id;
+use net\razshare\catpaw\attributes\database\IgnoreUpdate;
+use net\razshare\catpaw\tools\helpers\Entity;
 //use PDO;
 
 #[Entity]

@@ -1,12 +1,12 @@
 <?php
 namespace examples\filters;
 
-use com\github\tncrazvan\catpaw\attributes\Body;
-use com\github\tncrazvan\catpaw\attributes\Consumes;
-use com\github\tncrazvan\catpaw\attributes\Entry;
-use com\github\tncrazvan\catpaw\attributes\FilterItem;
-use com\github\tncrazvan\catpaw\attributes\Inject;
-use com\github\tncrazvan\catpaw\tools\Status;
+use net\razshare\catpaw\attributes\Body;
+use net\razshare\catpaw\attributes\Consumes;
+use net\razshare\catpaw\attributes\Entry;
+use net\razshare\catpaw\attributes\FilterItem;
+use net\razshare\catpaw\attributes\Inject;
+use net\razshare\catpaw\tools\Status;
 use examples\models\Task;
 use examples\repositories\TaskRepository;
 

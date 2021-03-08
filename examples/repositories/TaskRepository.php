@@ -1,10 +1,10 @@
 <?php
 namespace examples\repositories;
 
-use com\github\tncrazvan\catpaw\attributes\Repository;
-use com\github\tncrazvan\catpaw\qb\tools\Column;
-use com\github\tncrazvan\catpaw\qb\tools\Page;
-use com\github\tncrazvan\catpaw\tools\helpers\CrudRepository;
+use net\razshare\catpaw\attributes\Repository;
+use net\razshare\catpaw\qb\tools\Column;
+use net\razshare\catpaw\qb\tools\Page;
+use net\razshare\catpaw\tools\helpers\CrudRepository;
 use examples\models\Task;
 use React\Promise\Promise;
 

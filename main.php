@@ -1,10 +1,10 @@
 <?php
 require_once './vendor/autoload.php';
 
-use com\github\tncrazvan\catpaw\CatPaw;
-use com\github\tncrazvan\catpaw\config\MainConfiguration;
-use com\github\tncrazvan\catpaw\tools\helpers\Factory;
-use com\github\tncrazvan\catpaw\tools\helpers\SimpleQueryBuilder;
+use net\razshare\catpaw\CatPaw;
+use net\razshare\catpaw\config\MainConfiguration;
+use net\razshare\catpaw\tools\helpers\Factory;
+use net\razshare\catpaw\tools\helpers\SimpleQueryBuilder;
 use React\EventLoop\LoopInterface;
 
 //make a new loop and make it injectable

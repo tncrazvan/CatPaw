@@ -1,20 +1,20 @@
 <?php
 namespace examples;
 
-use com\github\tncrazvan\catpaw\attributes\Body;
-use com\github\tncrazvan\catpaw\attributes\Consumes;
-use com\github\tncrazvan\catpaw\attributes\Filter;
-use com\github\tncrazvan\catpaw\attributes\http\methods\GET;
-use com\github\tncrazvan\catpaw\attributes\http\methods\POST;
-use com\github\tncrazvan\catpaw\attributes\http\methods\PUT;
-use com\github\tncrazvan\catpaw\attributes\http\Path;
-use com\github\tncrazvan\catpaw\attributes\http\PathParam;
-use com\github\tncrazvan\catpaw\attributes\http\Query;
-use com\github\tncrazvan\catpaw\attributes\http\RequestHeaders;
-use com\github\tncrazvan\catpaw\attributes\Inject;
-use com\github\tncrazvan\catpaw\attributes\Produces;
-use com\github\tncrazvan\catpaw\qb\tools\Page;
-use com\github\tncrazvan\catpaw\tools\Status;
+use net\razshare\catpaw\attributes\Body;
+use net\razshare\catpaw\attributes\Consumes;
+use net\razshare\catpaw\attributes\Filter;
+use net\razshare\catpaw\attributes\http\methods\GET;
+use net\razshare\catpaw\attributes\http\methods\POST;
+use net\razshare\catpaw\attributes\http\methods\PUT;
+use net\razshare\catpaw\attributes\http\Path;
+use net\razshare\catpaw\attributes\http\PathParam;
+use net\razshare\catpaw\attributes\http\Query;
+use net\razshare\catpaw\attributes\http\RequestHeaders;
+use net\razshare\catpaw\attributes\Inject;
+use net\razshare\catpaw\attributes\Produces;
+use net\razshare\catpaw\qb\tools\Page;
+use net\razshare\catpaw\tools\Status;
 use examples\filters\AssertTaskExists;
 use examples\filters\CheckTaskTitleLength;
 use examples\models\Task;
