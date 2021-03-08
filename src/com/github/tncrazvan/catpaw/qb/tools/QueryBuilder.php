@@ -84,7 +84,7 @@ class QueryBuilder implements QueryConst{
      * Execute the prepared statement.
      * @return mixed the first result of the statement as class $classname
      */
-    public function fetchObject(string $classname):Promise{
+    public function fetchObjects(string $classname):Promise{
         return $this->execute(\PDO::FETCH_CLASS,$classname);
     }
 
@@ -96,15 +96,15 @@ class QueryBuilder implements QueryConst{
         return $this->execute(\PDO::FETCH_ASSOC);
     }
 
-    private function fetch(\PDOStatement $stm,array &$result, &$resolve):void{
-        $this->loop->futureTick(function() use(&$stm,&$resolve,&$result){
+    private function fetch(\PDOStatement $stm, array &$result, \Closure &$resolve, int $fetch_style):void{
+        $this->loop->futureTick(function() use(&$stm,&$resolve,&$result,&$fetch_style){
             $item = $stm->fetch();
             if(!$item) {
                 $resolve($result);
                 return;
             }
             $result[] = $item;
-            $this->fetch($stm,$result,$resolve);
+            $this->fetch($stm,$result,$resolve,$fetch_style);
         });
     }
 
@@ -127,26 +127,27 @@ class QueryBuilder implements QueryConst{
                 throw new \Exception(json_encode($stm->errorInfo()));
             
             if($fetch_style >= 0)
-            if($fetch_argument === null){
-                //results = $stm->fetchAll($fetch_style);
-                return new Promise(function($resolve) use(&$stm,&$fetch_style){
-                    $result = [];
-                    $stm->setFetchMode($fetch_style);
-                    $this->fetch($stm,$result,$resolve);
-                });
-            }else
-                if($fetch_style === \PDO::FETCH_CLASS){
-                    return new Promise(function($resolve) use(&$stm,&$fetch_argument){
-                        $results = $stm->fetchObject($fetch_argument);
-                        $resolve(!$results?null:$results);
+                if($fetch_argument === null){
+                    //results = $stm->fetchAll($fetch_style);
+                    return new Promise(function($resolve) use(&$stm,&$fetch_style){
+                        $result = [];
+                        $stm->setFetchMode($fetch_style);
+                        $this->fetch($stm,$result,$resolve,$fetch_style);
                     });
-                }else{
-                    $results = $stm->fetchAll($fetch_style,$fetch_argument);
-                    return new Promise(function($resolve) use(&$stm,&$fetch_style,&$fetch_argument){
-                        $stm->setFetchMode($fetch_style,$fetch_argument);
-                        $this->fetch($stm,$result,$resolve);
-                    });
-                }
+                }else
+                    // if($fetch_style === \PDO::FETCH_CLASS){
+                    //     return new Promise(function($resolve) use(&$stm,&$fetch_argument){
+                    //         $results = $stm->fetchObject($fetch_argument);
+                    //         $resolve(!$results?null:$results);
+                    //     });
+                    // }else{
+                        //$results = $stm->fetchAll($fetch_style,$fetch_argument);
+                        return new Promise(function($resolve) use(&$stm,&$fetch_style,&$fetch_argument){
+                            $result = [];
+                            $stm->setFetchMode($fetch_style,$fetch_argument);
+                            $this->fetch($stm,$result,$resolve,$fetch_style);
+                        });
+                    //}
         // }catch(\Throwable $e){
         //     return new Promise(function($resolve,$rejected) use(&$e){
         //         $rejected($e);
