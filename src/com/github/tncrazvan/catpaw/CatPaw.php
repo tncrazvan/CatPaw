@@ -87,15 +87,15 @@ class CatPaw{
         $params = [];
 
         //check if request matches any axposed endpoint and extract parameters
-        $localPath = static::usingPath( $method,$path,$params,Meta::$FUNCTIONS );
-        if(!$localPath)
-            $localPath = static::usingPath( $method,$path,$params,Meta::$METHODS );
+        $local_path = static::usingPath( $method,$path,$params,Meta::$FUNCTIONS );
+        if(!$local_path)
+            $local_path = static::usingPath( $method,$path,$params,Meta::$METHODS );
 
-        if($localPath === null)
+        if($local_path === null)
             return $invoker->invoke($request,$method,'@404',$params);
 
         try{
-            $result = $invoker->invoke($request,$method,$localPath,$params);
+            $result = $invoker->invoke($request,$method,$local_path,$params);
             return $result;
 
         }catch(\Throwable $e){
@@ -109,34 +109,48 @@ class CatPaw{
 
     const PATTERN_PARAM = '/(?<={).*(?=})/';
 
-    private static function usingPath(string $method, string &$requestedPath, array &$params, array &$_map):?string{
+    private static function usingPath(string $method, string &$requested_path, array &$params, array &$_map):?string{
         if(!isset($_map[$method])) 
             return null;
-        foreach($_map[$method] as $localPath => $item){
-            $localPieces = \explode('/',$localPath);
-            $requestedPieces = \explode('/',$requestedPath);
-            $max = \count($requestedPieces);
+        $candidate_params = [];
+        $candidate = '';
+        foreach($_map[$method] as $local_path => $item){
+            $local_pieces = \explode('/',$local_path);
+            $requested_pieces = \explode('/',$requested_path);
+            $max = \count($requested_pieces);
             $c = 0;
-            foreach($localPieces as $index => &$localPiece){
+            $is_pattern = false;
+            foreach($local_pieces as $index => &$local_piece){
                 if($max <= $index) {
                     if($c === $max)
                         return null;
                     continue;
                 }
 
-                $requestedPiece = $requestedPieces[$index];
+                $requested_piece = $requested_pieces[$index];
 
-                if(\preg_match(static::PATTERN_PARAM,$localPiece,$matches) && $matches && isset($matches[0])){
-                    $paramName = $matches[0];
-                    $paramsNames[] = $paramName;
-                    $params[$paramName] = $requestedPiece;
-                }else if($localPiece !== $requestedPiece){
+                if(\preg_match(static::PATTERN_PARAM,$local_piece,$matches) && $matches && isset($matches[0])){
+                    // $paramName = $matches[0];
+                    // $paramsNames[] = $paramName;
+                    // $params[$paramName] = $requestedPiece;
+                    if($candidate) break;
+                    $is_pattern = true;
+                    $candidate_params[$matches[0]] = $requested_piece;
+                }else if($local_piece !== $requested_piece){
                     continue;
                 }
                 $c++;
             }
-            if($c === $max)
-                return $localPath;
+            if($is_pattern){
+                $candidate = $local_path;
+            }else if($c === $max)
+                return $local_path;
+        }
+        if('' !== $candidate){
+            foreach($candidate_params as $key => &$value){
+                $params[$key] = $value;
+            }
+            return $candidate;
         }
         return null;
     }

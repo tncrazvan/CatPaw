@@ -7,6 +7,7 @@ use com\github\tncrazvan\catpaw\attributes\Filter;
 use com\github\tncrazvan\catpaw\attributes\http\ResponseHeaders;
 use com\github\tncrazvan\catpaw\attributes\http\Path;
 use com\github\tncrazvan\catpaw\attributes\http\PathParam;
+use com\github\tncrazvan\catpaw\attributes\http\Query;
 use com\github\tncrazvan\catpaw\attributes\http\RequestHeaders;
 use com\github\tncrazvan\catpaw\attributes\Inject;
 use com\github\tncrazvan\catpaw\attributes\Produces;
@@ -96,6 +97,7 @@ class Route{
             Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
             Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Request::class] = Request::findByParameter($param);
             Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Inject::class] = Inject::findByParameter($param);
+            Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Query::class] = Query::findByParameter($param);
         }
     }
     private static function initialize_function(
@@ -132,6 +134,7 @@ class Route{
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Request::class] = Request::findByParameter($param);
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Inject::class] = Inject::findByParameter($param);
+            Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Query::class] = Query::findByParameter($param);
         }
     }
     private static function initialize_filter(
@@ -160,6 +163,7 @@ class Route{
             Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Body::class] = Body::findByParameter($param);
             Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Request::class] = Request::findByParameter($param);
             Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Inject::class] = Inject::findByParameter($param);
+            Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Query::class] = Query::findByParameter($param);
         }
     }
     private static function initialize(
