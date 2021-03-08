@@ -1,5 +1,5 @@
 {
-	"name": "tncrazvan/catpaw",
+	"name": "razshare/catpaw",
 	"description": "A Php Http & WebSocket server",
 	"type": "library",
 	"license": "Apache-2.0",
@@ -14,7 +14,7 @@
 	],
 	"require": {
 		"php": ">=8.0",
-		"tncrazvan/asciitable": ">=1.0.4",
+		"razshare/asciitable": ">=1.0.4",
 		"react/react": "^1.0.1"
 	},
 	"config": {
