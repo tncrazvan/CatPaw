@@ -13,8 +13,8 @@
 	}
 	],
 	"require": {
-		"php": "^8.0",
-		"tncrazvan/asciitable": "^1.0.4",
+		"php": ">=8.0",
+		"tncrazvan/asciitable": ">=1.0.4",
 		"react/react": "^1.0.1"
 	},
 	"config": {
@@ -22,7 +22,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"com\\github\\tncrazvan\\catpaw\\":["src/com/github/tncrazvan/catpaw/"],
+			"net\\razshare\\catpaw\\":["src/net/razshare/catpaw/"],
 			"examples\\":["examples/"]
 		}
 	}
