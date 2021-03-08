@@ -13,7 +13,7 @@ class CrudRepository{
     #[Inject]
     protected SimpleQueryBuilder $builder;
 
-    public function findAll():Promise{
+    public function findAll(string $classname = ''):Promise{
         $query = 
                 $this
                 ->builder
@@ -23,8 +23,8 @@ class CrudRepository{
             $query->limit(...$this->pg->get());
             $this->pg = null;
         }
-
-        return $query->fetchAssoc();
+        
+        return $classname !== ''?$query->fetchObjects($classname):$query->fetchAssoc();
     }
 
     private function match_pks(QueryBuilder $query, object $model):void{
@@ -55,7 +55,7 @@ class CrudRepository{
             $this->pg = null;
         }
 
-        return $query->fetchObject($this->classname);
+        return $query->fetchObjects($this->classname)->then(fn($items)=>$items[0]??null);
     }
 
     public function delete(object $object):Promise{

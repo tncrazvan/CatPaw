@@ -39,7 +39,7 @@ class DBTasks{
         #[Inject] TaskRepository $repo      //inject the repository
     ):Generator|array{                      //specify it's a generator so that intellisense won't scream at you
         
-        $tasks = yield $repo->findAll();    //find the todos from the database and `yield`.
+        $tasks = yield $repo->findAll(Task::class);    //find the todos from the database and `yield`.
                                             //`yield`ing will make it so the server will convert the 
                                             //response of this method to a `Promise` in the background.
                                             //This means that from this point on your method has become
