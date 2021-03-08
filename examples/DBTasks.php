@@ -39,14 +39,14 @@ class DBTasks{
         #[Inject] TaskRepository $repo      //inject the repository
     ):Generator|array{                      //specify it's a generator so that intellisense won't scream at you
         
-        $tasks = yield $repo->findAll(Task::class);    //find the todos from the database and `yield`.
-                                            //`yield`ing will make it so the server will convert the 
-                                            //response of this method to a `Promise` in the background.
-                                            //This means that from this point on your method has become
-                                            //an asynchronous method, everytime you `yield` execution will be paused
-                                            //and resumed on the next loop tick.
-                                            //Note that you don't have to provide an instance of the loop object,
-                                            //that's because loop itself is a singleton which the server can recover easily.
+        $tasks = yield $repo->findAll(Task::class);     //find the todos from the database and `yield`.
+                                                        //`yield`ing will make it so the server will convert the 
+                                                        //response of this method to a `Promise` in the background.
+                                                        //This means that from this point on your method has become
+                                                        //an asynchronous method, everytime you `yield` execution will be paused
+                                                        //and resumed on the next loop tick.
+                                                        //Note that you don't have to provide an instance of the loop object,
+                                                        //that's because loop itself is a singleton which the server can recover easily.
 
         return $tasks;                      //return the todos.
     }
