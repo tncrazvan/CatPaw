@@ -43,6 +43,10 @@ class QueryBuilder implements QueryConst{
         $this->bindings = [];
     }
 
+    public function getDatabase():\PDO{
+        return $this->database;
+    }
+
     public function reset():void{
         $this->query = "";
         $this->selections = null;
