@@ -115,7 +115,7 @@ class DBTasks{
         #[Inject] TaskRepository $repo,
         #[PathParam] int $offset
     ):Generator|array{
-        $tasks = yield $repo->findAll(Page::of($offset,3));
+        $tasks = yield $repo->page(Page::of($offset,3))->findAll(Task::class);
         return $tasks;
     }
 }
