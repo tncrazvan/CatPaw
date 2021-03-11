@@ -27,7 +27,7 @@ Factory::setObject(
 );
 
 //scan classes
-//using `cat-template`, this can will be done automatically for you.
+//using `cat-template`, this will be done automatically for you.
 Factory::make(\examples\Server::class);
 Factory::make(\examples\YieldTest::class);
 Factory::make(\examples\Starter::class);
