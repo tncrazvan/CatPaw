@@ -10,7 +10,6 @@ use net\razshare\catpaw\attributes\http\methods\PUT;
 use net\razshare\catpaw\attributes\http\Path;
 use net\razshare\catpaw\attributes\http\PathParam;
 use net\razshare\catpaw\attributes\http\Query;
-use net\razshare\catpaw\attributes\http\RequestHeaders;
 use net\razshare\catpaw\attributes\Inject;
 use net\razshare\catpaw\attributes\Produces;
 use net\razshare\catpaw\qb\tools\Page;
@@ -19,8 +18,8 @@ use examples\filters\AssertTaskExists;
 use examples\filters\CheckTaskTitleLength;
 use examples\models\Task;
 use examples\repositories\TaskRepository;
-use Generator;
 use net\razshare\catpaw\attributes\Singleton;
+use Generator;
 
 #[Singleton]
 #[Path("/tasks")]                           //specify the http base path.
