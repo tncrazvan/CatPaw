@@ -4,10 +4,12 @@ namespace examples;
 use net\razshare\catpaw\attributes\http\methods\GET;
 use net\razshare\catpaw\attributes\http\Path;
 use net\razshare\catpaw\attributes\Inject;
+use net\razshare\catpaw\attributes\Singleton;
 use net\razshare\catpaw\tools\helpers\Yielder;
 use React\EventLoop\LoopInterface;
 use React\Promise\Promise;
 
+#[Singleton]
 #[Path("/yield")]
 class YieldTest{
     #[GET]

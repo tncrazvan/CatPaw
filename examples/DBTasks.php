@@ -20,8 +20,9 @@ use examples\filters\CheckTaskTitleLength;
 use examples\models\Task;
 use examples\repositories\TaskRepository;
 use Generator;
+use net\razshare\catpaw\attributes\Singleton;
 
-
+#[Singleton]
 #[Path("/tasks")]                           //specify the http base path.
                                             //all web methods within this class will 
                                             // prepend "/todo" to their path.
