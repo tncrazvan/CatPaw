@@ -6,7 +6,6 @@ use net\razshare\catpaw\attributes\Filter;
 use net\razshare\catpaw\attributes\FilterItem;
 use net\razshare\catpaw\attributes\http\methods\GET;
 use net\razshare\catpaw\attributes\http\Path;
-use net\razshare\catpaw\attributes\Inject;
 use net\razshare\catpaw\attributes\Produces;
 use net\razshare\catpaw\attributes\sessions\Session;
 use net\razshare\catpaw\attributes\Singleton;
