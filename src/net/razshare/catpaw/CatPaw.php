@@ -133,7 +133,7 @@ class CatPaw{
                     // $paramName = $matches[0];
                     // $paramsNames[] = $paramName;
                     // $params[$paramName] = $requestedPiece;
-                    if($candidate) break;
+                    if($candidate !== '') break;
                     $is_pattern = true;
                     $candidate_params[$matches[0]] = $requested_piece;
                 }else if($local_piece !== $requested_piece){
@@ -141,10 +141,13 @@ class CatPaw{
                 }
                 $c++;
             }
-            if($is_pattern){
-                $candidate = $local_path;
-            }else if($c === $max)
-                return $local_path;
+            
+            if($c === $max){
+                if($is_pattern)
+                    $candidate = $local_path;
+                else
+                    return $local_path;
+            }
         }
         if('' !== $candidate){
             foreach($candidate_params as $key => &$value){
