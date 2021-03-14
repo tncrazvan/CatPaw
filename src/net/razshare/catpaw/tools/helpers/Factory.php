@@ -340,6 +340,7 @@ class Factory{
             else if (UNLINK::findByMethod($method)) $callback('UNLINK',$method);
             else if (UNLOCK::findByMethod($method)) $callback('UNLOCK',$method);
             else if (VIEW::findByMethod($method)) $callback('VIEW',$method);
+            else if (Path::findByMethod($method)) $callback('GET',$method);
             else continue;
         }
         ############################################################################

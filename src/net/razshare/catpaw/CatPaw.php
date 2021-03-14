@@ -116,8 +116,10 @@ class CatPaw{
         $candidate = '';
         foreach($_map[$method] as $local_path => $item){
             $local_pieces = \explode('/',$local_path);
+            $local_pieces_c = \count($local_pieces);
             $requested_pieces = \explode('/',$requested_path);
             $max = \count($requested_pieces);
+            if($max !== $local_pieces_c) continue;
             $c = 0;
             $is_pattern = false;
             foreach($local_pieces as $index => &$local_piece){
