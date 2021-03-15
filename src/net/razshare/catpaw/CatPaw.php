@@ -106,57 +106,31 @@ class CatPaw{
             
         
     }
-
-    const PATTERN_PARAM = '/(?<={).*(?=})/';
-
+    
     private static function usingPath(string $method, string &$requested_path, array &$params, array &$_map):?string{
         if(!isset($_map[$method])) 
             return null;
-        $candidate_params = [];
-        $candidate = '';
         foreach($_map[$method] as $local_path => $item){
-            $local_pieces = \explode('/',$local_path);
-            $local_pieces_c = \count($local_pieces);
-            $requested_pieces = \explode('/',$requested_path);
-            $max = \count($requested_pieces);
-            if($max !== $local_pieces_c) continue;
-            $c = 0;
-            $is_pattern = false;
-            foreach($local_pieces as $index => &$local_piece){
-                if($max <= $index) {
-                    if($c === $max)
-                        return null;
-                    continue;
+            $path_pattern = '/^'.\preg_replace(
+                [
+                    '/\//',
+                    '/\./',
+                    '/{[\w\d\-_\.\~]+}/',
+                ],
+                [
+                    '\/',
+                    '\.',
+                    '([\w\d\-_\.\~]+)',
+                ],
+                $local_path
+            ).'$/';
+            if(\preg_match($path_pattern,$requested_path,$values) && \preg_match('/(?<={)[\w\d\-_\.\~]+(?=})/',$local_path,$names)){
+                $l = \count($values);
+                for($i=1;$i<$l;$i++){
+                    $params[$names[$i-1]] = $values[$i];
                 }
-
-                $requested_piece = $requested_pieces[$index];
-
-                if(\preg_match(static::PATTERN_PARAM,$local_piece,$matches) && $matches && isset($matches[0])){
-                    // $paramName = $matches[0];
-                    // $paramsNames[] = $paramName;
-                    // $params[$paramName] = $requestedPiece;
-                    if($candidate !== '') break;
-                    $is_pattern = true;
-                    $candidate_params[$matches[0]] = $requested_piece;
-                }else if($local_piece !== $requested_piece){
-                    continue;
-                }
-                $c++;
-            }
-            
-            if($c === $max){
-                if($is_pattern)
-                    $candidate = $local_path;
-                else
-                    return $local_path;
+                return $local_path;
             }
         }
-        if('' !== $candidate){
-            foreach($candidate_params as $key => &$value){
-                $params[$key] = $value;
-            }
-            return $candidate;
-        }
-        return null;
     }
 }
