@@ -2,7 +2,7 @@
 	"name": "razshare/catpaw",
 	"description": "A Php Http & WebSocket server",
 	"type": "library",
-	"license": "Apache-2.0",
+	"license": "GPL-2.0-only",
 	"scripts":{
 		"load": "composer dump-autoload -o"
 	},
