@@ -34,6 +34,7 @@ Factory::make(\examples\Starter::class);
 Factory::make(\examples\repositories\TaskRepository::class);
 Factory::make(\examples\models\Task::class);
 Factory::make(\examples\DBTasks::class);
+Factory::make(\examples\ProcessTest::class);
 
 //create and start server
 $server = new CatPaw(new class extends MainConfiguration{

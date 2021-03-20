@@ -5,6 +5,8 @@ namespace net\razshare\catpaw\attributes\metadata;
 class Meta{
     public static $PATH_PARAMS = [];
 
+    public static array $HTTP_METHODS_PATHS_PATTERNS = [];
+
     public static array $METHODS = [];
     public static array $METHODS_ATTRIBUTES = [];
 

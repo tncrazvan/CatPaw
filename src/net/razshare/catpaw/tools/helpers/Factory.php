@@ -267,20 +267,11 @@ class Factory{
         if(!str_starts_with($base_path,'/'))
             $base_path = "/$base_path";
             
-        if($singleton){
-            Route::map(
-                $reflection_class,
-                $base_path,
-                $map
-            );
-        }else {
-            $factory = Factory::class;
-            Route::map(
-                $reflection_class,
-                $base_path,
-                $map
-            );
-        }
+        Route::map(
+            $reflection_class,
+            $base_path,
+            $map
+        );
     }
 
     private static function entry(array &$methods,mixed $instance,string &$classname):void{
