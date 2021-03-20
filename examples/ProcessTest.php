@@ -19,7 +19,7 @@ class ProcessTest{
     #[Path("/{message}")]
     public function start(
         #[Inject] LoopInterface $loop,
-        #[PathParam] string $message,
+        #[PathParam] string $message = 'hello from child',
         #[Query] int $sleep = 3
     ):Generator|string{
         $message = yield new Promise(function($r) use(&$loop,&$message,&$sleep){
