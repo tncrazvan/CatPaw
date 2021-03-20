@@ -124,13 +124,17 @@ class CatPaw{
                 ],
                 $local_path
             ).'$/';
-            if(\preg_match($path_pattern,$requested_path,$values) && \preg_match('/(?<={)[\w\d\-_\.\~]+(?=})/',$local_path,$names)){
-                $l = \count($values);
-                for($i=1;$i<$l;$i++){
-                    $params[$names[$i-1]] = $values[$i];
+            $matching = \preg_match($path_pattern,$requested_path,$values);
+            if($matching){
+                if(\preg_match_all('/(?<={)[\w\d\-_\.\~]+(?=})/',$local_path,$names)){
+                    $l = \count($values);
+                    for($i=1;$i<$l;$i++){
+                        $params[$names[0][$i-1]] = $values[$i];
+                    }
                 }
                 return $local_path;
             }
         }
+        return null;
     }
 }
