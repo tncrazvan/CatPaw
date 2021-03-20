@@ -141,7 +141,7 @@ class Route{
                 $query->setName($param->getName());
             Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Query::class] = $query;
         }
-        Meta::$HTTP_METHODS_PATHS_PATTERNS[$method][$path] = static::getPathPattern($path,$params);
+        Meta::$HTTP_METHODS_PATHS_PATTERNS[$method][$path][] = static::getPathPattern($path,$params);
     }
     private static function initialize_function(
         string &$method, 
@@ -195,7 +195,7 @@ class Route{
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Query::class] = $query;
         }
         
-        Meta::$HTTP_METHODS_PATHS_PATTERNS[$method][$path] = static::getPathPattern($path,$params);
+        Meta::$HTTP_METHODS_PATHS_PATTERNS[$method][$path][] = static::getPathPattern($path,$params);
     }
     private static function initialize_filter(
         string $method,
