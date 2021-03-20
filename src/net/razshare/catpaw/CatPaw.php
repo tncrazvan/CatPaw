@@ -111,28 +111,18 @@ class CatPaw{
         if(!isset($_map[$method])) 
             return null;
         foreach($_map[$method] as $local_path => $item){
-            $path_pattern = '/^'.\preg_replace(
-                [
-                    '/\//',
-                    '/\./',
-                    '/{[\w\d\-_\.\~]+}/',
-                ],
-                [
-                    '\/',
-                    '\.',
-                    '([\w\d\-_\.\~]+)',
-                ],
-                $local_path
-            ).'$/';
-            $matching = \preg_match($path_pattern,$requested_path,$values);
-            if($matching){
-                if(\preg_match_all('/(?<={)[\w\d\-_\.\~]+(?=})/',$local_path,$names)){
-                    $l = \count($values);
-                    for($i=1;$i<$l;$i++){
-                        $params[$names[0][$i-1]] = $values[$i];
+            $path_patterns = Meta::$HTTP_METHODS_PATHS_PATTERNS[$method][$local_path];
+            foreach($path_patterns as $path_pattern){
+                $matching = \preg_match($path_pattern,$requested_path,$values);
+                if($matching){
+                    if(\preg_match_all('/(?<={)[\w\d\-_\.\~]+(?=})/',$local_path,$names)){
+                        $l = \count($values);
+                        for($i=1;$i<$l;$i++){
+                            $params[$names[0][$i-1]] = \urldecode($values[$i]);
+                        }
                     }
+                    return $local_path;
                 }
-                return $local_path;
             }
         }
         return null;

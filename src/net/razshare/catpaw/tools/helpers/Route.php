@@ -47,6 +47,45 @@ class Route{
             static::initialize($method,$path,$reflection_class,$reflection_method,null);
         }
     }
+
+    private static function getPathPattern(
+        string &$path,
+        array &$params
+    ):string{
+        $toSearch = [
+            '/\//',
+            '/\./',
+        ];
+        $toReplace = [
+            '\/',
+            '\.',
+        ];
+        foreach($params as $param){
+            $path_param = PathParam::findByParameter($param);
+            if($path_param){
+                $optional = $param->isOptional();
+                $type = $param->getType()->getName();
+                switch($type){
+                    case 'int':
+                        $path_param->setRegex('[0-9]+');
+                    break;
+                    case 'float':
+                        $path_param->setRegex('[0-9]+\.[0-9]+');
+                    break;
+                }
+                $toSearch[] = '/{'.$param->getName().'}/';
+                $toReplace[] = ($optional?'?':'').'('.$path_param->getRegex().')'.($optional?'?':'');
+            }
+        }
+
+        $path_pattern = '/^'.\preg_replace(
+            $toSearch,
+            $toReplace,
+            $path
+        ).'$/';
+        return $path_pattern;
+    }
+
     private static function initialize_class(
         string &$method, 
         string &$path, 
@@ -86,7 +125,7 @@ class Route{
         Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByMethod($reflection_method);
         if(!Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class])
             Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class] = new Produces("text/plain");
-        
+
         foreach($params as $param){
             $path_param = PathParam::findByParameter($param);
             Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
@@ -97,8 +136,12 @@ class Route{
             Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
             Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Request::class] = Request::findByParameter($param);
             Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Inject::class] = Inject::findByParameter($param);
-            Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Query::class] = Query::findByParameter($param);
+            $query = Query::findByParameter($param);
+            if($query && '' === $query->getName())
+                $query->setName($param->getName());
+            Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Query::class] = $query;
         }
+        Meta::$HTTP_METHODS_PATHS_PATTERNS[$method][$path][] = static::getPathPattern($path,$params);
     }
     private static function initialize_function(
         string &$method, 
@@ -126,6 +169,18 @@ class Route{
         
         foreach($params as $param){
             $path_param = PathParam::findByParameter($param);
+            $type = $param->getType()->getName();
+            switch($type){
+                case 'int':
+                    $path_param->setRegex('/[0-9]+/');
+                break;
+                case 'float':
+                    $path_param->setRegex('/[0-9]+\.[0-9]+/');
+                break;
+                default:
+                    $path_param->setRegex('/.+/');
+                break;
+            }
             Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][ResponseHeaders::class] = ResponseHeaders::findByParameter($param);
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][RequestHeaders::class] = RequestHeaders::findByParameter($param);
@@ -134,8 +189,13 @@ class Route{
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Body::class] = Body::findByParameter($param);
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Request::class] = Request::findByParameter($param);
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Inject::class] = Inject::findByParameter($param);
-            Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Query::class] = Query::findByParameter($param);
+            $query = Query::findByParameter($param);
+            if($query && '' === $query->getName())
+                $query->setName($param->getName());
+            Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Query::class] = $query;
         }
+        
+        Meta::$HTTP_METHODS_PATHS_PATTERNS[$method][$path][] = static::getPathPattern($path,$params);
     }
     private static function initialize_filter(
         string $method,

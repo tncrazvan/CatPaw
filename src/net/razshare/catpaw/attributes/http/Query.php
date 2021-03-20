@@ -8,9 +8,12 @@ use net\razshare\catpaw\attributes\traits\CoreAttributeDefinition;
 class Query implements AttributeInterface{
     use CoreAttributeDefinition;
     public function __construct(
-        private string $name
+        private string $name = ''
     ){}
 
+    public function setName(string $name):void{
+        $this->name = $name;
+    }
     public function getName():string{
         return $this->name;
     }
