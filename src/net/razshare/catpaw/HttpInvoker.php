@@ -18,11 +18,11 @@ use net\razshare\catpaw\tools\helpers\Factory;
 use net\razshare\catpaw\attributes\metadata\Meta;
 use net\razshare\catpaw\attributes\Request;
 use net\razshare\catpaw\attributes\sessions\Session;
-use net\razshare\catpaw\services\ByteRangeService;
 use net\razshare\catpaw\services\FileReaderService;
 use net\razshare\catpaw\sessions\SessionManager;
 use net\razshare\catpaw\tools\helpers\parsing\BodyParser;
 use net\razshare\catpaw\tools\helpers\Yielder;
+use net\razshare\catpaw\tools\response\ByteRangeResponse;
 use net\razshare\catpaw\tools\Strings;
 use net\razshare\catpaw\tools\XMLSerializer;
 use React\EventLoop\LoopInterface;
@@ -399,7 +399,7 @@ class HttpInvoker{
         if($body instanceof Response)
             return $body;
 
-        if($body instanceof ByteRangeService){
+        if($body instanceof ByteRangeResponse){
             $body = $this->resolveRange(
                 source:$body->getSource(),
                 reqheaders:$request->getHeaders(),
