@@ -169,18 +169,6 @@ class Route{
         
         foreach($params as $param){
             $path_param = PathParam::findByParameter($param);
-            $type = $param->getType()->getName();
-            switch($type){
-                case 'int':
-                    $path_param->setRegex('/[0-9]+/');
-                break;
-                case 'float':
-                    $path_param->setRegex('/[0-9]+\.[0-9]+/');
-                break;
-                default:
-                    $path_param->setRegex('/.+/');
-                break;
-            }
             Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][ResponseHeaders::class] = ResponseHeaders::findByParameter($param);
             Meta::$FUNCTIONS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][RequestHeaders::class] = RequestHeaders::findByParameter($param);
