@@ -9,18 +9,14 @@ use net\razshare\catpaw\attributes\Produces;
 use net\razshare\catpaw\services\ByteRangeService;
 
 #[Path("/byte-range")]
-#[Produces("audio/mpeg")]
+#[Produces("text/html")]
 class ByteRangeTest{
     
     #[GET]
     public function test(
-        #[Inject] ByteRangeService $range,
-        #[ResponseHeaders] array &$headers
+        #[Inject] ByteRangeService $range
     ){
         $filename = dirname(__FILE__)."/files/test.html";
-
-        $headers["Content-Type"] = "text/html";
-
         return $range->from($filename);
     }
 }
