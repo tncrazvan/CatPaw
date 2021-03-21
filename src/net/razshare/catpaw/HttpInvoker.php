@@ -18,12 +18,18 @@ use net\razshare\catpaw\tools\helpers\Factory;
 use net\razshare\catpaw\attributes\metadata\Meta;
 use net\razshare\catpaw\attributes\Request;
 use net\razshare\catpaw\attributes\sessions\Session;
+use net\razshare\catpaw\services\ByteRangeService;
+use net\razshare\catpaw\services\FileReaderService;
 use net\razshare\catpaw\sessions\SessionManager;
 use net\razshare\catpaw\tools\helpers\parsing\BodyParser;
 use net\razshare\catpaw\tools\helpers\Yielder;
+use net\razshare\catpaw\tools\Strings;
 use net\razshare\catpaw\tools\XMLSerializer;
 use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
+use React\Stream\ThroughStream;
+
+use function React\Promise\Stream\buffer;
 
 class HttpInvoker{
 
@@ -240,6 +246,147 @@ class HttpInvoker{
         );
     }
 
+
+    private function resolveRange(
+        string $source,
+        array $reqheaders,
+        array &$resheaders,
+        array $innerResHeaders,
+        Status $status,
+        LoopInterface $loop,
+        FileReaderService $reader
+    ){
+        if(is_file($source)){
+            $contentLength = filesize($source);
+            if($contentLength === 0){
+                $status->setCode(Status::OK);
+                return '';   
+            }
+        }
+
+
+        $isRange = isset($reqheaders["Range"][0]);
+        if($isRange){
+            $rangeString = str_replace('bytes=','',$reqheaders["Range"][0]);
+            $ranges = \preg_split('/,\s*/',$rangeString);
+            $cranges = count($ranges);
+            if($cranges <= 0){
+                $status->setCode(Status::REQUESTED_RANGE_NOT_SATISFIABLE);
+                return '';
+            }
+
+            if($cranges === 1){
+                $status->setCode(Status::PARTIAL_CONTENT);
+                $range = $ranges[0];
+                [$start,$end] = explode('-',$range);
+                $start = (int) $start;
+                $end = (int) ($end !== ''?$end:$contentLength-1);
+                $length = $end-$start;
+                
+                if($length > $contentLength || $start < 0 || $end < 0 || $end < $start){
+                    $status->setCode(Status::REQUESTED_RANGE_NOT_SATISFIABLE);
+                    return;
+                }
+
+                $resheaders["Content-Range"] = "bytes $start-$end/$contentLength";
+                $handle = \fopen($source,'r+');
+                \fseek($handle,$start);
+                return buffer($reader->stream($handle,$length+1));
+            }
+
+
+
+            $status->setCode(Status::PARTIAL_CONTENT);
+            $boundary = Strings::uuid();
+            $resheaders["Content-Type"] = "multipart/byteranges; boundary=$boundary";
+            $maxIndex = \count($ranges)-1;
+
+            $handle = \fopen($source,'r+');
+            $tstream = new ThroughStream();
+            
+            $this->ranges(
+                index:0,
+                maxIndex:$maxIndex,
+                ranges: $ranges,
+                contentLength:$contentLength,
+                status:$status,
+                handle:$handle,
+                tstream:$tstream,
+                boundary:$boundary,
+                loop:$loop,
+                headers:$innerResHeaders
+            );
+            return buffer($tstream);
+        }
+
+        $status->setCode(Status::OK);
+        $resheaders["Accept-Ranges"] = "bytes";
+        return $reader->read($source);
+    }
+
+    private function ranges(
+        int $index,
+        array $ranges,
+        int $maxIndex,
+        int $contentLength,
+        Status $status,
+        string $boundary,
+        $handle,
+        ThroughStream $tstream,
+        LoopInterface $loop,
+        array $headers = []
+    ):void{
+        $loop->futureTick(function() use(
+            &$ranges,
+            &$maxIndex,
+            &$contentLength,
+            &$status,
+            &$boundary,
+            &$handle,
+            &$tstream,
+            &$loop,
+            &$headers,
+            $index,
+        ){
+            $range = $ranges[$index];
+            [$start,$end] = explode('-',$range);
+            $start = (int) $start;
+            $end = (int) ($end !== ''?$end:$contentLength-1);
+            $length = $end-$start+1;
+            if($length > $contentLength || $start < 0 || $end < 0 || $end < $start){
+                $status->setCode(Status::REQUESTED_RANGE_NOT_SATISFIABLE);
+                return;
+            }
+            
+            \fseek($handle,$start);
+            $chunk = \fread($handle,$length);
+            $message = "--$boundary\r\n";
+            //$message .= "Content-Type: audio/mpeg\r\n";
+            $message .= implode("\r\n",$headers)."\r\n";
+            $message .= "Content-Range: bytes $start-$end/$contentLength\r\n\r\n";
+            $message .= $chunk;
+            $message .= "\r\n";
+
+            $tstream->write($message);
+            if($index >= $maxIndex){
+                $tstream->end("--$boundary--");
+                return;
+            }
+            $this->ranges(
+                index:++$index,
+                ranges: $ranges,
+                maxIndex:$maxIndex,
+                contentLength:$contentLength,
+                status:$status,
+                handle:$handle,
+                tstream:$tstream,
+                boundary:$boundary,
+                loop:$loop
+            );
+        });
+    }
+
+
     private function generateResponse(
         &$body,
         &$http_method,
@@ -247,10 +394,24 @@ class HttpInvoker{
         &$__PRODUCES__,
         &$http_headers,
         &$status,
-        &$request
+        ServerRequestInterface &$request
     ):mixed{
         if($body instanceof Response)
             return $body;
+
+        if($body instanceof ByteRangeService){
+            $body = $this->resolveRange(
+                source:$body->getSource(),
+                reqheaders:$request->getHeaders(),
+                resheaders:$http_headers,
+                innerResHeaders:[
+                    "Content-Type" => isset($http_headers["Content-Type"])?$http_headers["Content-Type"]:"text/plain"
+                ],
+                status:$status,
+                loop:$this->loop,
+                reader:Factory::make(FileReaderService::class)
+            );
+        }
 
         if($body instanceof PromiseInterface){
             return $body->then(
