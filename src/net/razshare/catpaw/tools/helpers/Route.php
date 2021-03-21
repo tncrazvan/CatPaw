@@ -101,7 +101,12 @@ class Route{
         Meta::$CLASS_ATTRIBUTES[$method][$path][Singleton::class] = Singleton::findByClass($reflection_class);
         Meta::$CLASS_ATTRIBUTES[$method][$path][Repository::class] = Repository::findByClass($reflection_class);
         Meta::$CLASS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByClass($reflection_class);
-        Meta::$CLASS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByClass($reflection_class);
+        $produces = Produces::findByClass($reflection_class);
+        if($produces)
+            Meta::$CLASS_ATTRIBUTES[$method][$path][Produces::class] = $produces;
+        else
+            Meta::$CLASS_ATTRIBUTES[$method][$path][Produces::class] = new Produces("text/plain");
+        
         Meta::$CLASS_ATTRIBUTES[$method][$path][Path::class] = Path::findByClass($reflection_class);
     }
     private static function initialize_method(
@@ -123,9 +128,6 @@ class Route{
         Meta::$METHODS_ATTRIBUTES[$method][$path][Path::class] = Path::findByMethod($reflection_method);
         Meta::$METHODS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByMethod($reflection_method);
         Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByMethod($reflection_method);
-        if(!Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class])
-            Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class] = new Produces("text/plain");
-
         foreach($params as $param){
             $path_param = PathParam::findByParameter($param);
             Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
