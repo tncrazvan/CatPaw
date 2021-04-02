@@ -28,13 +28,13 @@ Factory::setObject(
 
 //scan classes
 //using `cat-template`, this will be done automatically for you.
-// Factory::make(\examples\Server::class);
-// Factory::make(\examples\YieldTest::class);
-// Factory::make(\examples\Starter::class);
-// Factory::make(\examples\repositories\TaskRepository::class);
-// Factory::make(\examples\models\Task::class);
-// Factory::make(\examples\DBTasks::class);
-// Factory::make(\examples\ProcessTest::class);
+Factory::make(\examples\Server::class);
+Factory::make(\examples\YieldTest::class);
+Factory::make(\examples\Starter::class);
+Factory::make(\examples\repositories\TaskRepository::class);
+Factory::make(\examples\models\Task::class);
+Factory::make(\examples\DBTasks::class);
+Factory::make(\examples\ProcessTest::class);
 Factory::make(\examples\ByteRangeTest::class);
 
 //create and start server

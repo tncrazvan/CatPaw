@@ -16,7 +16,8 @@
 		"php": ">=8.0",
 		"razshare/asciitable": ">=1.0.4",
 		"react/react": "^1.0.1",
-		"react/child-process": "^0.6.2"
+		"react/child-process": "^0.6.2",
+		"react/mysql": "^0.5.4"
 	},
 	"config": {
 		"preferred-install": "dist"
