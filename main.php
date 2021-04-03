@@ -1,9 +1,13 @@
 <?php
 require_once './vendor/autoload.php';
 
+use net\razshare\catpaw\attributes\http\Path;
+use net\razshare\catpaw\attributes\interfaces\AttributeInterface;
+use net\razshare\catpaw\attributes\traits\CoreAttributeDefinition;
 use net\razshare\catpaw\CatPaw;
 use net\razshare\catpaw\config\MainConfiguration;
 use net\razshare\catpaw\tools\helpers\Factory;
+use net\razshare\catpaw\tools\helpers\Route;
 //use net\razshare\catpaw\tools\helpers\SimpleQueryBuilder;
 use React\EventLoop\LoopInterface;
 
@@ -26,6 +30,34 @@ Factory::setObject(LoopInterface::class,\React\EventLoop\Factory::create());
 //    )
 //);
 
+#[\Attribute()]
+class MyCustomAttribute implements AttributeInterface{
+    use CoreAttributeDefinition;
+
+    public function __construct(
+        private string $arg1
+    ){}
+
+    public function getArg1():string{
+        return $this->arg1;
+    }
+}
+
+Factory::hook(function:function(\ReflectionFunction $reflection_function){
+    if(null !== ($attribute = MyCustomAttribute::findByFunction($reflection_function))){
+        $arg1 = $attribute->getArg1();
+        echo "arg1: $arg1\n";
+    }
+});
+
+Route::get(
+    "/factory-test",
+    #[MyCustomAttribute("hello world")] 
+    function(){
+        return "this is a test";
+    }
+);
+
 //scan classes
 //using `cat-template`, this will be done automatically for you.
 Factory::make(\examples\Server::class);
@@ -36,7 +68,6 @@ Factory::make(\examples\Starter::class);
 //Factory::make(\examples\DBTasks::class);
 Factory::make(\examples\ProcessTest::class);
 Factory::make(\examples\ByteRangeTest::class);
-Factory::make(\examples\OpenApi::class);
 
 //create and start server
 $server = new CatPaw(new class extends MainConfiguration{
