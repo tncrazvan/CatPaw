@@ -1,10 +1,14 @@
 <?php
 require_once './vendor/autoload.php';
 
+use net\razshare\catpaw\attributes\http\Path;
+use net\razshare\catpaw\attributes\interfaces\AttributeInterface;
+use net\razshare\catpaw\attributes\traits\CoreAttributeDefinition;
 use net\razshare\catpaw\CatPaw;
 use net\razshare\catpaw\config\MainConfiguration;
 use net\razshare\catpaw\tools\helpers\Factory;
-use net\razshare\catpaw\tools\helpers\SimpleQueryBuilder;
+use net\razshare\catpaw\tools\helpers\Route;
+//use net\razshare\catpaw\tools\helpers\SimpleQueryBuilder;
 use React\EventLoop\LoopInterface;
 
 //make a new loop and make it injectable
@@ -36,7 +40,6 @@ Factory::make(\examples\Starter::class);
 //Factory::make(\examples\DBTasks::class);
 Factory::make(\examples\ProcessTest::class);
 Factory::make(\examples\ByteRangeTest::class);
-Factory::make(\examples\OpenApi::class);
 
 //create and start server
 $server = new CatPaw(new class extends MainConfiguration{

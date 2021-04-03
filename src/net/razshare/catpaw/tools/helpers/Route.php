@@ -128,6 +128,7 @@ class Route{
         Meta::$METHODS_ATTRIBUTES[$method][$path][Path::class] = Path::findByMethod($reflection_method);
         Meta::$METHODS_ATTRIBUTES[$method][$path][Consumes::class] = Consumes::findByMethod($reflection_method);
         Meta::$METHODS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByMethod($reflection_method);
+                
         foreach($params as $param){
             $path_param = PathParam::findByParameter($param);
             Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
@@ -144,6 +145,8 @@ class Route{
             Meta::$METHODS_ARGS_ATTRIBUTES[$method][$path][$param->getName()][Query::class] = $query;
         }
         Meta::$HTTP_METHODS_PATHS_PATTERNS[$method][$path][] = static::getPathPattern($path,$params);
+        
+        foreach(Factory::getMethodHooks() as $hook) $hook($reflection_method);
     }
     private static function initialize_function(
         string &$method, 
@@ -168,7 +171,7 @@ class Route{
         Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class] = Produces::findByFunction($reflection_function);
         if(!Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class])
             Meta::$FUNCTIONS_ATTRIBUTES[$method][$path][Produces::class] = new Produces("text/plain");
-        
+
         foreach($params as $param){
             $path_param = PathParam::findByParameter($param);
             Meta::$PATH_PARAMS[$method][$path][$param->getName()] = $path_param;
@@ -186,6 +189,8 @@ class Route{
         }
         
         Meta::$HTTP_METHODS_PATHS_PATTERNS[$method][$path][] = static::getPathPattern($path,$params);
+        
+        foreach(Factory::getFunctionHooks() as $hook) $hook($reflection_function);
     }
     private static function initialize_filter(
         string $method,
@@ -215,6 +220,8 @@ class Route{
             Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Inject::class] = Inject::findByParameter($param);
             Meta::$FILTERS_ARGS_ATTRIBUTES[$method][$path][$classname][$param->getName()][Query::class] = Query::findByParameter($param);
         }
+
+        foreach(Factory::getFilterItemHooks() as $hook) $hook($reflection_function);
     }
     private static function initialize(
         string $method,
