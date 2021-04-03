@@ -152,6 +152,40 @@ class Factory{
         $instance->id = $entity_id;   
     }
 
+    private static $CLASS_HOOKS = [];
+    private static $METHOD_HOOKS = [];
+    private static $FUNCTION_HOOKS = [];
+    private static $FILTER_ITEM_HOOKS = [];
+    
+    public static function hook(
+        ?\Closure $class = null,
+        ?\Closure $method = null,
+        ?\Closure $function = null,
+        ?\Closure $filterItem = null,
+    ):void{
+        if($class)
+            static::$CLASS_HOOKS[] = $class;
+        if($method)
+            static::$METHOD_HOOKS[] = $method;
+        if($function)
+            static::$FUNCTION_HOOKS[] = $function;
+        if($filterItem)
+            static::$FILTER_ITEM_HOOKS[] = $filterItem;
+    }
+
+    public static function getClassHooks():array{
+        return static::$CLASS_HOOKS;
+    }
+    public static function getMethodHooks():array{
+        return static::$METHOD_HOOKS;
+    }
+    public static function getFunctionHooks():array{
+        return static::$FUNCTION_HOOKS;
+    }
+    public static function getFilterItemHooks():array{
+        return static::$FILTER_ITEM_HOOKS;
+    }
+
     /**
      * Make a new instance of the given class.<br />
      * This method will take care of dependency injections.
@@ -237,6 +271,8 @@ class Factory{
         
         if($scoped)
             static::entry($methods,$instance,$classname);
+
+        foreach(static::$CLASS_HOOKS as $hook) $hook($instance);
         
         return $instance;
     }
@@ -280,6 +316,9 @@ class Factory{
             $entry = Entry::findByMethod($method);
             if($entry){
                 if($method instanceof \ReflectionMethod){
+                    
+                    foreach(Factory::getMethodHooks() as $hook) $hook($method);
+                    
                     $args = [];
                     $i = 0;
                     foreach($method->getParameters() as $parameter){
