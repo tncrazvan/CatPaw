@@ -30,34 +30,6 @@ Factory::setObject(LoopInterface::class,\React\EventLoop\Factory::create());
 //    )
 //);
 
-#[\Attribute()]
-class MyCustomAttribute implements AttributeInterface{
-    use CoreAttributeDefinition;
-
-    public function __construct(
-        private string $arg1
-    ){}
-
-    public function getArg1():string{
-        return $this->arg1;
-    }
-}
-
-Factory::hook(function:function(\ReflectionFunction $reflection_function){
-    if(null !== ($attribute = MyCustomAttribute::findByFunction($reflection_function))){
-        $arg1 = $attribute->getArg1();
-        echo "arg1: $arg1\n";
-    }
-});
-
-Route::get(
-    "/factory-test",
-    #[MyCustomAttribute("hello world")] 
-    function(){
-        return "this is a test";
-    }
-);
-
 //scan classes
 //using `cat-template`, this will be done automatically for you.
 Factory::make(\examples\Server::class);
